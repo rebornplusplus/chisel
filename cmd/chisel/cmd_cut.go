@@ -10,6 +10,7 @@ import (
 
 	"github.com/canonical/chisel/internal/archive"
 	"github.com/canonical/chisel/internal/cache"
+	"github.com/canonical/chisel/internal/sbom"
 	"github.com/canonical/chisel/internal/setup"
 	"github.com/canonical/chisel/internal/slicer"
 )
@@ -117,6 +118,11 @@ func (cmd *cmdCut) Execute(args []string) error {
 	}
 
 	err = db.WriteInstalledSlices(cmd.RootDir, selection.Slices)
+	if err != nil {
+		return err
+	}
+
+	err = sbom.SbomDB.WriteSections(cmd.RootDir)
 	return err
 
 	// return printVersions()

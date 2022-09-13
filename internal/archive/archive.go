@@ -11,6 +11,7 @@ import (
 	"github.com/canonical/chisel/internal/cache"
 	"github.com/canonical/chisel/internal/control"
 	"github.com/canonical/chisel/internal/deb"
+	"github.com/canonical/chisel/internal/sbom"
 )
 
 type Archive interface {
@@ -108,6 +109,7 @@ func (a *ubuntuArchive) Fetch(pkg string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
+	sbom.SbomDB.AddSection(section)
 	suffix := section.Get("Filename")
 	logf("Fetching %s...", suffix)
 	reader, err := index.fetch("../../"+suffix, section.Get("SHA256"))
