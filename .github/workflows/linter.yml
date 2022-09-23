@@ -1,20 +1,24 @@
-name: Lint Go
+name: Linter
 on: [pull_request]
 
 jobs:
-  lint-go:
-    name: Lint Go Using golangci and gofmt
-    runs-on: ubuntu-latest
+  go-linters:
+    name: Go linters
+    runs-on: ubuntu-22.04
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v3
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Lint using golangci-lint
+          go-version-file: 'go.mod'
+
+      - name: Check code formatting, complexity, style, performance and patterns
         uses: golangci/golangci-lint-action@v3
-      - name: Lint using gofmt and git diff
-        run: |
-          go fmt ./...
-          git diff | exit 1
+        with:
+          # https://golangci-lint.run/usage/linters/
+          args: |
+            --disable-all --enable goimports --enable funlen \
+             --enable gocyclo --enable errcheck --enable unused \
+             --enable staticcheck --enable dupl --enable revive \
+             --enable whitespace --enable maligned --enable prealloc
+
