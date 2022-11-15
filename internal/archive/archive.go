@@ -17,6 +17,7 @@ type Archive interface {
 	Options() *Options
 	Fetch(pkg string) (io.ReadCloser, error)
 	Exists(pkg string) bool
+	PackageVersion(pkg string) (string, error)
 }
 
 type Options struct {
@@ -80,6 +81,15 @@ func (a *ubuntuArchive) Options() *Options {
 func (a *ubuntuArchive) Exists(pkg string) bool {
 	_, _, err := a.selectPackage(pkg)
 	return err == nil
+}
+
+func (a *ubuntuArchive) PackageVersion(pkg string) (string, error) {
+	section, _, err := a.selectPackage(pkg)
+	if err != nil {
+		return "", err
+	}
+	version := section.Get("Version")
+	return version, nil
 }
 
 func (a *ubuntuArchive) selectPackage(pkg string) (control.Section, *ubuntuIndex, error) {

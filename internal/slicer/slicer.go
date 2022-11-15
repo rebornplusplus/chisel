@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/canonical/chisel/internal/archive"
+	"github.com/canonical/chisel/internal/db"
 	"github.com/canonical/chisel/internal/deb"
 	"github.com/canonical/chisel/internal/fsutil"
 	"github.com/canonical/chisel/internal/scripts"
@@ -29,6 +30,9 @@ func Run(options *RunOptions) error {
 	archives := make(map[string]archive.Archive)
 	extract := make(map[string]map[string][]deb.ExtractInfo)
 	pathInfos := make(map[string]setup.PathInfo)
+
+	pathOwner := make(map[string][]*setup.Slice)
+	optionals := make(map[string]bool)
 
 	oldUmask := syscall.Umask(0)
 	defer func() {
@@ -84,6 +88,9 @@ func Run(options *RunOptions) error {
 				if sourcePath == copyrightPath && targetPath == copyrightPath {
 					hasCopyright = true
 				}
+				if !containsSlice(pathOwner[targetPath], slice) {
+					pathOwner[targetPath] = append(pathOwner[targetPath], slice)
+				}
 			} else {
 				targetDir := filepath.Dir(strings.TrimRight(targetPath, "/")) + "/"
 				if targetDir == "" || targetDir == "/" {
@@ -93,6 +100,10 @@ func Run(options *RunOptions) error {
 					Path:     targetDir,
 					Optional: true,
 				})
+				if !containsSlice(pathOwner[targetPath], slice) {
+					pathOwner[targetPath] = append(pathOwner[targetPath], slice)
+				}
+				optionals[targetPath] = true
 			}
 		}
 		if !hasCopyright {
@@ -100,6 +111,10 @@ func Run(options *RunOptions) error {
 				Path:     copyrightPath,
 				Optional: true,
 			})
+			if !containsSlice(pathOwner[copyrightPath], slice) {
+				pathOwner[copyrightPath] = append(pathOwner[copyrightPath], slice)
+			}
+			optionals[copyrightPath] = true
 		}
 	}
 
@@ -230,6 +245,7 @@ func Run(options *RunOptions) error {
 	var untilDirs []string
 	for targetPath, pathInfo := range pathInfos {
 		if pathInfo.Until == setup.UntilMutate {
+			delete(pathOwner, targetPath)
 			var targetPaths []string
 			if pathInfo.Kind == setup.GlobPath {
 				targetPaths = globbedPaths[targetPath]
@@ -259,7 +275,60 @@ func Run(options *RunOptions) error {
 		}
 	}
 
+	// untangle glob path ownership
+	for glob, paths := range globbedPaths {
+		if slices, ok := pathOwner[glob]; ok {
+			for _, path := range paths {
+				if _, ok := pathOwner[path]; !ok {
+					pathOwner[path] = make([]*setup.Slice, 0)
+				}
+				for _, slice := range slices {
+					if !containsSlice(pathOwner[path], slice) {
+						pathOwner[path] = append(pathOwner[path], slice)
+					}
+				}
+			}
+			delete(pathOwner, glob)
+		}
+	}
+	for path := range pathOwner {
+		if strings.ContainsAny(path, "*?") {
+			return fmt.Errorf("globbed paths of %v not found", path)
+		}
+	}
+
+	pkgVersions := make(map[string]string)
+	for _, slice := range options.Selection.Slices {
+		if _, ok := pkgVersions[slice.Package]; !ok {
+			archiveName := release.Packages[slice.Package].Archive
+			archive := options.Archives[archiveName]
+			version, err := archive.PackageVersion(slice.Package)
+			if err != nil {
+				return err
+			}
+			pkgVersions[slice.Package] = version
+		}
+	}
+
+	err := db.ChiselDB.ParseContentsAndPackages(&db.RunParams{
+		PathOwner:  pathOwner,
+		Optional:   optionals,
+		Packages:   pkgVersions,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func containsSlice(l []*setup.Slice, s *setup.Slice) bool {
+	for _, si := range l {
+		if si == s {
+			return true
+		}
+	}
+	return false
 }
 
 func contains(l []string, s string) bool {
