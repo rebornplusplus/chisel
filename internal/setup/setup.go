@@ -35,6 +35,7 @@ type Archive struct {
 // Package holds a collection of slices that represent parts of themselves.
 type Package struct {
 	Name    string
+	Group   string
 	Path    string
 	Archive string
 	Slices  map[string]*Slice
@@ -146,6 +147,9 @@ func (r *Release) validate() error {
 			keys = append(keys, SliceKey{pkg.Name, new.Name})
 			for newPath, newInfo := range new.Contents {
 				if old, ok := paths[newPath]; ok {
+					if same, _ := r.isSamePackageGroup(new.Package, old.Package); same {
+						continue
+					}
 					oldInfo := old.Contents[newPath]
 					if !newInfo.SameContent(&oldInfo) || (newInfo.Kind == CopyPath || newInfo.Kind == GlobPath) && new.Package != old.Package {
 						if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
@@ -186,6 +190,18 @@ func (r *Release) validate() error {
 	}
 
 	return nil
+}
+
+func (r *Release) isSamePackageGroup(pkgA string, pkgB string) (bool, error) {
+	p, ok := r.Packages[pkgA]
+	if !ok {
+		return false, fmt.Errorf("Package %q does not exist in release", pkgA)
+	}
+	q, ok := r.Packages[pkgB]
+	if !ok {
+		return false, fmt.Errorf("Package %q does not exist in release", pkgB)
+	}
+	return p.Group != "" && q.Group != "" && p.Group == q.Group, nil
 }
 
 func order(pkgs map[string]*Package, keys []SliceKey) ([]SliceKey, error) {
@@ -331,6 +347,7 @@ type yamlArchive struct {
 
 type yamlPackage struct {
 	Name    string               `yaml:"package"`
+	Group   string               `yaml:"group"`
 	Archive string               `yaml:"archive"`
 	Slices  map[string]yamlSlice `yaml:"slices"`
 }
@@ -472,6 +489,7 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 		return nil, fmt.Errorf("%s: filename and 'package' field (%q) disagree", pkgPath, yamlPkg.Name)
 	}
 	pkg.Archive = yamlPkg.Archive
+	pkg.Group = yamlPkg.Group
 
 	zeroPath := yamlPath{}
 	for sliceName, yamlSlice := range yamlPkg.Slices {
