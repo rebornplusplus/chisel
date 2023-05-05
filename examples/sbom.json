@@ -1,0 +1,876 @@
+{
+ "spdxVersion": "SPDX-2.3",
+ "dataLicense": "CC0-1.0",
+ "SPDXID": "SPDXRef-DOCUMENT",
+ "name": "dotnet-runtime:6.0-test",
+ "documentNamespace": "https://anchore.com/syft/image/dotnet-runtime-6.0-test-19ad1433-7335-4ef7-9b83-8111e36d32b0",
+ "creationInfo": {
+  "licenseListVersion": "3.20",
+  "creators": [
+   "Organization: Anchore, Inc",
+   "Tool: syft-0.79.0"
+  ],
+  "created": "2023-05-05T11:43:06Z"
+ },
+ "packages": [
+  {
+   "name": "Microsoft.NETCore.App.Runtime.ubuntu.22.04-x64",
+   "SPDXID": "SPDXRef-Package-dotnet-Microsoft.NETCore.App.Runtime.ubuntu.22.04-x64-d64945db36d53c2a",
+   "versionInfo": "6.0.16",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from dotnet project assets file: /usr/lib/dotnet/shared/Microsoft.NETCore.App/6.0.16/Microsoft.NETCore.App.deps.json",
+   "licenseConcluded": "NONE",
+   "licenseDeclared": "NONE",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:Microsoft.NETCore.App.Runtime.ubuntu.22.04-x64:Microsoft.NETCore.App.Runtime.ubuntu.22.04-x64:6.0.16:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:Microsoft.NETCore.App.Runtime.ubuntu.22.04-x64:Microsoft.NETCore.App.Runtime.ubuntu.22.04_x64:6.0.16:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:Microsoft.NETCore.App.Runtime.ubuntu.22.04_x64:Microsoft.NETCore.App.Runtime.ubuntu.22.04-x64:6.0.16:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:Microsoft.NETCore.App.Runtime.ubuntu.22.04_x64:Microsoft.NETCore.App.Runtime.ubuntu.22.04_x64:6.0.16:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:Microsoft.NETCore.App.Runtime.ubuntu.22.04:Microsoft.NETCore.App.Runtime.ubuntu.22.04-x64:6.0.16:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:Microsoft.NETCore.App.Runtime.ubuntu.22.04:Microsoft.NETCore.App.Runtime.ubuntu.22.04_x64:6.0.16:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "PACKAGE-MANAGER",
+     "referenceType": "purl",
+     "referenceLocator": "pkg:nuget/Microsoft.NETCore.App.Runtime.ubuntu.22.04-x64@6.0.16"
+    }
+   ]
+  },
+  {
+   "name": "dotnet-host",
+   "SPDXID": "SPDXRef-Package-deb-dotnet-host-981cfa915c2dd41a",
+   "versionInfo": "6.0.116-0ubuntu1~22.04.1",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/dotnet-host/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "Apache-2.0 AND LicenseRef-Apache-2.0-LLVM-Exceptions AND LicenseRef-Apache-2.0-Runtime-Library-Exception AND BSD-2-Clause AND BSD-3-Clause AND BSD-4-Clause AND LicenseRef-BSD-Seward AND LicenseRef-Expat AND GPL-2.0-only AND LGPL-3.0-only AND MS-PL AND LicenseRef-OFL AND LicenseRef-Unicode-Data AND W3C AND Zlib AND LicenseRef-public-domain",
+   "licenseDeclared": "Apache-2.0 AND LicenseRef-Apache-2.0-LLVM-Exceptions AND LicenseRef-Apache-2.0-Runtime-Library-Exception AND BSD-2-Clause AND BSD-3-Clause AND BSD-4-Clause AND LicenseRef-BSD-Seward AND LicenseRef-Expat AND GPL-2.0-only AND LGPL-3.0-only AND MS-PL AND LicenseRef-OFL AND LicenseRef-Unicode-Data AND W3C AND Zlib AND LicenseRef-public-domain",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet-host:dotnet-host:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet-host:dotnet_host:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet_host:dotnet-host:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet_host:dotnet_host:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet:dotnet-host:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet:dotnet_host:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "dotnet-hostfxr-6.0",
+   "SPDXID": "SPDXRef-Package-deb-dotnet-hostfxr-6.0-361dbd63eead0a90",
+   "versionInfo": "6.0.116-0ubuntu1~22.04.1",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/dotnet-hostfxr-6.0/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "Apache-2.0 AND LicenseRef-Apache-2.0-LLVM-Exceptions AND LicenseRef-Apache-2.0-Runtime-Library-Exception AND BSD-2-Clause AND BSD-3-Clause AND BSD-4-Clause AND LicenseRef-BSD-Seward AND LicenseRef-Expat AND GPL-2.0-only AND LGPL-3.0-only AND MS-PL AND LicenseRef-OFL AND LicenseRef-Unicode-Data AND W3C AND Zlib AND LicenseRef-public-domain",
+   "licenseDeclared": "Apache-2.0 AND LicenseRef-Apache-2.0-LLVM-Exceptions AND LicenseRef-Apache-2.0-Runtime-Library-Exception AND BSD-2-Clause AND BSD-3-Clause AND BSD-4-Clause AND LicenseRef-BSD-Seward AND LicenseRef-Expat AND GPL-2.0-only AND LGPL-3.0-only AND MS-PL AND LicenseRef-OFL AND LicenseRef-Unicode-Data AND W3C AND Zlib AND LicenseRef-public-domain",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet-hostfxr-6.0:dotnet-hostfxr-6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet-hostfxr-6.0:dotnet_hostfxr_6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet_hostfxr_6.0:dotnet-hostfxr-6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet_hostfxr_6.0:dotnet_hostfxr_6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet-hostfxr:dotnet-hostfxr-6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet-hostfxr:dotnet_hostfxr_6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet_hostfxr:dotnet-hostfxr-6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet_hostfxr:dotnet_hostfxr_6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet:dotnet-hostfxr-6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet:dotnet_hostfxr_6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "dotnet-runtime-6.0",
+   "SPDXID": "SPDXRef-Package-deb-dotnet-runtime-6.0-e03dec728b56b462",
+   "versionInfo": "6.0.116-0ubuntu1~22.04.1",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/dotnet-runtime-6.0/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "Apache-2.0 AND LicenseRef-Apache-2.0-LLVM-Exceptions AND LicenseRef-Apache-2.0-Runtime-Library-Exception AND BSD-2-Clause AND BSD-3-Clause AND BSD-4-Clause AND LicenseRef-BSD-Seward AND LicenseRef-Expat AND GPL-2.0-only AND LGPL-3.0-only AND MS-PL AND LicenseRef-OFL AND LicenseRef-Unicode-Data AND W3C AND Zlib AND LicenseRef-public-domain",
+   "licenseDeclared": "Apache-2.0 AND LicenseRef-Apache-2.0-LLVM-Exceptions AND LicenseRef-Apache-2.0-Runtime-Library-Exception AND BSD-2-Clause AND BSD-3-Clause AND BSD-4-Clause AND LicenseRef-BSD-Seward AND LicenseRef-Expat AND GPL-2.0-only AND LGPL-3.0-only AND MS-PL AND LicenseRef-OFL AND LicenseRef-Unicode-Data AND W3C AND Zlib AND LicenseRef-public-domain",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet-runtime-6.0:dotnet-runtime-6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet-runtime-6.0:dotnet_runtime_6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet_runtime_6.0:dotnet-runtime-6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet_runtime_6.0:dotnet_runtime_6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet-runtime:dotnet-runtime-6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet-runtime:dotnet_runtime_6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet_runtime:dotnet-runtime-6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet_runtime:dotnet_runtime_6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet:dotnet-runtime-6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:dotnet:dotnet_runtime_6.0:6.0.116-0ubuntu1\\~22.04.1:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "libc6",
+   "SPDXID": "SPDXRef-Package-deb-libc6-2685a08334ec526",
+   "versionInfo": "2.35-0ubuntu3.1",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/libc6/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "GFDL-1.3-only AND GPL-2.0-only AND LGPL-2.1-only",
+   "licenseDeclared": "GFDL-1.3-only AND GPL-2.0-only AND LGPL-2.1-only",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libc6:libc6:2.35-0ubuntu3.1:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "libgcc-s1",
+   "SPDXID": "SPDXRef-Package-deb-libgcc-s1-99cde16306649188",
+   "versionInfo": "12.1.0-2ubuntu1~22.04",
+   "originator": "Person: Ubuntu Core developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /var/lib/dpkg/status",
+   "licenseConcluded": "NONE",
+   "licenseDeclared": "NONE",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libgcc-s1:libgcc-s1:12.1.0-2ubuntu1\\~22.04:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libgcc-s1:libgcc_s1:12.1.0-2ubuntu1\\~22.04:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libgcc_s1:libgcc-s1:12.1.0-2ubuntu1\\~22.04:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libgcc_s1:libgcc_s1:12.1.0-2ubuntu1\\~22.04:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libgcc:libgcc-s1:12.1.0-2ubuntu1\\~22.04:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libgcc:libgcc_s1:12.1.0-2ubuntu1\\~22.04:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "libicu70",
+   "SPDXID": "SPDXRef-Package-deb-libicu70-e8b5a35c62221418",
+   "versionInfo": "70.1-2",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/libicu70/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "GPL-3.0-only AND MIT",
+   "licenseDeclared": "GPL-3.0-only AND MIT",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libicu70:libicu70:70.1-2:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "liblttng-ust-common1",
+   "SPDXID": "SPDXRef-Package-deb-liblttng-ust-common1-c728eeaa4c5e1677",
+   "versionInfo": "2.13.1-1ubuntu1",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/liblttng-ust-common1/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "BSD-2-Clause AND BSD-3-Clause AND LicenseRef-Expat AND FSFAP AND GPL-2.0-only AND GPL-2.0-or-later AND GPL-3.0-only AND GPL-3.0-or-later AND LGPL-2.1-only AND LGPL-2.1-or-later",
+   "licenseDeclared": "BSD-2-Clause AND BSD-3-Clause AND LicenseRef-Expat AND FSFAP AND GPL-2.0-only AND GPL-2.0-or-later AND GPL-3.0-only AND GPL-3.0-or-later AND LGPL-2.1-only AND LGPL-2.1-or-later",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng-ust-common1:liblttng-ust-common1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng-ust-common1:liblttng_ust_common1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng_ust_common1:liblttng-ust-common1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng_ust_common1:liblttng_ust_common1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng-ust:liblttng-ust-common1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng-ust:liblttng_ust_common1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng_ust:liblttng-ust-common1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng_ust:liblttng_ust_common1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng:liblttng-ust-common1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng:liblttng_ust_common1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "liblttng-ust-ctl5",
+   "SPDXID": "SPDXRef-Package-deb-liblttng-ust-ctl5-8da768cbd84b95a1",
+   "versionInfo": "2.13.1-1ubuntu1",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/liblttng-ust-ctl5/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "BSD-2-Clause AND BSD-3-Clause AND LicenseRef-Expat AND FSFAP AND GPL-2.0-only AND GPL-2.0-or-later AND GPL-3.0-only AND GPL-3.0-or-later AND LGPL-2.1-only AND LGPL-2.1-or-later",
+   "licenseDeclared": "BSD-2-Clause AND BSD-3-Clause AND LicenseRef-Expat AND FSFAP AND GPL-2.0-only AND GPL-2.0-or-later AND GPL-3.0-only AND GPL-3.0-or-later AND LGPL-2.1-only AND LGPL-2.1-or-later",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng-ust-ctl5:liblttng-ust-ctl5:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng-ust-ctl5:liblttng_ust_ctl5:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng_ust_ctl5:liblttng-ust-ctl5:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng_ust_ctl5:liblttng_ust_ctl5:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng-ust:liblttng-ust-ctl5:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng-ust:liblttng_ust_ctl5:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng_ust:liblttng-ust-ctl5:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng_ust:liblttng_ust_ctl5:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng:liblttng-ust-ctl5:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng:liblttng_ust_ctl5:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "liblttng-ust1",
+   "SPDXID": "SPDXRef-Package-deb-liblttng-ust1-bbc4240dd0233860",
+   "versionInfo": "2.13.1-1ubuntu1",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/liblttng-ust1/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "BSD-2-Clause AND BSD-3-Clause AND LicenseRef-Expat AND FSFAP AND GPL-2.0-only AND GPL-2.0-or-later AND GPL-3.0-only AND GPL-3.0-or-later AND LGPL-2.1-only AND LGPL-2.1-or-later",
+   "licenseDeclared": "BSD-2-Clause AND BSD-3-Clause AND LicenseRef-Expat AND FSFAP AND GPL-2.0-only AND GPL-2.0-or-later AND GPL-3.0-only AND GPL-3.0-or-later AND LGPL-2.1-only AND LGPL-2.1-or-later",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng-ust1:liblttng-ust1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng-ust1:liblttng_ust1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng_ust1:liblttng-ust1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng_ust1:liblttng_ust1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng:liblttng-ust1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblttng:liblttng_ust1:2.13.1-1ubuntu1:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "liblzma5",
+   "SPDXID": "SPDXRef-Package-deb-liblzma5-9945bdf71da01bad",
+   "versionInfo": "5.2.5-2ubuntu1",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/liblzma5/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "LicenseRef-Autoconf AND GPL-2.0-only AND GPL-2.0-or-later AND GPL-3.0-only AND LGPL-2.0-only AND LGPL-2.1-only AND LGPL-2.1-or-later AND LicenseRef-PD AND LicenseRef-PD-debian AND LicenseRef-config-h AND LicenseRef-noderivs AND LicenseRef-permissive-fsf AND LicenseRef-permissive-nowarranty AND LicenseRef-probably-PD",
+   "licenseDeclared": "LicenseRef-Autoconf AND GPL-2.0-only AND GPL-2.0-or-later AND GPL-3.0-only AND LGPL-2.0-only AND LGPL-2.1-only AND LGPL-2.1-or-later AND LicenseRef-PD AND LicenseRef-PD-debian AND LicenseRef-config-h AND LicenseRef-noderivs AND LicenseRef-permissive-fsf AND LicenseRef-permissive-nowarranty AND LicenseRef-probably-PD",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:liblzma5:liblzma5:5.2.5-2ubuntu1:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "libnuma1",
+   "SPDXID": "SPDXRef-Package-deb-libnuma1-69fa0decf90bc832",
+   "versionInfo": "2.0.14-3ubuntu2",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/libnuma1/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "LicenseRef-GPL AND LicenseRef-LGPL",
+   "licenseDeclared": "LicenseRef-GPL AND LicenseRef-LGPL",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libnuma1:libnuma1:2.0.14-3ubuntu2:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "libssl3",
+   "SPDXID": "SPDXRef-Package-deb-libssl3-51f5fe71ea9c4de0",
+   "versionInfo": "3.0.2-0ubuntu1.9",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/libssl3/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "Apache-2.0 AND LicenseRef-Artistic AND GPL-1.0-only AND GPL-1.0-or-later",
+   "licenseDeclared": "Apache-2.0 AND LicenseRef-Artistic AND GPL-1.0-only AND GPL-1.0-or-later",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libssl3:libssl3:3.0.2-0ubuntu1.9:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "libstdc++6",
+   "SPDXID": "SPDXRef-Package-deb-libstdc--6-ce860aab85e48b4",
+   "versionInfo": "12.1.0-2ubuntu1~22.04",
+   "originator": "Person: Ubuntu Core developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /var/lib/dpkg/status",
+   "licenseConcluded": "NONE",
+   "licenseDeclared": "NONE",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libstdc\\+\\+6:libstdc\\+\\+6:12.1.0-2ubuntu1\\~22.04:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "libunwind-13",
+   "SPDXID": "SPDXRef-Package-deb-libunwind-13-a25a2a0e2c5d612a",
+   "versionInfo": "1:13.0.1-2ubuntu2.1",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/libunwind-13/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "LicenseRef-APACHE-2-LLVM-EXCEPTIONS AND Apache-2.0 AND BSD-3-Clause AND BSD-3-Clause AND MIT AND LicenseRef-Python AND LicenseRef-solar-public-domain",
+   "licenseDeclared": "LicenseRef-APACHE-2-LLVM-EXCEPTIONS AND Apache-2.0 AND BSD-3-Clause AND BSD-3-Clause AND MIT AND LicenseRef-Python AND LicenseRef-solar-public-domain",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libunwind-13:libunwind-13:1\\:13.0.1-2ubuntu2.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libunwind-13:libunwind_13:1\\:13.0.1-2ubuntu2.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libunwind_13:libunwind-13:1\\:13.0.1-2ubuntu2.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libunwind_13:libunwind_13:1\\:13.0.1-2ubuntu2.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libunwind:libunwind-13:1\\:13.0.1-2ubuntu2.1:*:*:*:*:*:*:*"
+    },
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libunwind:libunwind_13:1\\:13.0.1-2ubuntu2.1:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "libunwind8",
+   "SPDXID": "SPDXRef-Package-deb-libunwind8-56d0244a8a7d86eb",
+   "versionInfo": "1.3.2-2build2",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/libunwind8/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "LicenseRef-Expat AND GPL-2.0-only AND GPL-2.0-or-later",
+   "licenseDeclared": "LicenseRef-Expat AND GPL-2.0-only AND GPL-2.0-or-later",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:libunwind8:libunwind8:1.3.2-2build2:*:*:*:*:*:*:*"
+    }
+   ]
+  },
+  {
+   "name": "zlib1g",
+   "SPDXID": "SPDXRef-Package-deb-zlib1g-a96b29c092d71303",
+   "versionInfo": "1:1.2.11.dfsg-2ubuntu9.2",
+   "originator": "Person: Ubuntu Developers \u003cubuntu-devel-discuss@lists.ubuntu.com\u003e",
+   "downloadLocation": "NOASSERTION",
+   "sourceInfo": "acquired package info from DPKG DB: /usr/share/doc/zlib1g/copyright, /var/lib/dpkg/status",
+   "licenseConcluded": "Zlib",
+   "licenseDeclared": "Zlib",
+   "copyrightText": "NOASSERTION",
+   "externalRefs": [
+    {
+     "referenceCategory": "SECURITY",
+     "referenceType": "cpe23Type",
+     "referenceLocator": "cpe:2.3:a:zlib1g:zlib1g:1\\:1.2.11.dfsg-2ubuntu9.2:*:*:*:*:*:*:*"
+    }
+   ]
+  }
+ ],
+ "files": [
+  {
+   "fileName": "/usr/lib/dotnet/shared/Microsoft.NETCore.App/6.0.16/Microsoft.NETCore.App.deps.json",
+   "SPDXID": "SPDXRef-36b8046e0e61c433",
+   "checksums": [
+    {
+     "algorithm": "SHA1",
+     "checksumValue": "0000000000000000000000000000000000000000"
+    }
+   ],
+   "licenseConcluded": "NOASSERTION",
+   "copyrightText": "",
+   "comment": "layerID: sha256:9136ec1bfe31edc448bf9a17c5c2246cda52d354d59e21443af8c26b5f72d940"
+  },
+  {
+   "fileName": "/var/lib/dpkg/status",
+   "SPDXID": "SPDXRef-fef089549c69d858",
+   "checksums": [
+    {
+     "algorithm": "SHA1",
+     "checksumValue": "0000000000000000000000000000000000000000"
+    }
+   ],
+   "licenseConcluded": "NOASSERTION",
+   "copyrightText": "",
+   "comment": "layerID: sha256:a7aad60015868e1eeaee981c9e3bec7cd8229effd541ca1a7a5f320c2f4bb751"
+  }
+ ],
+ "hasExtractedLicensingInfos": [
+  {
+   "licenseId": "LicenseRef-APACHE-2-LLVM-EXCEPTIONS",
+   "extractedText": "NONE",
+   "name": "APACHE-2-LLVM-EXCEPTIONS"
+  },
+  {
+   "licenseId": "LicenseRef-Apache-2.0-LLVM-Exceptions",
+   "extractedText": "NONE",
+   "name": "Apache-2.0-LLVM-Exceptions"
+  },
+  {
+   "licenseId": "LicenseRef-Apache-2.0-Runtime-Library-Exception",
+   "extractedText": "NONE",
+   "name": "Apache-2.0-Runtime-Library-Exception"
+  },
+  {
+   "licenseId": "LicenseRef-Artistic",
+   "extractedText": "NONE",
+   "name": "Artistic"
+  },
+  {
+   "licenseId": "LicenseRef-Autoconf",
+   "extractedText": "NONE",
+   "name": "Autoconf"
+  },
+  {
+   "licenseId": "LicenseRef-BSD-Seward",
+   "extractedText": "NONE",
+   "name": "BSD-Seward"
+  },
+  {
+   "licenseId": "LicenseRef-Expat",
+   "extractedText": "NONE",
+   "name": "Expat"
+  },
+  {
+   "licenseId": "LicenseRef-GPL",
+   "extractedText": "NONE",
+   "name": "GPL"
+  },
+  {
+   "licenseId": "LicenseRef-LGPL",
+   "extractedText": "NONE",
+   "name": "LGPL"
+  },
+  {
+   "licenseId": "LicenseRef-OFL",
+   "extractedText": "NONE",
+   "name": "OFL"
+  },
+  {
+   "licenseId": "LicenseRef-PD",
+   "extractedText": "NONE",
+   "name": "PD"
+  },
+  {
+   "licenseId": "LicenseRef-PD-debian",
+   "extractedText": "NONE",
+   "name": "PD-debian"
+  },
+  {
+   "licenseId": "LicenseRef-Python",
+   "extractedText": "NONE",
+   "name": "Python"
+  },
+  {
+   "licenseId": "LicenseRef-Unicode-Data",
+   "extractedText": "NONE",
+   "name": "Unicode-Data"
+  },
+  {
+   "licenseId": "LicenseRef-config-h",
+   "extractedText": "NONE",
+   "name": "config-h"
+  },
+  {
+   "licenseId": "LicenseRef-noderivs",
+   "extractedText": "NONE",
+   "name": "noderivs"
+  },
+  {
+   "licenseId": "LicenseRef-permissive-fsf",
+   "extractedText": "NONE",
+   "name": "permissive-fsf"
+  },
+  {
+   "licenseId": "LicenseRef-permissive-nowarranty",
+   "extractedText": "NONE",
+   "name": "permissive-nowarranty"
+  },
+  {
+   "licenseId": "LicenseRef-probably-PD",
+   "extractedText": "NONE",
+   "name": "probably-PD"
+  },
+  {
+   "licenseId": "LicenseRef-public-domain",
+   "extractedText": "NONE",
+   "name": "public-domain"
+  },
+  {
+   "licenseId": "LicenseRef-solar-public-domain",
+   "extractedText": "NONE",
+   "name": "solar-public-domain"
+  }
+ ],
+ "relationships": [
+  {
+   "spdxElementId": "SPDXRef-Package-deb-libc6-2685a08334ec526",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-dotnet-hostfxr-6.0-361dbd63eead0a90",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-libssl3-51f5fe71ea9c4de0",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-libunwind8-56d0244a8a7d86eb",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-libnuma1-69fa0decf90bc832",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-liblttng-ust-ctl5-8da768cbd84b95a1",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-dotnet-host-981cfa915c2dd41a",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-liblzma5-9945bdf71da01bad",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-libgcc-s1-99cde16306649188",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-libunwind-13-a25a2a0e2c5d612a",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-zlib1g-a96b29c092d71303",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-liblttng-ust1-bbc4240dd0233860",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-liblttng-ust-common1-c728eeaa4c5e1677",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-libstdc--6-ce860aab85e48b4",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-dotnet-Microsoft.NETCore.App.Runtime.ubuntu.22.04-x64-d64945db36d53c2a",
+   "relatedSpdxElement": "SPDXRef-36b8046e0e61c433",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-dotnet-runtime-6.0-e03dec728b56b462",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-Package-deb-libicu70-e8b5a35c62221418",
+   "relatedSpdxElement": "SPDXRef-fef089549c69d858",
+   "relationshipType": "OTHER",
+   "comment": "evident-by: indicates the package's existence is evident by the given file"
+  },
+  {
+   "spdxElementId": "SPDXRef-DOCUMENT",
+   "relatedSpdxElement": "SPDXRef-DOCUMENT",
+   "relationshipType": "DESCRIBES"
+  }
+ ]
+}
