@@ -21,8 +21,9 @@ jobs:
 
       - name: Check bugs and unused code
         uses: golangci/golangci-lint-action@v3
-        # with:
-        #  args: --disable-all --enable errcheck,unused,staticcheck
+        with:
+          version: 1.52.2
+          args: --disable-all --enable errcheck,unused,staticcheck
 
   gosec:
     name: Golang Security Checker
