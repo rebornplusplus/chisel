@@ -19,11 +19,16 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
+      - name: Format check
+        run: |
+          go fmt ./...
+          git diff --exit-code
+
       - name: Check bugs and unused code
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.52.2
-          args: --disable-all --enable gofmt,errcheck,unused,staticcheck
+          args: --disable-all --enable errcheck,unused,staticcheck
 
   gosec:
     name: Golang Security Checker
