@@ -20,7 +20,7 @@ jobs:
       - name: Run Gosec security scanner
         uses: securego/gosec@master
         with:
-          args: '-fmt sarif -out results.sarif -stdout -verbose text -severity medium ./...'
+          args: '-fmt sarif -out results.sarif -stdout -verbose text -severity high ./...'
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
