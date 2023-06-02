@@ -22,7 +22,7 @@ jobs:
       - name: Check bugs and unused code
         uses: golangci/golangci-lint-action@v3
         with:
-          version: 1.52.2
+          version: v1.52.2
           args: --disable-all --enable errcheck,unused,staticcheck
 
   gosec:
