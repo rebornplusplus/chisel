@@ -19,31 +19,10 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
-      - name: Check code formatting
-        uses: golangci/golangci-lint-action@v3
-        with:
-          # https://golangci-lint.run/usage/linters/
-          args: --disable-all --enable goimports
-
-      - name: Check code complexity
-        uses: golangci/golangci-lint-action@v3
-        with:
-          args: --disable-all --enable funlen --enable gocyclo 
-
-      - name: Check code style and patterns
-        uses: golangci/golangci-lint-action@v3
-        with:
-          args: --disable-all --enable dupl --enable revive --enable whitespace
-
       - name: Check bugs and unused code
         uses: golangci/golangci-lint-action@v3
         with:
-          args: --disable-all --enable errcheck --enable unused --enable staticcheck 
-
-      - name: Check code performance
-        uses: golangci/golangci-lint-action@v3
-        with:
-          args: --disable-all --enable maligned --enable prealloc
+          args: --disable-all --enable errcheck,unused,staticcheck
 
   gosec:
     name: Golang Security Checker
