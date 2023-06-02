@@ -1,4 +1,4 @@
-name: Lint/Sec Checks
+name: Lint and check security
 
 on: 
   workflow_dispatch:
@@ -9,8 +9,8 @@ on:
     branches: [main]
 
 jobs:
-  go-linters:
-    name: Go linters
+  lint:
+    name: Lint
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3

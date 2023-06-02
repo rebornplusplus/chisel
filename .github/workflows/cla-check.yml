@@ -1,7 +1,6 @@
-name: cla-check
+name: CLA check
 
 on:
-  push:
   pull_request:
     branches: [main]
 
