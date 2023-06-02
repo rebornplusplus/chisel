@@ -1,6 +1,6 @@
-name: Lint/Sec Checks
+name: Lint and security checks
 
-on: 
+on:
   workflow_dispatch:
   push:
     paths-ignore:
@@ -9,47 +9,36 @@ on:
     branches: [main]
 
 jobs:
-  go-linters:
-    name: Go linters
+  lint:
+    name: Lint
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
 
-      - name: Check code formatting
-        uses: golangci/golangci-lint-action@v3
+      - uses: actions/setup-go@v3
         with:
-          # https://golangci-lint.run/usage/linters/
-          args: --disable-all --enable goimports
+          go-version-file: 'go.mod'
 
-      - name: Check code complexity
-        uses: golangci/golangci-lint-action@v3
-        with:
-          args: --disable-all --enable funlen --enable gocyclo 
-
-      - name: Check code style and patterns
-        uses: golangci/golangci-lint-action@v3
-        with:
-          args: --disable-all --enable dupl --enable revive --enable whitespace
+      - name: Ensure no formatting changes
+        run: |
+          go fmt ./...
+          git diff --exit-code
 
       - name: Check bugs and unused code
         uses: golangci/golangci-lint-action@v3
         with:
-          args: --disable-all --enable errcheck --enable unused --enable staticcheck 
+          version: v1.52.2
+          args: --disable-all --enable errcheck,staticcheck,unused
 
-      - name: Check code performance
-        uses: golangci/golangci-lint-action@v3
-        with:
-          args: --disable-all --enable maligned --enable prealloc
-
-  gosec:
-    name: Golang Security Checker
+  security-check:
+    name: Security check
     runs-on: ubuntu-22.04
     env:
       GO111MODULE: on
     steps:
       - uses: actions/checkout@v3
 
-      - name: Run Gosec Security Scanner
+      - name: Run Gosec security scanner
         uses: securego/gosec@master
         with:
           args: '-fmt sarif -out results.sarif -stdout -verbose text -severity medium ./...'
