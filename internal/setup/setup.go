@@ -336,12 +336,12 @@ type yamlPackage struct {
 }
 
 type yamlPath struct {
-	Dir     bool   `yaml:"make"`
-	Mode    uint   `yaml:"mode"`
-	Copy    string `yaml:"copy"`
-	Text    string `yaml:"text"`
-	Symlink string `yaml:"symlink"`
-	Mutable bool   `yaml:"mutable"`
+	Dir     bool    `yaml:"make"`
+	Mode    uint    `yaml:"mode"`
+	Copy    string  `yaml:"copy"`
+	Text    *string `yaml:"text"`
+	Symlink string  `yaml:"symlink"`
+	Mutable bool    `yaml:"mutable"`
 
 	Until PathUntil `yaml:"until"`
 	Arch  yamlArch  `yaml:"arch"`
@@ -384,7 +384,7 @@ type yamlSlice struct {
 	Mutate    string               `yaml:"mutate"`
 }
 
-var ubuntuAnimals = map[string]string{
+var ubuntuAdjectives = map[string]string{
 	"18.04": "bionic",
 	"20.04": "focal",
 	"22.04": "jammy",
@@ -426,11 +426,11 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			return nil, fmt.Errorf("%s: archive %q missing version field", fileName, archiveName)
 		}
 		if len(details.Suites) == 0 {
-			animal := ubuntuAnimals[details.Version]
-			if animal == "" {
+			adjective := ubuntuAdjectives[details.Version]
+			if adjective == "" {
 				return nil, fmt.Errorf("%s: archive %q missing suites field", fileName, archiveName)
 			}
-			details.Suites = []string{animal}
+			details.Suites = []string{adjective}
 		}
 		if len(details.Components) == 0 {
 			return nil, fmt.Errorf("%s: archive %q missing components field", fileName, archiveName)
@@ -533,9 +533,9 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 					}
 					kinds = append(kinds, DirPath)
 				}
-				if len(yamlPath.Text) > 0 {
+				if yamlPath.Text != nil {
 					kinds = append(kinds, TextPath)
-					info = yamlPath.Text
+					info = *yamlPath.Text
 				}
 				if len(yamlPath.Symlink) > 0 {
 					kinds = append(kinds, SymlinkPath)

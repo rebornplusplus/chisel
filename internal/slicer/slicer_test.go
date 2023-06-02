@@ -1,6 +1,7 @@
 package slicer_test
 
 import (
+	"archive/tar"
 	"bytes"
 	"fmt"
 	"io"
@@ -24,6 +25,43 @@ type slicerTest struct {
 	hackopt func(c *C, opts *slicer.RunOptions)
 	result  map[string]string
 	error   string
+}
+
+var packageEntries = map[string][]testutil.TarEntry{
+	"copyright-symlink-libssl3": {
+		{Header: tar.Header{Name: "./"}},
+		{Header: tar.Header{Name: "./usr/"}},
+		{Header: tar.Header{Name: "./usr/lib/"}},
+		{Header: tar.Header{Name: "./usr/lib/x86_64-linux-gnu/"}},
+		{Header: tar.Header{Name: "./usr/lib/x86_64-linux-gnu/libssl.so.3", Mode: 00755}},
+		{Header: tar.Header{Name: "./usr/share/"}},
+		{Header: tar.Header{Name: "./usr/share/doc/"}},
+		{Header: tar.Header{Name: "./usr/share/doc/copyright-symlink-libssl3/"}},
+		{Header: tar.Header{Name: "./usr/share/doc/copyright-symlink-libssl3/copyright"}},
+	},
+	"copyright-symlink-openssl": {
+		{Header: tar.Header{Name: "./"}},
+		{Header: tar.Header{Name: "./etc/"}},
+		{Header: tar.Header{Name: "./etc/ssl/"}},
+		{Header: tar.Header{Name: "./etc/ssl/openssl.cnf"}},
+		{Header: tar.Header{Name: "./usr/"}},
+		{Header: tar.Header{Name: "./usr/bin/"}},
+		{Header: tar.Header{Name: "./usr/bin/openssl", Mode: 00755}},
+		{Header: tar.Header{Name: "./usr/share/"}},
+		{Header: tar.Header{Name: "./usr/share/doc/"}},
+		{Header: tar.Header{Name: "./usr/share/doc/copyright-symlink-openssl/"}},
+		{Header: tar.Header{Name: "./usr/share/doc/copyright-symlink-openssl/copyright", Linkname: "../libssl3/copyright"}},
+	},
+}
+
+// filesystem entries of copyright file from base-files package that will be
+// automatically injected into every slice
+var copyrightEntries = map[string]string{
+	"/usr/":                               "dir 0755",
+	"/usr/share/":                         "dir 0755",
+	"/usr/share/doc/":                     "dir 0755",
+	"/usr/share/doc/base-files/":          "dir 0755",
+	"/usr/share/doc/base-files/copyright": "file 0644 cdb5461d",
 }
 
 var slicerTests = []slicerTest{{
@@ -312,6 +350,143 @@ var slicerTests = []slicerTest{{
 		opts.TargetDir, err = filepath.Rel(dir, opts.TargetDir)
 		c.Assert(err, IsNil)
 	},
+}, {
+	summary: "Can list parent directories of normal paths",
+	slices:  []setup.SliceKey{{"base-files", "myslice"}},
+	release: map[string]string{
+		"slices/mydir/base-files.yaml": `
+			package: base-files
+			slices:
+				myslice:
+					contents:
+						/a/b/c: {text: foo}
+						/x/y/: {make: true}
+					mutate: |
+						content.list("/")
+						content.list("/a")
+						content.list("/a/b")
+						content.list("/x")
+						content.list("/x/y")
+		`,
+	},
+}, {
+	summary: "Cannot list unselected directory",
+	slices:  []setup.SliceKey{{"base-files", "myslice"}},
+	release: map[string]string{
+		"slices/mydir/base-files.yaml": `
+			package: base-files
+			slices:
+				myslice:
+					contents:
+						/a/b/c: {text: foo}
+					mutate: |
+						content.list("/a/d")
+		`,
+	},
+	error: `slice base-files_myslice: cannot list directory which is not selected: /a/d/`,
+}, {
+	summary: "Cannot list file path as a directory",
+	slices:  []setup.SliceKey{{"base-files", "myslice"}},
+	release: map[string]string{
+		"slices/mydir/base-files.yaml": `
+			package: base-files
+			slices:
+				myslice:
+					contents:
+						/a/b/c: {text: foo}
+					mutate: |
+						content.list("/a/b/c")
+		`,
+	},
+	error: `slice base-files_myslice: content is not a directory: /a/b/c`,
+}, {
+	summary: "Can list parent directories of globs",
+	slices:  []setup.SliceKey{{"base-files", "myslice"}},
+	release: map[string]string{
+		"slices/mydir/base-files.yaml": `
+			package: base-files
+			slices:
+				myslice:
+					contents:
+						/**/bin/h?llo:
+					mutate: |
+						content.list("/usr/bin")
+		`,
+	},
+}, {
+	summary: "Cannot list directories not matched by glob",
+	slices:  []setup.SliceKey{{"base-files", "myslice"}},
+	release: map[string]string{
+		"slices/mydir/base-files.yaml": `
+			package: base-files
+			slices:
+				myslice:
+					contents:
+						/**/bin/h?llo:
+					mutate: |
+						content.list("/etc")
+		`,
+	},
+	error: `slice base-files_myslice: cannot list directory which is not selected: /etc/`,
+}, {
+	summary: "Duplicate copyright symlink is ignored",
+	slices:  []setup.SliceKey{{"copyright-symlink-openssl", "bins"}},
+	release: map[string]string{
+		"slices/mydir/copyright-symlink-libssl3.yaml": `
+			package: copyright-symlink-libssl3
+			slices:
+				libs:
+					contents:
+						/usr/lib/x86_64-linux-gnu/libssl.so.3:
+		`,
+		"slices/mydir/copyright-symlink-openssl.yaml": `
+			package: copyright-symlink-openssl
+			slices:
+				bins:
+					essential:
+						- copyright-symlink-libssl3_libs
+						- copyright-symlink-openssl_config
+					contents:
+						/usr/bin/openssl:
+				config:
+					contents:
+						/etc/ssl/openssl.cnf:
+		`,
+	},
+}, {
+	summary: "Can list unclean directory paths",
+	slices:  []setup.SliceKey{{"base-files", "myslice"}},
+	release: map[string]string{
+		"slices/mydir/base-files.yaml": `
+			package: base-files
+			slices:
+				myslice:
+					contents:
+						/a/b/c: {text: foo}
+						/x/y/: {make: true}
+					mutate: |
+						content.list("/////")
+						content.list("/a/")
+						content.list("/a/b/../b/")
+						content.list("/x///")
+						content.list("/x/./././y")
+		`,
+	},
+}, {
+	summary: "Cannot read directories",
+	slices:  []setup.SliceKey{{"base-files", "myslice"}},
+	release: map[string]string{
+		"slices/mydir/base-files.yaml": `
+			package: base-files
+			slices:
+				myslice:
+					contents:
+						/x/y/: {make: true}
+					mutate: |
+						content.read("/x/y")
+		`,
+	},
+	error: `slice base-files_myslice: content is not a file: /x/y`,
 }}
 
 const defaultChiselYaml = `
@@ -366,12 +541,18 @@ func (s *S) TestRun(c *C) {
 		selection, err := setup.Select(release, test.slices)
 		c.Assert(err, IsNil)
 
+		pkgs := map[string][]byte{
+			"base-files": testutil.PackageData["base-files"],
+		}
+		for name, entries := range packageEntries {
+			deb, err := testutil.MakeDeb(entries)
+			c.Assert(err, IsNil)
+			pkgs[name] = deb
+		}
 		archives := map[string]archive.Archive{
 			"ubuntu": &testArchive{
 				arch: test.arch,
-				pkgs: map[string][]byte{
-					"base-files": testutil.PackageData["base-files"],
-				},
+				pkgs: pkgs,
 			},
 		}
 
@@ -393,7 +574,14 @@ func (s *S) TestRun(c *C) {
 		}
 
 		if test.result != nil {
-			c.Assert(testutil.TreeDump(targetDir), DeepEquals, test.result)
+			result := make(map[string]string, len(copyrightEntries)+len(test.result))
+			for k, v := range copyrightEntries {
+				result[k] = v
+			}
+			for k, v := range test.result {
+				result[k] = v
+			}
+			c.Assert(testutil.TreeDump(targetDir), DeepEquals, result)
 		}
 	}
 }

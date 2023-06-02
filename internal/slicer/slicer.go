@@ -15,7 +15,6 @@ import (
 	"github.com/canonical/chisel/internal/fsutil"
 	"github.com/canonical/chisel/internal/scripts"
 	"github.com/canonical/chisel/internal/setup"
-	"github.com/canonical/chisel/internal/strdist"
 )
 
 type RunOptions struct {
@@ -29,6 +28,31 @@ func Run(options *RunOptions) error {
 	archives := make(map[string]archive.Archive)
 	extract := make(map[string]map[string][]deb.ExtractInfo)
 	pathInfos := make(map[string]setup.PathInfo)
+	knownPaths := make(map[string]bool)
+
+	knownPaths["/"] = true
+
+	addKnownPath := func(path string) {
+		if path[0] != '/' {
+			panic("bug: tried to add relative path to known paths")
+		}
+		cleanPath := filepath.Clean(path)
+		slashPath := cleanPath
+		if path[len(path)-1] == '/' && cleanPath != "/" {
+			slashPath += "/"
+		}
+		for {
+			if _, ok := knownPaths[slashPath]; ok {
+				break
+			}
+			knownPaths[slashPath] = true
+			cleanPath = filepath.Dir(cleanPath)
+			if cleanPath == "/" {
+				break
+			}
+			slashPath = cleanPath + "/"
+		}
+	}
 
 	oldUmask := syscall.Umask(0)
 	defer func() {
@@ -63,12 +87,18 @@ func Run(options *RunOptions) error {
 			extract[slice.Package] = extractPackage
 		}
 		arch := archives[slice.Package].Options().Arch
+		copyrightPath := "/usr/share/doc/" + slice.Package + "/copyright"
+		addKnownPath(copyrightPath)
+		hasCopyright := false
 		for targetPath, pathInfo := range slice.Contents {
 			if targetPath == "" {
 				continue
 			}
 			if len(pathInfo.Arch) > 0 && !contains(pathInfo.Arch, arch) {
 				continue
+			}
+			if pathInfo.Kind != setup.GlobPath {
+				addKnownPath(targetPath)
 			}
 			pathInfos[targetPath] = pathInfo
 			if pathInfo.Kind == setup.CopyPath || pathInfo.Kind == setup.GlobPath {
@@ -79,6 +109,9 @@ func Run(options *RunOptions) error {
 				extractPackage[sourcePath] = append(extractPackage[sourcePath], deb.ExtractInfo{
 					Path: targetPath,
 				})
+				if sourcePath == copyrightPath && targetPath == copyrightPath {
+					hasCopyright = true
+				}
 			} else {
 				targetDir := filepath.Dir(strings.TrimRight(targetPath, "/")) + "/"
 				if targetDir == "" || targetDir == "/" {
@@ -89,6 +122,12 @@ func Run(options *RunOptions) error {
 					Optional: true,
 				})
 			}
+		}
+		if !hasCopyright {
+			extractPackage[copyrightPath] = append(extractPackage[copyrightPath], deb.ExtractInfo{
+				Path:     copyrightPath,
+				Optional: true,
+			})
 		}
 	}
 
@@ -124,6 +163,12 @@ func Run(options *RunOptions) error {
 		packages[slice.Package] = nil
 		if err != nil {
 			return err
+		}
+	}
+
+	for _, expandedPaths := range globbedPaths {
+		for _, path := range expandedPaths {
+			addKnownPath(path)
 		}
 	}
 
@@ -187,15 +232,27 @@ func Run(options *RunOptions) error {
 		return nil
 	}
 	checkRead := func(path string) error {
-		if _, ok := pathInfos[path]; !ok {
-			for globPath := range globbedPaths {
-				if strdist.GlobPath(globPath, path) {
-					return nil
+		var err error
+		if !knownPaths[path] {
+			// we assume that path is clean and ends with slash if it designates a directory
+			if path[len(path)-1] == '/' {
+				if path == "/" {
+					panic("internal error: content root (\"/\") is not selected")
+				}
+				if knownPaths[path[:len(path)-1]] {
+					err = fmt.Errorf("content is not a directory: %s", path[:len(path)-1])
+				} else {
+					err = fmt.Errorf("cannot list directory which is not selected: %s", path)
+				}
+			} else {
+				if knownPaths[path+"/"] {
+					err = fmt.Errorf("content is not a file: %s", path)
+				} else {
+					err = fmt.Errorf("cannot read file which is not selected: %s", path)
 				}
 			}
-			return fmt.Errorf("cannot read file which is not selected: %s", path)
 		}
-		return nil
+		return err
 	}
 	content := &scripts.ContentValue{
 		RootDir:    targetDirAbs,
