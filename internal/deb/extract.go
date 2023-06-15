@@ -224,6 +224,7 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 		}
 
 		var pathReader io.Reader = tarReader
+		origMode := tarHeader.Mode
 		for _, extractInfo := range extractInfos {
 			if contentIsCached {
 				pathReader = bytes.NewReader(contentCache)
@@ -234,6 +235,7 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 			} else {
 				targetPath = sourcePath
 			}
+			tarHeader.Mode = origMode
 			if extractInfo.Mode != 0 {
 				tarHeader.Mode = int64(extractInfo.Mode)
 			}
