@@ -42,7 +42,7 @@ func Open(options *Options) (Archive, error) {
 }
 
 var httpClient = &http.Client{
-	Timeout: 30 * time.Second,
+	// Timeout: 30 * time.Second,
 }
 
 var httpDo = httpClient.Do
@@ -253,6 +253,8 @@ func (index *ubuntuIndex) fetch(suffix, digest string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create HTTP request: %v", err)
 	}
+	startTime := time.Now()
+	fmt.Println(".. GET", url)
 	resp, err := httpDo(req)
 	if err != nil {
 		return nil, fmt.Errorf("cannot talk to archive: %v", err)
@@ -282,6 +284,7 @@ func (index *ubuntuIndex) fetch(suffix, digest string) (io.ReadCloser, error) {
 	defer writer.Close()
 
 	_, err = io.Copy(writer, body)
+	fmt.Println(".. time taken:", time.Since(startTime))
 	if err == nil {
 		err = writer.Close()
 	}
