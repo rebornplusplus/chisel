@@ -9,21 +9,14 @@ on:
     branches: [main]
 
 jobs:
-  go-sec:
-    name: Gosec
-    runs-on: ubuntu-22.04
-    env:
-      GO111MODULE: on
+  scan:
+    name: Scan for known vulnerabilities
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Run Gosec security scanner
-        uses: securego/gosec@master
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: aquasecurity/trivy-action@master
         with:
-          args: '-fmt sarif -out results.sarif -stdout -verbose text -severity high ./...'
-
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: results.sarif
+          scan-type: 'fs'
+          scan-ref: '.'
