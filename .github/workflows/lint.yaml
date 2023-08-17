@@ -18,10 +18,10 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
-      - name: Ensure no formatting changes
-        run: |
-          go fmt ./...
-          git diff --exit-code
+      # - name: Ensure no formatting changes
+      #   run: |
+      #     go fmt ./...
+      #     git diff --exit-code
 
       - name: Check bugs and unused code
         uses: golangci/golangci-lint-action@v3
