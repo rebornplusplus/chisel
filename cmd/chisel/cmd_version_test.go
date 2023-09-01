@@ -3,7 +3,7 @@ package main_test
 import (
 	. "gopkg.in/check.v1"
 
-	chisel "github.com/canonical/chisel/cmd/chisel"
+	chisel "github.com/rebornplusplus/chisel/cmd/chisel"
 )
 
 func (s *ChiselSuite) TestVersionCommand(c *C) {

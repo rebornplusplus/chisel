@@ -19,7 +19,7 @@ import (
 
 	"gopkg.in/check.v1"
 
-	. "github.com/canonical/chisel/internal/testutil"
+	. "github.com/rebornplusplus/chisel/internal/testutil"
 )
 
 type containsCheckerSuite struct{}

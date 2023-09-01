@@ -15,9 +15,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/canonical/chisel/internal/archive"
-	"github.com/canonical/chisel/internal/archive/testarchive"
-	"github.com/canonical/chisel/internal/deb"
+	"github.com/rebornplusplus/chisel/internal/archive"
+	"github.com/rebornplusplus/chisel/internal/archive/testarchive"
+	"github.com/rebornplusplus/chisel/internal/deb"
 )
 
 type httpSuite struct {

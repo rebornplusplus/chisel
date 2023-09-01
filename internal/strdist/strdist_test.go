@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/canonical/chisel/internal/strdist"
+	"github.com/rebornplusplus/chisel/internal/strdist"
 )
 
 type distanceTest struct {

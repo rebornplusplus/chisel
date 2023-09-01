@@ -1,7 +1,7 @@
 package deb_test
 
 import (
-	"github.com/canonical/chisel/internal/deb"
+	"github.com/rebornplusplus/chisel/internal/deb"
 	. "gopkg.in/check.v1"
 )
 

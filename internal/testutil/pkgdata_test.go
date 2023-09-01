@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/blakesmith/ar"
-	"github.com/canonical/chisel/internal/testutil"
+	"github.com/rebornplusplus/chisel/internal/testutil"
 	"github.com/klauspost/compress/zstd"
 	. "gopkg.in/check.v1"
 )

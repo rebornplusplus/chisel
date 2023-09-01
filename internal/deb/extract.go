@@ -17,8 +17,8 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/ulikunitz/xz"
 
-	"github.com/canonical/chisel/internal/fsutil"
-	"github.com/canonical/chisel/internal/strdist"
+	"github.com/rebornplusplus/chisel/internal/fsutil"
+	"github.com/rebornplusplus/chisel/internal/strdist"
 )
 
 type ExtractOptions struct {

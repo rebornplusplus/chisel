@@ -8,7 +8,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/canonical/chisel/internal/testutil"
+	"github.com/rebornplusplus/chisel/internal/testutil"
 )
 
 type Item interface {

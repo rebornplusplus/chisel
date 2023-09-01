@@ -7,7 +7,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/canonical/chisel/internal/archive"
+	"github.com/rebornplusplus/chisel/internal/archive"
 )
 
 type matchTest struct {

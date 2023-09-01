@@ -11,10 +11,10 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/canonical/chisel/internal/archive"
-	"github.com/canonical/chisel/internal/setup"
-	"github.com/canonical/chisel/internal/slicer"
-	"github.com/canonical/chisel/internal/testutil"
+	"github.com/rebornplusplus/chisel/internal/archive"
+	"github.com/rebornplusplus/chisel/internal/setup"
+	"github.com/rebornplusplus/chisel/internal/slicer"
+	"github.com/rebornplusplus/chisel/internal/testutil"
 )
 
 type slicerTest struct {

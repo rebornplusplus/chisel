@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/canonical/chisel/internal/cache"
-	"github.com/canonical/chisel/internal/control"
-	"github.com/canonical/chisel/internal/deb"
+	"github.com/rebornplusplus/chisel/internal/cache"
+	"github.com/rebornplusplus/chisel/internal/control"
+	"github.com/rebornplusplus/chisel/internal/deb"
 )
 
 type Archive interface {

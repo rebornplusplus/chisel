@@ -14,8 +14,8 @@ import (
 
 	"github.com/juju/fslock"
 
-	"github.com/canonical/chisel/internal/cache"
-	"github.com/canonical/chisel/internal/fsutil"
+	"github.com/rebornplusplus/chisel/internal/cache"
+	"github.com/rebornplusplus/chisel/internal/fsutil"
 )
 
 type FetchOptions struct {
@@ -28,7 +28,7 @@ var bulkClient = &http.Client{
 	Timeout: 5 * time.Minute,
 }
 
-const baseURL = "https://codeload.github.com/canonical/chisel-releases/tar.gz/refs/heads/"
+const baseURL = "https://codeload.github.com/rebornplusplus/chisel-releases/tar.gz/refs/heads/"
 
 func FetchRelease(options *FetchOptions) (*Release, error) {
 	logf("Consulting release repository...")

@@ -22,7 +22,7 @@ package deb_test
 import (
 	. "gopkg.in/check.v1"
 
-	"github.com/canonical/chisel/internal/deb"
+	"github.com/rebornplusplus/chisel/internal/deb"
 )
 
 type VersionTestSuite struct{}

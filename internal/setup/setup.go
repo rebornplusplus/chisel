@@ -11,8 +11,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/canonical/chisel/internal/deb"
-	"github.com/canonical/chisel/internal/strdist"
+	"github.com/rebornplusplus/chisel/internal/deb"
+	"github.com/rebornplusplus/chisel/internal/strdist"
 )
 
 // Release is a collection of package slices targeting a particular

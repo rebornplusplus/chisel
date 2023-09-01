@@ -8,10 +8,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/canonical/chisel/internal/archive"
-	"github.com/canonical/chisel/internal/cache"
-	"github.com/canonical/chisel/internal/setup"
-	"github.com/canonical/chisel/internal/slicer"
+	"github.com/rebornplusplus/chisel/internal/archive"
+	"github.com/rebornplusplus/chisel/internal/cache"
+	"github.com/rebornplusplus/chisel/internal/setup"
+	"github.com/rebornplusplus/chisel/internal/slicer"
 )
 
 var shortCutHelp = "Cut a tree with selected slices"

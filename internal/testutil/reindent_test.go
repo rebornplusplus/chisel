@@ -3,7 +3,7 @@ package testutil_test
 import (
 	"strings"
 
-	"github.com/canonical/chisel/internal/testutil"
+	"github.com/rebornplusplus/chisel/internal/testutil"
 	. "gopkg.in/check.v1"
 )
 

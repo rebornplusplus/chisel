@@ -9,10 +9,10 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/canonical/chisel/cmd"
-	"github.com/canonical/chisel/internal/testutil"
+	"github.com/rebornplusplus/chisel/cmd"
+	"github.com/rebornplusplus/chisel/internal/testutil"
 
-	chisel "github.com/canonical/chisel/cmd/chisel"
+	chisel "github.com/rebornplusplus/chisel/cmd/chisel"
 )
 
 // Hook up check.v1 into the "go test" runner

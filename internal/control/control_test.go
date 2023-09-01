@@ -1,7 +1,7 @@
 package control_test
 
 import (
-	"github.com/canonical/chisel/internal/control"
+	"github.com/rebornplusplus/chisel/internal/control"
 
 	"bytes"
 	"io/ioutil"

@@ -17,7 +17,7 @@ package testutil_test
 import (
 	"gopkg.in/check.v1"
 
-	. "github.com/canonical/chisel/internal/testutil"
+	. "github.com/rebornplusplus/chisel/internal/testutil"
 )
 
 type intCheckersSuite struct{}

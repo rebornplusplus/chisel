@@ -10,11 +10,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/canonical/chisel/internal/archive"
-	"github.com/canonical/chisel/internal/deb"
-	"github.com/canonical/chisel/internal/fsutil"
-	"github.com/canonical/chisel/internal/scripts"
-	"github.com/canonical/chisel/internal/setup"
+	"github.com/rebornplusplus/chisel/internal/archive"
+	"github.com/rebornplusplus/chisel/internal/deb"
+	"github.com/rebornplusplus/chisel/internal/fsutil"
+	"github.com/rebornplusplus/chisel/internal/scripts"
+	"github.com/rebornplusplus/chisel/internal/setup"
 )
 
 type RunOptions struct {

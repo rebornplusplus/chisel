@@ -14,12 +14,12 @@ import (
 
 	"golang.org/x/crypto/ssh/terminal"
 
-	"github.com/canonical/chisel/internal/archive"
-	"github.com/canonical/chisel/internal/deb"
-	"github.com/canonical/chisel/internal/setup"
-	"github.com/canonical/chisel/internal/slicer"
+	"github.com/rebornplusplus/chisel/internal/archive"
+	"github.com/rebornplusplus/chisel/internal/deb"
+	"github.com/rebornplusplus/chisel/internal/setup"
+	"github.com/rebornplusplus/chisel/internal/slicer"
 
-	//"github.com/canonical/chisel/internal/logger"
+	//"github.com/rebornplusplus/chisel/internal/logger"
 
 )
 

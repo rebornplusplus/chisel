@@ -8,8 +8,8 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/canonical/chisel/internal/scripts"
-	"github.com/canonical/chisel/internal/testutil"
+	"github.com/rebornplusplus/chisel/internal/scripts"
+	"github.com/rebornplusplus/chisel/internal/testutil"
 )
 
 type scriptsTest struct {

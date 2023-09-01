@@ -1,4 +1,4 @@
-module github.com/canonical/chisel
+module github.com/rebornplusplus/chisel
 
 go 1.20
 
