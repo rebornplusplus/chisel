@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -146,6 +147,12 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 		}
 	}
 
+	// pkgPaths holds the info about the files in the package.
+	// TODO: re-evaluate if we need to store info about all paths
+	//       or, storing info only about directories will do.
+	pkgPaths := make(map[string]fs.FileInfo)
+	var extractedPaths []string
+
 	tarReader := tar.NewReader(dataReader)
 	for {
 		tarHeader, err := tarReader.Next()
@@ -161,6 +168,9 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 			continue
 		}
 		sourcePath = sourcePath[1:]
+
+		pkgPaths[sourcePath] = tarHeader.FileInfo()
+
 		globPath, ok := shouldExtract(sourcePath)
 		if !ok {
 			continue
@@ -193,6 +203,7 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 				if err != nil {
 					return err
 				}
+				extractedPaths = append(extractedPaths, sourcePath)
 				continue
 			}
 		}
@@ -219,15 +230,15 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 			}
 			var targetPath string
 			if globPath == "" {
-				targetPath = filepath.Join(options.TargetDir, extractInfo.Path)
+				targetPath = extractInfo.Path
 			} else {
-				targetPath = filepath.Join(options.TargetDir, sourcePath)
+				targetPath = sourcePath
 			}
 			if extractInfo.Mode != 0 {
 				tarHeader.Mode = int64(extractInfo.Mode)
 			}
 			err := fsutil.Create(&fsutil.CreateOptions{
-				Path:        targetPath,
+				Path:        filepath.Join(options.TargetDir, targetPath),
 				Mode:        tarHeader.FileInfo().Mode(),
 				Data:        pathReader,
 				Link:        tarHeader.Linkname,
@@ -236,9 +247,39 @@ func extractData(dataReader io.Reader, options *ExtractOptions) error {
 			if err != nil {
 				return err
 			}
+			extractedPaths = append(extractedPaths, targetPath)
 			if globPath != "" {
 				break
 			}
+		}
+	}
+
+	// change mode of implicitly created directories if they exist in pkg
+	sort.Strings(extractedPaths)
+	done := make(map[string]bool)
+	for _, path := range extractedPaths {
+		if path == "" {
+			continue
+		}
+		if strings.HasSuffix(path, "/") {
+			done[path] = true
+		}
+		dir := fsutil.SlashedPathDir(path)
+		for {
+			if dir == "/" || done[dir] {
+				// already changed mode of this dir and it's parents
+				break
+			}
+			if info, ok := pkgPaths[dir]; ok {
+				err := fsutil.Create(&fsutil.CreateOptions{
+					Path: filepath.Join(options.TargetDir, dir),
+					Mode: info.Mode(),
+				})
+				if err != nil {
+					return err
+				}
+			}
+			dir = fsutil.SlashedPathDir(dir)
 		}
 	}
 
