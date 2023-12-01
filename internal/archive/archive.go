@@ -8,9 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
+
 	"github.com/canonical/chisel/internal/cache"
 	"github.com/canonical/chisel/internal/control"
 	"github.com/canonical/chisel/internal/deb"
+	"github.com/canonical/chisel/internal/setup"
 )
 
 type Archive interface {
@@ -26,6 +29,7 @@ type Options struct {
 	Suites     []string
 	Components []string
 	CacheDir   string
+	PublicKeys []*packet.PublicKey
 }
 
 func Open(options *Options) (Archive, error) {
@@ -61,9 +65,10 @@ var bulkClient = &http.Client{
 var bulkDo = bulkClient.Do
 
 type ubuntuArchive struct {
-	options Options
-	indexes []*ubuntuIndex
-	cache   *cache.Cache
+	options    Options
+	indexes    []*ubuntuIndex
+	cache      *cache.Cache
+	publicKeys []*packet.PublicKey
 }
 
 type ubuntuIndex struct {
@@ -74,7 +79,7 @@ type ubuntuIndex struct {
 	component string
 	release   control.Section
 	packages  control.File
-	cache     *cache.Cache
+	archive   *ubuntuArchive
 }
 
 func (a *ubuntuArchive) Options() *Options {
@@ -140,6 +145,7 @@ func openUbuntu(options *Options) (Archive, error) {
 		cache: &cache.Cache{
 			Dir: options.CacheDir,
 		},
+		publicKeys: options.PublicKeys,
 	}
 
 	for _, suite := range options.Suites {
@@ -152,7 +158,7 @@ func openUbuntu(options *Options) (Archive, error) {
 				suite:     suite,
 				component: component,
 				release:   release,
-				cache:     archive.cache,
+				archive:   archive,
 			}
 			if release == nil {
 				err := index.fetchRelease()
@@ -178,12 +184,35 @@ func openUbuntu(options *Options) (Archive, error) {
 
 func (index *ubuntuIndex) fetchRelease() error {
 	logf("Fetching %s %s %s suite details...", index.label, index.version, index.suite)
-	reader, err := index.fetch("Release", "", fetchDefault)
+	reader, err := index.fetch("InRelease", "", fetchDefault)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}
 
-	ctrl, err := control.ParseReader("Label", reader)
+	// decode the signature and verify the InRelease file
+	sig, body, content, err := setup.DecodeSignature(data)
+	if err != nil {
+		return fmt.Errorf("InRelease: %w", err)
+	}
+	var verified bool
+	for _, key := range index.archive.publicKeys {
+		err = setup.VerifySignature(key, sig, body)
+		if err == nil {
+			verified = true
+			break
+		}
+	}
+	if !verified {
+		return fmt.Errorf("InRelease: signature verification failed")
+	}
+
+	ctrl, err := control.ParseString("Label", string(content))
 	if err != nil {
 		return fmt.Errorf("parsing archive Release file: %v", err)
 	}
@@ -240,7 +269,7 @@ func (index *ubuntuIndex) checkComponents(components []string) error {
 }
 
 func (index *ubuntuIndex) fetch(suffix, digest string, flags fetchFlags) (io.ReadCloser, error) {
-	reader, err := index.cache.Open(digest)
+	reader, err := index.archive.cache.Open(digest)
 	if err == nil {
 		return reader, nil
 	} else if err != cache.MissErr {
@@ -293,7 +322,7 @@ func (index *ubuntuIndex) fetch(suffix, digest string, flags fetchFlags) (io.Rea
 		body = reader
 	}
 
-	writer := index.cache.Create(digest)
+	writer := index.archive.cache.Create(digest)
 	defer writer.Close()
 
 	_, err = io.Copy(writer, body)
@@ -304,5 +333,5 @@ func (index *ubuntuIndex) fetch(suffix, digest string, flags fetchFlags) (io.Rea
 		return nil, fmt.Errorf("cannot fetch from archive: %v", err)
 	}
 
-	return index.cache.Open(writer.Digest())
+	return index.archive.cache.Open(writer.Digest())
 }
