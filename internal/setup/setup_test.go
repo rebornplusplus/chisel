@@ -1,13 +1,47 @@
 package setup_test
 
 import (
+	_ "embed"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	. "gopkg.in/check.v1"
 
 	"github.com/canonical/chisel/internal/setup"
 	"github.com/canonical/chisel/internal/testutil"
+)
+
+func parsePubKey(ascii string) *packet.PublicKey {
+	key, err := setup.DecodePublicKey([]byte(ascii))
+	if err != nil {
+		fmt.Println("armor", ascii)
+		panic(err)
+	}
+	return key
+}
+
+func indentLines(text string, indent string) string {
+	var result strings.Builder
+	for _, line := range strings.Split(text, "\n") {
+		result.WriteString(indent)
+		result.WriteString(line)
+		result.WriteByte('\n')
+	}
+	return result.String()
+}
+
+var (
+	//go:embed testdata/ubuntu-archive.asc
+	testUbuntuArchiveArmored  string
+	testUbuntuArchivePubKey   = parsePubKey(testUbuntuArchiveArmored)
+	testUbuntuArchivePubKeyID = "871920D1991BC93C"
+	//go:embed testdata/ubuntu-cdimage.asc
+	testUbuntuCDImageArmored  string
+	testUbuntuCDImagePubKey   = parsePubKey(testUbuntuCDImageArmored)
+	testUbuntuCDImagePubKeyID = "D94AA3F0EFE21092"
 )
 
 type setupTest struct {
@@ -791,6 +825,131 @@ var setupTests = []setupTest{{
 			},
 		},
 	},
+}, {
+	summary: "Archives with public keys",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				foo:
+					version: 22.04
+					components: [main, universe]
+					suites: [jammy]
+					public-keys: [ubuntu-archive]
+					default: true
+				bar:
+					version: 22.04
+					components: [universe]
+					suites: [jammy-updates]
+					public-keys: [ubuntu-archive, ubuntu-cdimage]
+			public-keys:
+				ubuntu-archive:
+					id: ` + testUbuntuArchivePubKeyID + `
+					armor: |` + "\n" + indentLines(testUbuntuArchiveArmored, "\t\t\t\t\t\t") + `
+				ubuntu-cdimage:
+					id: ` + testUbuntuCDImagePubKeyID + `
+					armor: |` + "\n" + indentLines(testUbuntuCDImageArmored, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	release: &setup.Release{
+		DefaultArchive: "foo",
+
+		Archives: map[string]*setup.Archive{
+			"foo": {
+				Name:       "foo",
+				Version:    "22.04",
+				Suites:     []string{"jammy"},
+				Components: []string{"main", "universe"},
+				PublicKeys: []*packet.PublicKey{testUbuntuArchivePubKey},
+			},
+			"bar": {
+				Name:       "bar",
+				Version:    "22.04",
+				Suites:     []string{"jammy-updates"},
+				Components: []string{"universe"},
+				PublicKeys: []*packet.PublicKey{testUbuntuArchivePubKey, testUbuntuCDImagePubKey},
+			},
+		},
+		Packages: map[string]*setup.Package{
+			"mypkg": {
+				Archive: "foo",
+				Name:    "mypkg",
+				Path:    "slices/mydir/mypkg.yaml",
+				Slices:  map[string]*setup.Slice{},
+			},
+		},
+	},
+}, {
+	summary: "Unknown public key",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				foo:
+					version: 22.04
+					components: [main, universe]
+					suites: [jammy]
+					public-keys: [ubuntu-archive]
+					default: true
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	relerror: `chisel.yaml: unknown reference to public key "ubuntu-archive" in archive "foo"`,
+}, {
+	summary: "Invalid public key",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				foo:
+					version: 22.04
+					components: [main, universe]
+					suites: [jammy]
+					public-keys: [ubuntu-archive]
+					default: true
+			public-keys:
+				ubuntu-archive:
+					id: foo
+					armor: |
+						G. B. Shaw's Law:
+							Those who can -- do.
+							Those who can't -- teach.
+
+						Martin's Extension:
+							Those who cannot teach -- administrate.
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	relerror: `chisel.yaml: invalid public key "ubuntu-archive": cannot decode armor`,
+}, {
+	summary: "Mismatched public key ID",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				foo:
+					version: 22.04
+					components: [main, universe]
+					suites: [jammy]
+					public-keys: [ubuntu-archive]
+					default: true
+			public-keys:
+				ubuntu-archive:
+					id: ` + testUbuntuCDImagePubKeyID + `
+					armor: |` + "\n" + indentLines(testUbuntuArchiveArmored, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	relerror: `chisel.yaml: invalid public key "ubuntu-archive": key-id does not match`,
 }}
 
 const defaultChiselYaml = `
