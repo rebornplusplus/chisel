@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ProtonMail/go-crypto/openpgp/packet"
+	"golang.org/x/crypto/openpgp/packet"
 	"gopkg.in/yaml.v3"
 
 	"github.com/canonical/chisel/internal/deb"
