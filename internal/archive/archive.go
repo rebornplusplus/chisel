@@ -198,7 +198,7 @@ func (index *ubuntuIndex) fetchRelease() error {
 	// decode the signature and verify the InRelease file
 	sig, body, content, err := setup.DecodeSignature(data)
 	if err != nil {
-		return fmt.Errorf("InRelease: %w", err)
+		return fmt.Errorf("cannot decode signature in the InRelease file")
 	}
 	var verified bool
 	for _, key := range index.archive.publicKeys {
@@ -209,7 +209,7 @@ func (index *ubuntuIndex) fetchRelease() error {
 		}
 	}
 	if !verified {
-		return fmt.Errorf("InRelease: signature verification failed")
+		return fmt.Errorf("cannot verify signature in the InRelease file")
 	}
 
 	ctrl, err := control.ParseString("Label", string(content))

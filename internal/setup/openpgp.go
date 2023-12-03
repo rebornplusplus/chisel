@@ -12,11 +12,10 @@ import (
 
 // DecodePublicKey decodes a single public key from the armored data.
 // The data should contain exactly one public key and no private keys.
-// It returns a nil error if a public key can be successfully decoded.
 func DecodePublicKey(armoredKey []byte) (*packet.PublicKey, error) {
 	block, err := armor.Decode(bytes.NewReader(armoredKey))
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode armor")
+		return nil, fmt.Errorf("cannot decode armored data")
 	}
 
 	reader := packet.NewReader(block.Body)
@@ -30,15 +29,15 @@ func DecodePublicKey(armoredKey []byte) (*packet.PublicKey, error) {
 			if pubKey == nil {
 				pubKey = pk
 			} else {
-				return nil, fmt.Errorf("armored data contains more than one public key")
+				return nil, fmt.Errorf("armored data contains more than one public key packet")
 			}
 		}
 		if _, ok := p.(*packet.PrivateKey); ok {
-			return nil, fmt.Errorf("armored data should not contain any private keys")
+			return nil, fmt.Errorf("armored data should not contain any private key packets")
 		}
 	}
 	if pubKey == nil {
-		return nil, fmt.Errorf("no public key found")
+		return nil, fmt.Errorf("no public key packets found")
 	}
 	return pubKey, nil
 }

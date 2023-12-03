@@ -14,25 +14,6 @@ import (
 	"github.com/canonical/chisel/internal/testutil"
 )
 
-func parsePubKey(ascii string) *packet.PublicKey {
-	key, err := setup.DecodePublicKey([]byte(ascii))
-	if err != nil {
-		fmt.Println("armor", ascii)
-		panic(err)
-	}
-	return key
-}
-
-func indentLines(text string, indent string) string {
-	var result strings.Builder
-	for _, line := range strings.Split(text, "\n") {
-		result.WriteString(indent)
-		result.WriteString(line)
-		result.WriteByte('\n')
-	}
-	return result.String()
-}
-
 var (
 	//go:embed testdata/ubuntu-archive.asc
 	testUbuntuArchiveArmored  string
@@ -927,7 +908,7 @@ var setupTests = []setupTest{{
 			package: mypkg
 		`,
 	},
-	relerror: `chisel.yaml: invalid public key "ubuntu-archive": cannot decode armor`,
+	relerror: `chisel.yaml: invalid public key "ubuntu-archive": cannot decode armored data`,
 }, {
 	summary: "Mismatched public key ID",
 	input: map[string]string{
@@ -1009,4 +990,23 @@ func (s *S) TestParseRelease(c *C) {
 			}
 		}
 	}
+}
+
+func parsePubKey(ascii string) *packet.PublicKey {
+	key, err := setup.DecodePublicKey([]byte(ascii))
+	if err != nil {
+		fmt.Println("armor", ascii)
+		panic(err)
+	}
+	return key
+}
+
+func indentLines(text string, indent string) string {
+	var result strings.Builder
+	for _, line := range strings.Split(text, "\n") {
+		result.WriteString(indent)
+		result.WriteString(line)
+		result.WriteByte('\n')
+	}
+	return result.String()
 }

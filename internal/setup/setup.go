@@ -423,7 +423,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		return nil, fmt.Errorf("%s: no archives defined", fileName)
 	}
 
-	// decode the public keys and match against provided IDs
+	// Decode the public keys and match against provided IDs
 	pubKeys := make(map[string]*packet.PublicKey, len(yamlVar.PublicKeys))
 	for keyName, yamlPubKey := range yamlVar.PublicKeys {
 		key, err := DecodePublicKey([]byte(yamlPubKey.Armor))
