@@ -1,8 +1,6 @@
 package setup_test
 
 import (
-	_ "embed"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,14 +13,8 @@ import (
 )
 
 var (
-	//go:embed testdata/ubuntu-archive.asc
-	testUbuntuArchiveArmored  string
-	testUbuntuArchivePubKey   = parsePubKey(testUbuntuArchiveArmored)
-	testUbuntuArchivePubKeyID = "871920D1991BC93C"
-	//go:embed testdata/ubuntu-cdimage.asc
-	testUbuntuCDImageArmored  string
-	testUbuntuCDImagePubKey   = parsePubKey(testUbuntuCDImageArmored)
-	testUbuntuCDImagePubKeyID = "D94AA3F0EFE21092"
+	ubuntuArchiveKey = testutil.GetGPGKey("ubuntu-archive-key")
+	testKey          = testutil.GetGPGKey("test-key")
 )
 
 type setupTest struct {
@@ -822,14 +814,14 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [universe]
 					suites: [jammy-updates]
-					public-keys: [ubuntu-archive, ubuntu-cdimage]
+					public-keys: [test-key, ubuntu-archive]
 			public-keys:
 				ubuntu-archive:
-					id: ` + testUbuntuArchivePubKeyID + `
-					armor: |` + "\n" + indentLines(testUbuntuArchiveArmored, "\t\t\t\t\t\t") + `
-				ubuntu-cdimage:
-					id: ` + testUbuntuCDImagePubKeyID + `
-					armor: |` + "\n" + indentLines(testUbuntuCDImageArmored, "\t\t\t\t\t\t") + `
+					id: ` + ubuntuArchiveKey.ID + `
+					armor: |` + "\n" + indentLines(ubuntuArchiveKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + indentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -844,14 +836,14 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy"},
 				Components: []string{"main", "universe"},
-				PublicKeys: []*packet.PublicKey{testUbuntuArchivePubKey},
+				PublicKeys: []*packet.PublicKey{ubuntuArchiveKey.PublicKey},
 			},
 			"bar": {
 				Name:       "bar",
 				Version:    "22.04",
 				Suites:     []string{"jammy-updates"},
 				Components: []string{"universe"},
-				PublicKeys: []*packet.PublicKey{testUbuntuArchivePubKey, testUbuntuCDImagePubKey},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey, ubuntuArchiveKey.PublicKey},
 			},
 		},
 		Packages: map[string]*setup.Package{
@@ -923,8 +915,8 @@ var setupTests = []setupTest{{
 					default: true
 			public-keys:
 				ubuntu-archive:
-					id: ` + testUbuntuCDImagePubKeyID + `
-					armor: |` + "\n" + indentLines(testUbuntuArchiveArmored, "\t\t\t\t\t\t") + `
+					id: ` + ubuntuArchiveKey.ID + `
+					armor: |` + "\n" + indentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -990,15 +982,6 @@ func (s *S) TestParseRelease(c *C) {
 			}
 		}
 	}
-}
-
-func parsePubKey(ascii string) *packet.PublicKey {
-	key, err := setup.DecodePublicKey([]byte(ascii))
-	if err != nil {
-		fmt.Println("armor", ascii)
-		panic(err)
-	}
-	return key
 }
 
 func indentLines(text string, indent string) string {
