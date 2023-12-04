@@ -10,36 +10,46 @@ import (
 	"golang.org/x/crypto/openpgp/packet"
 )
 
-// DecodePublicKey decodes a single public key from the armored data.
-// The data should contain exactly one public key and no private keys.
-func DecodePublicKey(armoredKey []byte) (*packet.PublicKey, error) {
+// DecodeKeys decodes public and private key packets from armored data.
+func DecodeKeys(armoredKey []byte) (pubKeys []*packet.PublicKey, privKeys []*packet.PrivateKey, err error) {
 	block, err := armor.Decode(bytes.NewReader(armoredKey))
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode armored data")
+		return nil, nil, fmt.Errorf("cannot decode armored data")
 	}
 
 	reader := packet.NewReader(block.Body)
-	var pubKey *packet.PublicKey
 	for {
 		p, err := reader.Next()
 		if err != nil {
 			break
 		}
-		if pk, ok := p.(*packet.PublicKey); ok {
-			if pubKey == nil {
-				pubKey = pk
-			} else {
-				return nil, fmt.Errorf("armored data contains more than one public key packet")
-			}
+		if privKey, ok := p.(*packet.PrivateKey); ok {
+			privKeys = append(privKeys, privKey)
 		}
-		if _, ok := p.(*packet.PrivateKey); ok {
-			return nil, fmt.Errorf("armored data should not contain any private key packets")
+		if pubKey, ok := p.(*packet.PublicKey); ok {
+			pubKeys = append(pubKeys, pubKey)
 		}
 	}
-	if pubKey == nil {
-		return nil, fmt.Errorf("no public key packets found")
+	return pubKeys, privKeys, nil
+}
+
+// DecodeSinglePublicKey decodes a single public key packet from armored data.
+// The data should contain exactly one public key and no private keys.
+func DecodeSinglePublicKey(armoredKey []byte) (*packet.PublicKey, error) {
+	pubKeys, privKeys, err := DecodeKeys(armoredKey)
+	if err != nil {
+		return nil, err
 	}
-	return pubKey, nil
+	if len(pubKeys) == 0 {
+		return nil, fmt.Errorf("no public key packet found")
+	}
+	if len(pubKeys) > 1 {
+		return nil, fmt.Errorf("armored data contains more than one public key packet")
+	}
+	if len(privKeys) > 0 {
+		return nil, fmt.Errorf("armored data contains private key packet")
+	}
+	return pubKeys[0], nil
 }
 
 func DecodeSignature(clearData []byte) (sig *packet.Signature, body []byte, plainText []byte, err error) {
