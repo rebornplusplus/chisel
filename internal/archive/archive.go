@@ -195,10 +195,10 @@ func (index *ubuntuIndex) fetchRelease() error {
 		return err
 	}
 
-	// Decode the signature and verify the InRelease file
-	sig, body, content, err := setup.DecodeSignature(data)
+	// Decode the signature and verify the InRelease file.
+	sig, body, content, err := setup.DecodeClearSigned(data)
 	if err != nil {
-		return fmt.Errorf("cannot decode signature in the InRelease file")
+		return fmt.Errorf("corrupted archive InRelease file: invalid signature")
 	}
 	var verified bool
 	for _, key := range index.archive.publicKeys {

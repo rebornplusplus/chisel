@@ -426,7 +426,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 	// Decode the public keys and match against provided IDs
 	pubKeys := make(map[string]*packet.PublicKey, len(yamlVar.PublicKeys))
 	for keyName, yamlPubKey := range yamlVar.PublicKeys {
-		key, err := DecodeSinglePublicKey([]byte(yamlPubKey.Armor))
+		key, err := DecodeArchivePublicKey([]byte(yamlPubKey.Armor))
 		if err != nil {
 			return nil, fmt.Errorf("%s: invalid public key %q: %w", fileName, keyName, err)
 		}

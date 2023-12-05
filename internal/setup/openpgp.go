@@ -11,8 +11,8 @@ import (
 )
 
 // DecodeKeys decodes public and private key packets from armored data.
-func DecodeKeys(armoredKey []byte) (pubKeys []*packet.PublicKey, privKeys []*packet.PrivateKey, err error) {
-	block, err := armor.Decode(bytes.NewReader(armoredKey))
+func DecodeKeys(armoredData []byte) (pubKeys []*packet.PublicKey, privKeys []*packet.PrivateKey, err error) {
+	block, err := armor.Decode(bytes.NewReader(armoredData))
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot decode armored data")
 	}
@@ -33,10 +33,10 @@ func DecodeKeys(armoredKey []byte) (pubKeys []*packet.PublicKey, privKeys []*pac
 	return pubKeys, privKeys, nil
 }
 
-// DecodeSinglePublicKey decodes a single public key packet from armored data.
-// The data should contain exactly one public key and no private keys.
-func DecodeSinglePublicKey(armoredKey []byte) (*packet.PublicKey, error) {
-	pubKeys, privKeys, err := DecodeKeys(armoredKey)
+// DecodeArchivePublicKey decodes a single public key packet from armored data.
+// The data should contain exactly one public key packet and no private key packets.
+func DecodeArchivePublicKey(armoredData []byte) (*packet.PublicKey, error) {
+	pubKeys, privKeys, err := DecodeKeys(armoredData)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,9 @@ func DecodeSinglePublicKey(armoredKey []byte) (*packet.PublicKey, error) {
 	return pubKeys[0], nil
 }
 
-func DecodeSignature(clearData []byte) (sig *packet.Signature, body []byte, plainText []byte, err error) {
+// DecodeClearSigned decodes the first clearsigned message in the data
+// and returns the signature, the signed message and the original message text.
+func DecodeClearSigned(clearData []byte) (sig *packet.Signature, signed []byte, text []byte, err error) {
 	block, _ := clearsign.Decode(clearData)
 	if block == nil {
 		return nil, nil, nil, fmt.Errorf("invalid clearsign text")
@@ -69,8 +71,12 @@ func DecodeSignature(clearData []byte) (sig *packet.Signature, body []byte, plai
 	return sig, block.Bytes, block.Plaintext, nil
 }
 
+// VerifySignature returns nil if sig is a valid signature, made by pubKey.
 func VerifySignature(pubKey *packet.PublicKey, sig *packet.Signature, body []byte) error {
 	hash := sig.Hash.New()
-	io.Copy(hash, bytes.NewBuffer(body))
+	_, err := io.Copy(hash, bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
 	return pubKey.VerifySignature(hash, sig)
 }
