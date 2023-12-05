@@ -8,6 +8,57 @@ import (
 	"github.com/canonical/chisel/internal/setup"
 )
 
+type Key struct {
+	ID                   string
+	ArmoredPublicKey     string
+	ArmoredPrivateKey    string
+	PrivateKeyPassphrase string
+	PublicKey            *packet.PublicKey
+	PrivateKey           *packet.PrivateKey
+}
+
+var gpgKeys = map[string]*Key{
+	"ubuntu-archive-key": {
+		ID:               "871920D1991BC93C",
+		ArmoredPublicKey: ubuntuArchiveSignKey2018,
+	},
+	"test-key": {
+		ID:                "854BAF1AA9D76600",
+		ArmoredPublicKey:  testPublicKeyData,
+		ArmoredPrivateKey: testPrivateKeyData,
+	},
+}
+
+func init() {
+	for name, key := range gpgKeys {
+		if key.ArmoredPublicKey != "" {
+			pubKeys, privKeys, err := setup.DecodeKeys([]byte(key.ArmoredPublicKey))
+			if err != nil || len(privKeys) > 0 || len(pubKeys) != 1 || pubKeys[0].KeyIdString() != key.ID {
+				log.Panicf("invalid public key armored data: %s", name)
+			}
+			key.PublicKey = pubKeys[0]
+		}
+		if key.ArmoredPrivateKey != "" {
+			pubKeys, privKeys, err := setup.DecodeKeys([]byte(key.ArmoredPrivateKey))
+			if err != nil || len(pubKeys) > 0 || len(privKeys) != 1 || privKeys[0].KeyIdString() != key.ID {
+				log.Println(len(pubKeys), len(privKeys), err)
+				log.Panicf("invalid private key armored data: %s", name)
+			}
+			key.PrivateKey = privKeys[0]
+			if key.PrivateKeyPassphrase != "" {
+				err = key.PrivateKey.Decrypt([]byte(key.PrivateKeyPassphrase))
+				if err != nil {
+					log.Panicf("invalid private key passphrase: %s", name)
+				}
+			}
+		}
+	}
+}
+
+func GetGPGKey(name string) *Key {
+	return gpgKeys[name]
+}
+
 // Ubuntu Archive Automatic Signing Key (2018) <ftpmaster@ubuntu.com>.
 // Key ID: 871920D1991BC93C.
 // Useful to validate InRelease files from live archive.
@@ -110,54 +161,3 @@ zjGJoKAFtlMwNNDZ39JlkguMB0M5SxoGRXxQZE4DhPntUIW0qsE6ChmmjssjSDeg
 =VBWI
 -----END PGP PRIVATE KEY BLOCK-----
 `
-
-type Key struct {
-	ID                   string
-	ArmoredPublicKey     string
-	ArmoredPrivateKey    string
-	PrivateKeyPassphrase string
-	PublicKey            *packet.PublicKey
-	PrivateKey           *packet.PrivateKey
-}
-
-var gpgKeys = map[string]*Key{
-	"ubuntu-archive-key": {
-		ID:               "871920D1991BC93C",
-		ArmoredPublicKey: ubuntuArchiveSignKey2018,
-	},
-	"test-key": {
-		ID:                "854BAF1AA9D76600",
-		ArmoredPublicKey:  testPublicKeyData,
-		ArmoredPrivateKey: testPrivateKeyData,
-	},
-}
-
-func init() {
-	for name, key := range gpgKeys {
-		if key.ArmoredPublicKey != "" {
-			pubKeys, privKeys, err := setup.DecodeKeys([]byte(key.ArmoredPublicKey))
-			if err != nil || len(privKeys) > 0 || len(pubKeys) != 1 || pubKeys[0].KeyIdString() != key.ID {
-				log.Panicf("invalid public key armored data: %s", name)
-			}
-			key.PublicKey = pubKeys[0]
-		}
-		if key.ArmoredPrivateKey != "" {
-			pubKeys, privKeys, err := setup.DecodeKeys([]byte(key.ArmoredPrivateKey))
-			if err != nil || len(pubKeys) > 0 || len(privKeys) != 1 || privKeys[0].KeyIdString() != key.ID {
-				log.Println(len(pubKeys), len(privKeys), err)
-				log.Panicf("invalid private key armored data: %s", name)
-			}
-			key.PrivateKey = privKeys[0]
-			if key.PrivateKeyPassphrase != "" {
-				err = key.PrivateKey.Decrypt([]byte(key.PrivateKeyPassphrase))
-				if err != nil {
-					log.Panicf("invalid private key passphrase: %s", name)
-				}
-			}
-		}
-	}
-}
-
-func GetGPGKey(name string) *Key {
-	return gpgKeys[name]
-}

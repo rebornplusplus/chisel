@@ -40,14 +40,14 @@ func DecodeArchivePublicKey(armoredData []byte) (*packet.PublicKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(pubKeys) == 0 {
-		return nil, fmt.Errorf("no public key packet found")
+	if len(privKeys) > 0 {
+		return nil, fmt.Errorf("armored data contains private key packet")
 	}
 	if len(pubKeys) > 1 {
 		return nil, fmt.Errorf("armored data contains more than one public key packet")
 	}
-	if len(privKeys) > 0 {
-		return nil, fmt.Errorf("armored data contains private key packet")
+	if len(pubKeys) == 0 {
+		return nil, fmt.Errorf("no public key packet found")
 	}
 	return pubKeys[0], nil
 }
