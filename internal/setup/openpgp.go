@@ -21,7 +21,10 @@ func DecodeKeys(armoredData []byte) (pubKeys []*packet.PublicKey, privKeys []*pa
 	for {
 		p, err := reader.Next()
 		if err != nil {
-			break
+			if err == io.EOF {
+				break
+			}
+			return nil, nil, err
 		}
 		if privKey, ok := p.(*packet.PrivateKey); ok {
 			privKeys = append(privKeys, privKey)
@@ -41,13 +44,13 @@ func DecodeArchivePublicKey(armoredData []byte) (*packet.PublicKey, error) {
 		return nil, err
 	}
 	if len(privKeys) > 0 {
-		return nil, fmt.Errorf("armored data contains private key packet")
+		return nil, fmt.Errorf("armored data contains private key")
 	}
 	if len(pubKeys) > 1 {
-		return nil, fmt.Errorf("armored data contains more than one public key packet")
+		return nil, fmt.Errorf("armored data contains more than one public key")
 	}
 	if len(pubKeys) == 0 {
-		return nil, fmt.Errorf("no public key packet found")
+		return nil, fmt.Errorf("armored data contains no public key")
 	}
 	return pubKeys[0], nil
 }

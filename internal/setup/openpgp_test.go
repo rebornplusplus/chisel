@@ -1,9 +1,10 @@
 package setup_test
 
 import (
-	"github.com/canonical/chisel/internal/setup"
 	"golang.org/x/crypto/openpgp/packet"
 	. "gopkg.in/check.v1"
+
+	"github.com/canonical/chisel/internal/setup"
 )
 
 type archiveKeyTest struct {
@@ -23,7 +24,7 @@ var archiveKeyTests = []archiveKeyTest{{
 	relerror: ".*contains more than one public key.*",
 }, {
 	summary:  "Armored data with no public key",
-	armored:  clearSignedData,
+	armored:  testSignaturePacket,
 	relerror: ".*no public key.*",
 }, {
 	summary:  "Armored data with private key",
@@ -203,4 +204,25 @@ VvD4PlSNTcSmpZTICEmLmb3DLlXezQ0Rgfwy6Q6X0kt9xztIJsNo5sgRxQUlpVl3
 5VFsefx4LxtZvdSFK0SNh7UAhdOzD5Tc/7aG0NFfjw==
 =BAhz
 -----END PGP SIGNATURE-----
+`
+
+// testSignaturePacket contains a signature packet used for testing.
+const testSignaturePacket = `
+-----BEGIN PGP ARMORED FILE-----
+Comment: Use "gpg --dearmor" for unpacking
+
+iQI4BBMBCgAiBQJbn8HaAhsDBgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRCH
+GSDRmRvJPCxzEACktnJ8c/+VmqAjlgK3+YOlB23jgoHOQwZtIQrhQ2Vlr+Nu2hno
+twj7i8NAxiwl2XcnOXahPJr4zJTppgCipY9bhoN02Am0Fo1j3jJwT2W5BYJGaFye
+/+gge21kYbdbB86bdS02fkmA8DsCevEEaew0WmZfWOkIlG3roatg1HE6H1WwcW4a
+3JDeGbXi75vv5xvZv3IqKXOui8EXZManyd9gsqvtU0uVWiCQxuw1s4hvim7uqggz
+OEDZYNyx+6deAq0cQG3OJb6IUYLFeHkKrCHHRZLlWORzz49ivE6qWOkk3vBodGqa
+xtUVfGSmstykjKZ8ldXwCp+HzPW8oi80AKLwtC2fTDDLKwEv+OQLwtyBCkkoYyxZ
+9V9XUQojuv+45mRKGbQKed4ZH/EjAbIu/IVTawbpmcHyHQQNb9tvi2OMUCvKuFwq
+EXAPRvqb81PWFVu3EZw2WRpdLsDsO8/T5EAReShSo1g8+HwpPiuvmLRqaLxinpBg
+W/COxAOlKbz4KgP0HSNLdSAT9DdOkUHLNX1GgEBLc+gxsuc5EYUeKRkmZ/nRRE+z
+3QIxCvOMuwXWOLflNY3EiLwY9Bdgey8ES+8RqUqSCov3pAFy7Nde27xR2gr5lGDe
+yVadRjJlRcYSHceghZt38RvEIzW+bXq3v2KivrjoHF58tVJcLQlM5a0mjw==
+=cp5f
+-----END PGP ARMORED FILE-----
 `

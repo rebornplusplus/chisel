@@ -212,6 +212,8 @@ func (index *ubuntuIndex) fetchRelease() error {
 		return fmt.Errorf("cannot verify signature in the InRelease file")
 	}
 
+	// Using ``content`` here because ``body`` has CRLF endings.
+	// TODO	figure out how to use either ``body`` or ``content``.
 	ctrl, err := control.ParseString("Label", string(content))
 	if err != nil {
 		return fmt.Errorf("parsing archive Release file: %v", err)
