@@ -352,6 +352,71 @@ func (s *httpSuite) TestArchiveLabels(c *C) {
 	c.Assert(err, ErrorMatches, `.*\bno Ubuntu section`)
 }
 
+func (s *httpSuite) TestVerifyArchiveRelease(c *C) {
+	// Test with valid public key
+	s.prepareArchive("jammy", "22.04", "amd64", []string{"main", "universe"})
+
+	options := archive.Options{
+		Label:      "ubuntu",
+		Version:    "22.04",
+		Arch:       "amd64",
+		Suites:     []string{"jammy"},
+		Components: []string{"main", "universe"},
+		CacheDir:   c.MkDir(),
+		PublicKeys: []*packet.PublicKey{s.authKey},
+	}
+
+	_, err := archive.Open(&options)
+	c.Assert(err, IsNil)
+
+	// Test with no public key
+	s.prepareArchive("jammy", "22.04", "amd64", []string{"main", "universe"})
+
+	options = archive.Options{
+		Label:      "ubuntu",
+		Version:    "22.04",
+		Arch:       "amd64",
+		Suites:     []string{"jammy"},
+		Components: []string{"main", "universe"},
+		CacheDir:   c.MkDir(),
+	}
+
+	_, err = archive.Open(&options)
+	c.Assert(err, ErrorMatches, `.*cannot verify signature.*`)
+
+	// Test with wrong public key
+	s.prepareArchive("jammy", "22.04", "amd64", []string{"main", "universe"})
+
+	options = archive.Options{
+		Label:      "ubuntu",
+		Version:    "22.04",
+		Arch:       "amd64",
+		Suites:     []string{"jammy"},
+		Components: []string{"main", "universe"},
+		CacheDir:   c.MkDir(),
+		PublicKeys: []*packet.PublicKey{ubuntuArchiveKey.PublicKey},
+	}
+
+	_, err = archive.Open(&options)
+	c.Assert(err, ErrorMatches, `.*cannot verify signature.*`)
+
+	// Test with multiple public keys: [invalid, valid]
+	s.prepareArchive("jammy", "22.04", "amd64", []string{"main", "universe"})
+
+	options = archive.Options{
+		Label:      "ubuntu",
+		Version:    "22.04",
+		Arch:       "amd64",
+		Suites:     []string{"jammy"},
+		Components: []string{"main", "universe"},
+		CacheDir:   c.MkDir(),
+		PublicKeys: []*packet.PublicKey{ubuntuArchiveKey.PublicKey, s.authKey},
+	}
+
+	_, err = archive.Open(&options)
+	c.Assert(err, IsNil)
+}
+
 func read(r io.Reader) string {
 	data, err := io.ReadAll(r)
 	if err != nil {
