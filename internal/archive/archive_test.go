@@ -1,6 +1,7 @@
 package archive_test
 
 import (
+	"golang.org/x/crypto/openpgp/packet"
 	. "gopkg.in/check.v1"
 
 	"debug/elf"
@@ -18,6 +19,7 @@ import (
 	"github.com/canonical/chisel/internal/archive"
 	"github.com/canonical/chisel/internal/archive/testarchive"
 	"github.com/canonical/chisel/internal/deb"
+	"github.com/canonical/chisel/internal/testutil"
 )
 
 type httpSuite struct {
@@ -31,9 +33,16 @@ type httpSuite struct {
 	header    http.Header
 	status    int
 	restore   func()
+	signKey   *packet.PrivateKey
+	authKey   *packet.PublicKey
 }
 
 var _ = Suite(&httpSuite{})
+
+var (
+	ubuntuArchiveKey = testutil.GetGPGKey("ubuntu-archive-key")
+	testKey          = testutil.GetGPGKey("test-key")
+)
 
 func (s *httpSuite) SetUpTest(c *C) {
 	s.logf = c.Logf
@@ -46,6 +55,8 @@ func (s *httpSuite) SetUpTest(c *C) {
 	s.header = nil
 	s.status = 200
 	s.restore = archive.FakeDo(s.Do)
+	s.signKey = testKey.PrivateKey
+	s.authKey = testKey.PublicKey
 }
 
 func (s *httpSuite) TearDownTest(c *C) {
@@ -94,9 +105,10 @@ func (s *httpSuite) prepareArchive(suite, version, arch string, components []str
 
 func (s *httpSuite) prepareArchiveAdjustRelease(suite, version, arch string, components []string, adjustRelease func(*testarchive.Release)) *testarchive.Release {
 	release := &testarchive.Release{
-		Suite:   suite,
-		Version: version,
-		Label:   "Ubuntu",
+		Suite:      suite,
+		Version:    version,
+		Label:      "Ubuntu",
+		SigningKey: s.signKey,
 	}
 	for i, component := range components {
 		index := &testarchive.PackageIndex{
@@ -172,6 +184,7 @@ func (s *httpSuite) TestOptionErrors(c *C) {
 	cacheDir := c.MkDir()
 	for _, test := range optionErrorTests {
 		test.options.CacheDir = cacheDir
+		test.options.PublicKeys = append(test.options.PublicKeys, s.authKey)
 		_, err := archive.Open(&test.options)
 		c.Assert(err, ErrorMatches, test.error)
 	}
@@ -188,6 +201,7 @@ func (s *httpSuite) TestFetchPackage(c *C) {
 		Suites:     []string{"jammy"},
 		Components: []string{"main", "universe"},
 		CacheDir:   c.MkDir(),
+		PublicKeys: []*packet.PublicKey{s.authKey},
 	}
 
 	archive, err := archive.Open(&options)
@@ -217,6 +231,7 @@ func (s *httpSuite) TestFetchPortsPackage(c *C) {
 		Suites:     []string{"jammy"},
 		Components: []string{"main", "universe"},
 		CacheDir:   c.MkDir(),
+		PublicKeys: []*packet.PublicKey{s.authKey},
 	}
 
 	archive, err := archive.Open(&options)
@@ -254,6 +269,7 @@ func (s *httpSuite) TestFetchSecurityPackage(c *C) {
 		Arch:       "amd64",
 		Suites:     []string{"jammy", "jammy-security", "jammy-updates"},
 		Components: []string{"main", "universe"},
+		PublicKeys: []*packet.PublicKey{s.authKey},
 	}
 
 	archive, err := archive.Open(&options)
@@ -284,6 +300,7 @@ func (s *httpSuite) TestArchiveLabels(c *C) {
 		Suites:     []string{"jammy"},
 		Components: []string{"main", "universe"},
 		CacheDir:   c.MkDir(),
+		PublicKeys: []*packet.PublicKey{s.authKey},
 	}
 
 	_, err := archive.Open(&options)
@@ -298,6 +315,7 @@ func (s *httpSuite) TestArchiveLabels(c *C) {
 		Suites:     []string{"jammy"},
 		Components: []string{"main", "universe"},
 		CacheDir:   c.MkDir(),
+		PublicKeys: []*packet.PublicKey{s.authKey},
 	}
 
 	_, err = archive.Open(&options)
@@ -312,6 +330,7 @@ func (s *httpSuite) TestArchiveLabels(c *C) {
 		Suites:     []string{"jammy"},
 		Components: []string{"main", "universe"},
 		CacheDir:   c.MkDir(),
+		PublicKeys: []*packet.PublicKey{s.authKey},
 	}
 
 	_, err = archive.Open(&options)
@@ -326,6 +345,7 @@ func (s *httpSuite) TestArchiveLabels(c *C) {
 		Suites:     []string{"jammy"},
 		Components: []string{"main", "universe"},
 		CacheDir:   c.MkDir(),
+		PublicKeys: []*packet.PublicKey{s.authKey},
 	}
 
 	_, err = archive.Open(&options)
@@ -381,6 +401,7 @@ func (s *S) testOpenArchiveArch(c *C, arch string) {
 		Suites:     []string{"jammy"},
 		Components: []string{"main", "universe"},
 		CacheDir:   c.MkDir(),
+		PublicKeys: []*packet.PublicKey{ubuntuArchiveKey.PublicKey},
 	}
 
 	archive, err := archive.Open(&options)

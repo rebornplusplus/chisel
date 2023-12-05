@@ -195,7 +195,7 @@ func (index *ubuntuIndex) fetchRelease() error {
 		return err
 	}
 
-	// decode the signature and verify the InRelease file
+	// Decode the signature and verify the InRelease file
 	sig, body, content, err := setup.DecodeSignature(data)
 	if err != nil {
 		return fmt.Errorf("cannot decode signature in the InRelease file")
