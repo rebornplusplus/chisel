@@ -200,7 +200,7 @@ func (index *ubuntuIndex) fetchRelease() error {
 	if err != nil {
 		return fmt.Errorf("corrupted archive InRelease file: invalid signature")
 	}
-	var verified bool
+	verified := false
 	for _, key := range index.archive.publicKeys {
 		err = setup.VerifySignature(key, sig, body)
 		if err == nil {
@@ -216,13 +216,13 @@ func (index *ubuntuIndex) fetchRelease() error {
 	// TODO	figure out how to use either ``body`` or ``content``.
 	ctrl, err := control.ParseString("Label", string(content))
 	if err != nil {
-		return fmt.Errorf("parsing archive Release file: %v", err)
+		return fmt.Errorf("parsing archive InRelease file: %v", err)
 	}
 	section := ctrl.Section("Ubuntu")
 	if section == nil {
 		section = ctrl.Section("UbuntuProFIPS")
 		if section == nil {
-			return fmt.Errorf("corrupted archive Release file: no Ubuntu section")
+			return fmt.Errorf("corrupted archive InRelease file: no Ubuntu section")
 		}
 	}
 	logf("Release date: %s", section.Get("Date"))

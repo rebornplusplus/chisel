@@ -141,15 +141,15 @@ func (r *Release) Content() []byte {
 	`)), r.Label, r.Suite, r.Version, r.Version, digests.String())
 
 	var buf bytes.Buffer
-	pt, err := clearsign.Encode(&buf, r.SigningKey, nil)
+	writer, err := clearsign.Encode(&buf, r.SigningKey, nil)
 	if err != nil {
 		panic(err)
 	}
-	_, err = pt.Write([]byte(content))
+	_, err = writer.Write([]byte(content))
 	if err != nil {
 		panic(err)
 	}
-	err = pt.Close()
+	err = writer.Close()
 	if err != nil {
 		panic(err)
 	}

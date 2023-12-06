@@ -40,8 +40,9 @@ type httpSuite struct {
 var _ = Suite(&httpSuite{})
 
 var (
-	ubuntuArchiveKey = testutil.GetGPGKey("ubuntu-archive-key")
+	ubuntuArchiveKey = testutil.GetGPGKey("ubuntu-archive-key-2018")
 	testKey          = testutil.GetGPGKey("test-key")
+	extraTestKey     = testutil.GetGPGKey("test-key-2")
 )
 
 func (s *httpSuite) SetUpTest(c *C) {
@@ -394,7 +395,7 @@ func (s *httpSuite) TestVerifyArchiveRelease(c *C) {
 		Suites:     []string{"jammy"},
 		Components: []string{"main", "universe"},
 		CacheDir:   c.MkDir(),
-		PublicKeys: []*packet.PublicKey{ubuntuArchiveKey.PublicKey},
+		PublicKeys: []*packet.PublicKey{extraTestKey.PublicKey},
 	}
 
 	_, err = archive.Open(&options)
@@ -410,7 +411,7 @@ func (s *httpSuite) TestVerifyArchiveRelease(c *C) {
 		Suites:     []string{"jammy"},
 		Components: []string{"main", "universe"},
 		CacheDir:   c.MkDir(),
-		PublicKeys: []*packet.PublicKey{ubuntuArchiveKey.PublicKey, s.authKey},
+		PublicKeys: []*packet.PublicKey{extraTestKey.PublicKey, s.authKey},
 	}
 
 	_, err = archive.Open(&options)
