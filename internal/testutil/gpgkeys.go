@@ -9,16 +9,15 @@ import (
 )
 
 type Key struct {
-	ID                   string
-	ArmoredPublicKey     string
-	ArmoredPrivateKey    string
-	PrivateKeyPassphrase string
-	PublicKey            *packet.PublicKey
-	PrivateKey           *packet.PrivateKey
+	ID                string
+	ArmoredPublicKey  string
+	ArmoredPrivateKey string
+	PublicKey         *packet.PublicKey
+	PrivateKey        *packet.PrivateKey
 }
 
 var gpgKeys = map[string]*Key{
-	"ubuntu-archive-key": {
+	"ubuntu-archive-key-2018": {
 		ID:               "871920D1991BC93C",
 		ArmoredPublicKey: ubuntuArchiveSignKey2018,
 	},
@@ -26,6 +25,11 @@ var gpgKeys = map[string]*Key{
 		ID:                "854BAF1AA9D76600",
 		ArmoredPublicKey:  testPublicKeyData,
 		ArmoredPrivateKey: testPrivateKeyData,
+	},
+	"test-key-2": {
+		ID:                "9568570379BF1F43",
+		ArmoredPublicKey:  testPublicKeyData2,
+		ArmoredPrivateKey: testPrivateKeyData2,
 	},
 }
 
@@ -41,16 +45,9 @@ func init() {
 		if key.ArmoredPrivateKey != "" {
 			pubKeys, privKeys, err := setup.DecodeKeys([]byte(key.ArmoredPrivateKey))
 			if err != nil || len(pubKeys) > 0 || len(privKeys) != 1 || privKeys[0].KeyIdString() != key.ID {
-				log.Println(len(pubKeys), len(privKeys), err)
 				log.Panicf("invalid private key armored data: %s", name)
 			}
 			key.PrivateKey = privKeys[0]
-			if key.PrivateKeyPassphrase != "" {
-				err = key.PrivateKey.Decrypt([]byte(key.PrivateKeyPassphrase))
-				if err != nil {
-					log.Panicf("invalid private key passphrase: %s", name)
-				}
-			}
 		}
 	}
 }
@@ -159,5 +156,43 @@ dP5/EFjJbHC47yAAds/yspfk5qIHu6PHrTVB+wJGwOJdwJ1+2zis5ONE8NexfSrD
 zjGJoKAFtlMwNNDZ39JlkguMB0M5SxoGRXxQZE4DhPntUIW0qsE6ChmmjssjSDeg
 75rwgc+hjNDunKQhKNpjVVFGF4uceV5EQ084F4nA5w==
 =VBWI
+-----END PGP PRIVATE KEY BLOCK-----
+`
+
+// Test-purpose RSA 1024 bits signing key-pairs without a passphrase.
+// Key ID: 9568570379BF1F43. User: "Extra Test Key <test@key>".
+const testPublicKeyData2 = `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EZXAwcgEEAMBQ4Qx6xam1k1hyjPrKQfCnGRBBm2+Lw9DHQcz0lreH51iZEVkS
+fACbPHI9A7NX8xdX1cMLpaTQCT3h30WwuLuNAo1IdYcdGpfzFzd6rqS5OCItj+3u
+XZrTlS8QxVVShSPYFfxYaIXKCZF9G+RTKD0rWQwkMwNHZ4vJGBm7qKytABEBAAG0
+GUV4dHJhIFRlc3QgS2V5IDx0ZXN0QGtleT6IzgQTAQoAOBYhBFQrMoAoDwtUfB+G
+BpVoVwN5vx9DBQJlcDByAhsDBQsJCAcCBhUKCQgLAgQWAgMBAh4BAheAAAoJEJVo
+VwN5vx9Dy80D/iUzJkfT8lsH0vZ2jcpgcyjtZqrIfOMLYk8DqoYD/1wDGx4TIzg/
+bpqDHxBCDmBaxY6+ps9IaBcsD1whjyX4AZK6FykV8d9GAc+3b9t2EPe92LV3XKaT
+rwF9bjDSJZUUz1I31YTnHpBiRU+hWuf7OVjnLcEAB8mMa7Y6YN37qT44
+=U79/
+-----END PGP PUBLIC KEY BLOCK----9568570379BF1F43-
+`
+const testPrivateKeyData2 = `
+-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+lQHYBGVwMHIBBADAUOEMesWptZNYcoz6ykHwpxkQQZtvi8PQx0HM9Ja3h+dYmRFZ
+EnwAmzxyPQOzV/MXV9XDC6Wk0Ak94d9FsLi7jQKNSHWHHRqX8xc3eq6kuTgiLY/t
+7l2a05UvEMVVUoUj2BX8WGiFygmRfRvkUyg9K1kMJDMDR2eLyRgZu6isrQARAQAB
+AAP+LXyDuiSor0rt0o/ndeLURVP0auKlnbS4SB902gHoyvh3OL6deoyTbT5KRffV
+8fuFmNoSymrtDwYQhYUwvqY9jt+lVSKDseqLkF5C92VZFWpjiYDOqZzoBfVUDZo5
+NffyIxuG5X33o9yBmUk29PWcLqzSanxg/TmXy63pp4sBYfECAN3GgiWxwrQTtv0X
+OUuSKbvnDVyM86R7Hdo08hmwB/6qhGibw5KBko+h+kBsIo1naEzzGsXWUjLk8BbZ
+qPTRGrECAN3+ijctJPm+JprWjJlJ5KrdXlIMG5x87vtdp5ZzctsmY97GMBaW+SvW
+uuBHfiY7xFUru8304gWd/YAwTdxVeL0CALjGKCTWPhZaRJ+ew9iryVgFEznaNAgO
+pzVXr3yllNdinGWjvbyEkn1y7OlzH0REg9jOsc82Bbz4aiDm19Qr/1KtR7QZRXh0
+cmEgVGVzdCBLZXkgPHRlc3RAa2V5PojOBBMBCgA4FiEEVCsygCgPC1R8H4YGlWhX
+A3m/H0MFAmVwMHICGwMFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQlWhXA3m/
+H0PLzQP+JTMmR9PyWwfS9naNymBzKO1mqsh84wtiTwOqhgP/XAMbHhMjOD9umoMf
+EEIOYFrFjr6mz0hoFywPXCGPJfgBkroXKRXx30YBz7dv23YQ973YtXdcppOvAX1u
+MNIllRTPUjfVhOcekGJFT6Fa5/s5WOctwQAHyYxrtjpg3fupPjg=
+=JbF+
 -----END PGP PRIVATE KEY BLOCK-----
 `
