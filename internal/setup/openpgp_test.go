@@ -24,7 +24,7 @@ var archiveKeyTests = []archiveKeyTest{{
 	relerror: ".*contains more than one public key.*",
 }, {
 	summary:  "Armored data with no public key",
-	armored:  testSignaturePacket,
+	armored:  armoredDataWithNoKeys,
 	relerror: ".*no public key.*",
 }, {
 	summary:  "Armored data with private key",
@@ -47,13 +47,11 @@ func (s *S) TestDecodeArchivePubKey(c *C) {
 		c.Logf("Summary: %s", test.summary)
 
 		pubKey, err := setup.DecodeArchivePublicKey([]byte(test.armored))
-		if err != nil || test.relerror != "" {
-			if test.relerror != "" {
-				c.Assert(err, ErrorMatches, test.relerror)
-				continue
-			} else {
-				c.Assert(err, IsNil)
-			}
+		if test.relerror != "" {
+			c.Assert(err, ErrorMatches, test.relerror)
+			continue
+		} else {
+			c.Assert(err, IsNil)
 		}
 
 		c.Assert(pubKey, DeepEquals, test.pubKey)
@@ -77,14 +75,14 @@ var verifyClearSignTests = []verifyClearSignTest{{
 	pubKey:    testKey.PublicKey,
 	relerror:  ".*invalid signature: hash tag doesn't match.*",
 }, {
-	summary:   "Invalid data: no sign",
+	summary:   "Invalid data: malformed clearsign text",
 	clearData: "foo\n",
 	pubKey:    testKey.PublicKey,
 	relerror:  ".*invalid clearsign text.*",
 }, {
 	summary:   "Wrong public key to verify with",
 	clearData: clearSignedData,
-	pubKey:    ubuntuArchiveKey.PublicKey,
+	pubKey:    extraTestKey.PublicKey,
 	relerror:  ".*invalid signature:.*verification failure",
 }}
 
@@ -206,8 +204,9 @@ VvD4PlSNTcSmpZTICEmLmb3DLlXezQ0Rgfwy6Q6X0kt9xztIJsNo5sgRxQUlpVl3
 -----END PGP SIGNATURE-----
 `
 
-// testSignaturePacket contains a signature packet used for testing.
-const testSignaturePacket = `
+// armoredDataWithNoKeys contains only a signature packet, to be
+// used for testing purposes. It does not contain any key packets.
+const armoredDataWithNoKeys = `
 -----BEGIN PGP ARMORED FILE-----
 Comment: Use "gpg --dearmor" for unpacking
 

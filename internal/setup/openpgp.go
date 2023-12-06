@@ -74,7 +74,7 @@ func DecodeClearSigned(clearData []byte) (sig *packet.Signature, signed []byte, 
 	return sig, block.Bytes, block.Plaintext, nil
 }
 
-// VerifySignature returns nil if sig is a valid signature, made by pubKey.
+// VerifySignature returns nil if sig is a valid signature made by pubKey.
 func VerifySignature(pubKey *packet.PublicKey, sig *packet.Signature, body []byte) error {
 	hash := sig.Hash.New()
 	_, err := io.Copy(hash, bytes.NewBuffer(body))
