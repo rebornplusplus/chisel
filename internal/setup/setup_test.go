@@ -3,7 +3,6 @@ package setup_test
 import (
 	"os"
 	"path/filepath"
-	"strings"
 
 	"golang.org/x/crypto/openpgp/packet"
 	. "gopkg.in/check.v1"
@@ -13,8 +12,8 @@ import (
 )
 
 var (
-	ubuntuArchiveKey = testutil.GetGPGKey("ubuntu-archive-key")
-	testKey          = testutil.GetGPGKey("test-key")
+	testKey      = testutil.GetGPGKey("test-key")
+	extraTestKey = testutil.GetGPGKey("test-key-2")
 )
 
 type setupTest struct {
@@ -61,6 +60,11 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [main, other]
 					suites: [jammy, jammy-security]
+					public-keys: [test-key]
+			public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -75,6 +79,7 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy", "jammy-security"},
 				Components: []string{"main", "other"},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey},
 			},
 		},
 		Packages: map[string]*setup.Package{
@@ -118,6 +123,7 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy"},
 				Components: []string{"main", "universe"},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey},
 			},
 		},
 		Packages: map[string]*setup.Package{
@@ -179,6 +185,7 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy"},
 				Components: []string{"main", "universe"},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey},
 			},
 		},
 		Packages: map[string]*setup.Package{
@@ -439,6 +446,7 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy"},
 				Components: []string{"main", "universe"},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey},
 			},
 		},
 		Packages: map[string]*setup.Package{
@@ -653,6 +661,7 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy"},
 				Components: []string{"main", "universe"},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey},
 			},
 		},
 		Packages: map[string]*setup.Package{
@@ -692,6 +701,7 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy"},
 				Components: []string{"main", "universe"},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey},
 			},
 		},
 		Packages: map[string]*setup.Package{
@@ -732,6 +742,7 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy"},
 				Components: []string{"main", "universe"},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey},
 			},
 		},
 		Packages: map[string]*setup.Package{
@@ -763,10 +774,16 @@ var setupTests = []setupTest{{
 					components: [main, universe]
 					suites: [jammy]
 					default: true
+					public-keys: [test-key]
 				bar:
 					version: 22.04
 					components: [universe]
 					suites: [jammy-updates]
+					public-keys: [test-key]
+			public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -781,12 +798,14 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy"},
 				Components: []string{"main", "universe"},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey},
 			},
 			"bar": {
 				Name:       "bar",
 				Version:    "22.04",
 				Suites:     []string{"jammy-updates"},
 				Components: []string{"universe"},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey},
 			},
 		},
 		Packages: map[string]*setup.Package{
@@ -808,20 +827,20 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [main, universe]
 					suites: [jammy]
-					public-keys: [ubuntu-archive]
+					public-keys: [extra-key]
 					default: true
 				bar:
 					version: 22.04
 					components: [universe]
 					suites: [jammy-updates]
-					public-keys: [test-key, ubuntu-archive]
+					public-keys: [test-key, extra-key]
 			public-keys:
-				ubuntu-archive:
-					id: ` + ubuntuArchiveKey.ID + `
-					armor: |` + "\n" + indentLines(ubuntuArchiveKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+				extra-key:
+					id: ` + extraTestKey.ID + `
+					armor: |` + "\n" + testutil.IndentLines(extraTestKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 				test-key:
 					id: ` + testKey.ID + `
-					armor: |` + "\n" + indentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+					armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -836,14 +855,14 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy"},
 				Components: []string{"main", "universe"},
-				PublicKeys: []*packet.PublicKey{ubuntuArchiveKey.PublicKey},
+				PublicKeys: []*packet.PublicKey{extraTestKey.PublicKey},
 			},
 			"bar": {
 				Name:       "bar",
 				Version:    "22.04",
 				Suites:     []string{"jammy-updates"},
 				Components: []string{"universe"},
-				PublicKeys: []*packet.PublicKey{testKey.PublicKey, ubuntuArchiveKey.PublicKey},
+				PublicKeys: []*packet.PublicKey{testKey.PublicKey, extraTestKey.PublicKey},
 			},
 		},
 		Packages: map[string]*setup.Package{
@@ -856,6 +875,20 @@ var setupTests = []setupTest{{
 		},
 	},
 }, {
+	summary: "Archive without public keys",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				foo:
+					version: 22.04
+					components: [main, universe]
+					suites: [jammy]
+					default: true
+		`,
+	},
+	relerror: `chisel.yaml: archive "foo" missing public-keys field`,
+}, {
 	summary: "Unknown public key",
 	input: map[string]string{
 		"chisel.yaml": `
@@ -865,14 +898,14 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [main, universe]
 					suites: [jammy]
-					public-keys: [ubuntu-archive]
+					public-keys: [extra-key]
 					default: true
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
 		`,
 	},
-	relerror: `chisel.yaml: unknown reference to public key "ubuntu-archive" in archive "foo"`,
+	relerror: `chisel.yaml: unknown reference to public key "extra-key" in archive "foo"`,
 }, {
 	summary: "Invalid public key",
 	input: map[string]string{
@@ -883,10 +916,10 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [main, universe]
 					suites: [jammy]
-					public-keys: [ubuntu-archive]
+					public-keys: [extra-key]
 					default: true
 			public-keys:
-				ubuntu-archive:
+				extra-key:
 					id: foo
 					armor: |
 						G. B. Shaw's Law:
@@ -900,7 +933,7 @@ var setupTests = []setupTest{{
 			package: mypkg
 		`,
 	},
-	relerror: `chisel.yaml: invalid public key "ubuntu-archive": cannot decode armored data`,
+	relerror: `chisel.yaml: invalid public key "extra-key": cannot decode armored data`,
 }, {
 	summary: "Mismatched public key ID",
 	input: map[string]string{
@@ -911,26 +944,31 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [main, universe]
 					suites: [jammy]
-					public-keys: [ubuntu-archive]
+					public-keys: [extra-key]
 					default: true
 			public-keys:
-				ubuntu-archive:
-					id: ` + ubuntuArchiveKey.ID + `
-					armor: |` + "\n" + indentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+				extra-key:
+					id: ` + extraTestKey.ID + `
+					armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
 		`,
 	},
-	relerror: `chisel.yaml: invalid public key "ubuntu-archive": key-id does not match`,
+	relerror: `chisel.yaml: invalid public key "extra-key": key-id does not match`,
 }}
 
-const defaultChiselYaml = `
+var defaultChiselYaml = `
 	format: chisel-v1
 	archives:
 		ubuntu:
 			version: 22.04
 			components: [main, universe]
+			public-keys: [test-key]
+	public-keys:
+		test-key:
+			id: ` + testKey.ID + `
+			armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 `
 
 func (s *S) TestParseRelease(c *C) {
@@ -982,14 +1020,4 @@ func (s *S) TestParseRelease(c *C) {
 			}
 		}
 	}
-}
-
-func indentLines(text string, indent string) string {
-	var result strings.Builder
-	for _, line := range strings.Split(text, "\n") {
-		result.WriteString(indent)
-		result.WriteString(line)
-		result.WriteByte('\n')
-	}
-	return result.String()
 }

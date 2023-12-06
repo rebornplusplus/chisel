@@ -458,6 +458,9 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		if details.Default {
 			release.DefaultArchive = archiveName
 		}
+		if len(details.PublicKeys) == 0 {
+			return nil, fmt.Errorf("%s: archive %q missing public-keys field", fileName, archiveName)
+		}
 		var archiveKeys []*packet.PublicKey
 		for _, keyName := range details.PublicKeys {
 			key, ok := pubKeys[keyName]
