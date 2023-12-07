@@ -40,7 +40,7 @@ type httpSuite struct {
 var _ = Suite(&httpSuite{})
 
 var (
-	testKey                  = testutil.GetGPGKey("test-key")
+	testKey                  = testutil.GetGPGKey("test-key-1")
 	extraTestKey             = testutil.GetGPGKey("test-key-2")
 	ubuntuArchiveSignKey2012 = testutil.GetGPGKey("ubuntu-archive-key-2012")
 	ubuntuArchiveSignKey2018 = testutil.GetGPGKey("ubuntu-archive-key-2018")

@@ -25,7 +25,7 @@ var gpgKeys = map[string]*Key{
 		ID:               "3B4FE6ACC0B21F32",
 		ArmoredPublicKey: ubuntuArchiveSignKey2012,
 	},
-	"test-key": {
+	"test-key-1": {
 		ID:                "854BAF1AA9D76600",
 		ArmoredPublicKey:  testPublicKeyData,
 		ArmoredPrivateKey: testPrivateKeyData,
