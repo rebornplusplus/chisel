@@ -61,28 +61,32 @@ func (s *S) TestDecodeArchivePubKey(c *C) {
 type verifyClearSignTest struct {
 	summary   string
 	clearData string
-	pubKey    *packet.PublicKey
+	pubKeys   []*packet.PublicKey
 	relerror  string
 }
 
 var verifyClearSignTests = []verifyClearSignTest{{
 	summary:   "Good data with proper sign",
 	clearData: clearSignedData,
-	pubKey:    testKey.PublicKey,
+	pubKeys:   []*packet.PublicKey{testKey.PublicKey},
+}, {
+	summary:   "Good data with multiple signatures",
+	clearData: clearSignedWithMultipleSigns,
+	pubKeys:   []*packet.PublicKey{testKey.PublicKey, extraTestKey.PublicKey},
 }, {
 	summary:   "Invalid data: improper hash",
 	clearData: invalidSignedData,
-	pubKey:    testKey.PublicKey,
+	pubKeys:   []*packet.PublicKey{testKey.PublicKey},
 	relerror:  ".*invalid signature: hash tag doesn't match.*",
 }, {
 	summary:   "Invalid data: malformed clearsign text",
 	clearData: "foo\n",
-	pubKey:    testKey.PublicKey,
+	pubKeys:   []*packet.PublicKey{testKey.PublicKey},
 	relerror:  ".*invalid clearsign text.*",
 }, {
 	summary:   "Wrong public key to verify with",
 	clearData: clearSignedData,
-	pubKey:    extraTestKey.PublicKey,
+	pubKeys:   []*packet.PublicKey{extraTestKey.PublicKey},
 	relerror:  ".*invalid signature:.*verification failure",
 }}
 
@@ -90,17 +94,26 @@ func (s *S) TestVerifySignature(c *C) {
 	for _, test := range verifyClearSignTests {
 		c.Logf("Summary: %s", test.summary)
 
-		sig, body, _, err := setup.DecodeClearSigned([]byte(test.clearData))
+		sigs, body, _, err := setup.DecodeClearSigned([]byte(test.clearData))
 		if err == nil {
-			err = setup.VerifySignature(test.pubKey, sig, body)
-		}
-		if err != nil || test.relerror != "" {
-			if test.relerror != "" {
-				c.Assert(err, ErrorMatches, test.relerror)
-				continue
-			} else {
-				c.Assert(err, IsNil)
+			// verify at least one signature with the set of public keys
+			for _, sig := range sigs {
+				for _, pubKey := range test.pubKeys {
+					err = setup.VerifySignature(pubKey, sig, body)
+					if err == nil {
+						break
+					}
+				}
+				if err == nil {
+					break
+				}
 			}
+		}
+		if test.relerror != "" {
+			c.Assert(err, ErrorMatches, test.relerror)
+			continue
+		} else {
+			c.Assert(err, IsNil)
 		}
 	}
 }
@@ -181,6 +194,31 @@ SpjS8zZQ5H+7t0O2zqNSu4UqBTCXWIsW9EiL1EHr92F2O3HhOn1ER7KgTl+GDUZ/
 VvD4PlSNTcSmpZTICEmLmb3DLlXezQ0Rgfwy6Q6X0kt9xztIJsNo5sgRxQUlpVl3
 5VFsefx4LxtZvdSFK0SNh7UAhdOzD5Tc/7aG0NFfjw==
 =BAhz
+-----END PGP SIGNATURE-----
+`
+
+// This data contains two signatures, from these keys:
+//   - 854BAF1AA9D76600	(foo@bar)
+//   - 9568570379BF1F43	(test@key)
+const clearSignedWithMultipleSigns = `
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+foo
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCgAdFiEEDp0LAdsRnT9gfhU5hUuvGqnXZgAFAmVxmacACgkQhUuvGqnX
+ZgBarggAp4YWGia+9yUJG3ojieaSFnue9Ov/YnhV3PLKqxo1+DJZZDekxuxk7sbU
+x+ZQmM/3xus1MhEVmySvwEiuGktr9fk+/eEZOZj6d4ZTTloUeDZNaJ7LSUEUKdMM
+HA5Adphtv+vBZwmkH6u7jyJSGC+P/U7DFmIPODeDcqLzh5hjWWK1dkNqkwEF75Ot
+9AXI5Y0e4WWJj/UQ1zuUwtw9Rf4JB8MUFOVUPJe4UFZw+XUYHq5DFBNYLn2SDLMQ
+BQ3hzmDE9FazILBIFfutKTpA3gmPu9wZ+WroNXkKkleV0Wjo0kA4bnz5hLy2D4Bf
+DBATaX5qzUwC9LxpzNJoScsW/2U+KYizBAEBCgAdFiEEVCsygCgPC1R8H4YGlWhX
+A3m/H0MFAmVxmacACgkQlWhXA3m/H0PVCgQArXUt7hQO3bATZBsbTgQ2INhs1aiR
+GAWkroW5Dp5mOmTtAtfFuysEMdH+v42Z6g1BqwypWtCVNYF+v8aQYwUwUulN/Pna
+qtWNWLmXMFLmNVILL9X+o/sRCtra1qCu6Vn59H+yPhye9CXiV+U/V8dB60YLs812
+cgcXWByCFx3J1hM=
+=1GLl
 -----END PGP SIGNATURE-----
 `
 

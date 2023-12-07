@@ -55,23 +55,30 @@ func DecodeArchivePublicKey(armoredData []byte) (*packet.PublicKey, error) {
 	return pubKeys[0], nil
 }
 
-// DecodeClearSigned decodes the first clearsigned message in the data
-// and returns the signature, the signed message and the original message text.
-func DecodeClearSigned(clearData []byte) (sig *packet.Signature, signed []byte, text []byte, err error) {
+// DecodeClearSigned decodes the first clearsigned message in the data and
+// returns the signatures, the signed message and the original message text.
+func DecodeClearSigned(clearData []byte) (sigs []*packet.Signature, signed []byte, text []byte, err error) {
 	block, _ := clearsign.Decode(clearData)
 	if block == nil {
 		return nil, nil, nil, fmt.Errorf("invalid clearsign text")
 	}
 	reader := packet.NewReader(block.ArmoredSignature.Body)
-	p, err := reader.Next()
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("error reading signature: %w", err)
+	for {
+		p, err := reader.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, nil, nil, fmt.Errorf("error reading signatures: %w", err)
+		}
+		if sig, ok := p.(*packet.Signature); ok {
+			sigs = append(sigs, sig)
+		}
 	}
-	sig, ok := p.(*packet.Signature)
-	if !ok {
-		return nil, nil, nil, fmt.Errorf("error parsing signature")
+	if len(sigs) == 0 {
+		return nil, nil, nil, fmt.Errorf("clearsigned data contains no signature")
 	}
-	return sig, block.Bytes, block.Plaintext, nil
+	return sigs, block.Bytes, block.Plaintext, nil
 }
 
 // VerifySignature returns nil if sig is a valid signature made by pubKey.

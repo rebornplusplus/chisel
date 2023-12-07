@@ -195,16 +195,27 @@ func (index *ubuntuIndex) fetchRelease() error {
 		return err
 	}
 
-	// Decode the signature and verify the InRelease file.
-	sig, body, content, err := setup.DecodeClearSigned(data)
+	// Decode the signature(s) and verify the InRelease file.
+	// The InRelease file may have multiple signatures from multiple
+	// different keys. Verify at least one signature with the set of
+	// public keys. Unlike ``gpg --verify`` which ensures the
+	// verification of all signatures, this is in line with what apt
+	// does. [1]
+	// [1]  https://salsa.debian.org/apt-team/apt/-/blob/4e344a4c1d2862b7cdb900a20222bc22ac5edcf7/methods/gpgv.cc#L553-557
+	sigs, body, content, err := setup.DecodeClearSigned(data)
 	if err != nil {
 		return fmt.Errorf("corrupted archive InRelease file: invalid signature")
 	}
 	verified := false
-	for _, key := range index.archive.publicKeys {
-		err = setup.VerifySignature(key, sig, body)
-		if err == nil {
-			verified = true
+	for _, sig := range sigs {
+		for _, key := range index.archive.publicKeys {
+			err = setup.VerifySignature(key, sig, body)
+			if err == nil {
+				verified = true
+				break
+			}
+		}
+		if verified {
 			break
 		}
 	}
