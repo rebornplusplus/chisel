@@ -69,14 +69,14 @@ func DecodeClearSigned(clearData []byte) (sigs []*packet.Signature, signed []byt
 			if err == io.EOF {
 				break
 			}
-			return nil, nil, nil, fmt.Errorf("error reading signatures: %w", err)
+			return nil, nil, nil, fmt.Errorf("error parsing armored data: %w", err)
 		}
 		if sig, ok := p.(*packet.Signature); ok {
 			sigs = append(sigs, sig)
 		}
 	}
 	if len(sigs) == 0 {
-		return nil, nil, nil, fmt.Errorf("clearsigned data contains no signature")
+		return nil, nil, nil, fmt.Errorf("clearsigned data contains no signatures")
 	}
 	return sigs, block.Bytes, block.Plaintext, nil
 }

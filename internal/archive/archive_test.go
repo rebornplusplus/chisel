@@ -425,19 +425,30 @@ func (s *S) TestRealArchive(c *C) {
 }
 
 type ubuntuRelease struct {
-	name    string
-	version string
+	name               string
+	version            string
+	archiveSigningKeys []*packet.PublicKey
 }
 
 var ubuntuReleases = []ubuntuRelease{{
 	name:    "focal",
 	version: "20.04",
+	archiveSigningKeys: []*packet.PublicKey{
+		ubuntuArchiveSignKey2012.PublicKey,
+		ubuntuArchiveSignKey2018.PublicKey,
+	},
 }, {
 	name:    "jammy",
 	version: "22.04",
+	archiveSigningKeys: []*packet.PublicKey{
+		ubuntuArchiveSignKey2018.PublicKey,
+	},
 }, {
 	name:    "noble",
 	version: "24.04",
+	archiveSigningKeys: []*packet.PublicKey{
+		ubuntuArchiveSignKey2018.PublicKey,
+	},
 }}
 
 var elfToDebArch = map[elf.Machine]string{
@@ -469,10 +480,7 @@ func (s *S) testOpenArchiveArch(c *C, release ubuntuRelease, arch string) {
 		Suites:     []string{release.name},
 		Components: []string{"main", "universe"},
 		CacheDir:   c.MkDir(),
-		PublicKeys: []*packet.PublicKey{
-			ubuntuArchiveSignKey2018.PublicKey,
-			ubuntuArchiveSignKey2012.PublicKey,
-		},
+		PublicKeys: release.archiveSigningKeys,
 	}
 
 	archive, err := archive.Open(&options)

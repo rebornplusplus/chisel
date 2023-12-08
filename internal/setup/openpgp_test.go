@@ -74,6 +74,10 @@ var verifyClearSignTests = []verifyClearSignTest{{
 	clearData: clearSignedWithMultipleSigns,
 	pubKeys:   []*packet.PublicKey{testKey.PublicKey, extraTestKey.PublicKey},
 }, {
+	summary:   "Multiple signatures: verify at least one signature",
+	clearData: clearSignedWithMultipleSigns,
+	pubKeys:   []*packet.PublicKey{testKey.PublicKey},
+}, {
 	summary:   "Invalid data: improper hash",
 	clearData: invalidSignedData,
 	pubKeys:   []*packet.PublicKey{testKey.PublicKey},
@@ -96,7 +100,7 @@ func (s *S) TestVerifySignature(c *C) {
 
 		sigs, body, _, err := setup.DecodeClearSigned([]byte(test.clearData))
 		if err == nil {
-			// verify at least one signature with the set of public keys
+			// Verify at least one signature with the set of public keys.
 			for _, sig := range sigs {
 				for _, pubKey := range test.pubKeys {
 					err = setup.VerifySignature(pubKey, sig, body)
