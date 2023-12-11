@@ -43,7 +43,7 @@ var archiveKeyTests = []archiveKeyTest{{
 }, {
 	summary:  "Armored data: bad packets",
 	armored:  invalidArmoredKey,
-	relerror: ".*",
+	relerror: "openpgp: .*",
 }}
 
 func (s *S) TestDecodeArchivePubKey(c *C) {
@@ -88,7 +88,7 @@ var verifyClearSignTests = []verifyClearSignTest{{
 	summary:   "Invalid data: improper hash",
 	clearData: invalidSignedData,
 	pubKeys:   []*packet.PublicKey{testKey.PublicKey},
-	relerror:  ".*invalid signature: hash tag doesn't match.*",
+	relerror:  "openpgp: .*invalid signature: hash tag doesn't match.*",
 }, {
 	summary:   "Invalid data: bad packets",
 	clearData: invalidSignedDataBadPackets,
@@ -103,7 +103,7 @@ var verifyClearSignTests = []verifyClearSignTest{{
 	summary:   "Wrong public key to verify with",
 	clearData: clearSignedData,
 	pubKeys:   []*packet.PublicKey{extraTestKey.PublicKey},
-	relerror:  ".*invalid signature:.*verification failure",
+	relerror:  "openpgp: .*invalid signature:.*verification failure",
 }}
 
 func (s *S) TestVerifySignature(c *C) {
