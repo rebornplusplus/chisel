@@ -40,6 +40,10 @@ var archiveKeyTests = []archiveKeyTest{{
 }, {
 	summary:  "Empty armored data",
 	relerror: ".*cannot decode armored data.*",
+}, {
+	summary:  "Armored data: bad packets",
+	armored:  invalidArmoredKey,
+	relerror: ".*",
 }}
 
 func (s *S) TestDecodeArchivePubKey(c *C) {
@@ -85,6 +89,11 @@ var verifyClearSignTests = []verifyClearSignTest{{
 	clearData: invalidSignedData,
 	pubKeys:   []*packet.PublicKey{testKey.PublicKey},
 	relerror:  ".*invalid signature: hash tag doesn't match.*",
+}, {
+	summary:   "Invalid data: bad packets",
+	clearData: invalidSignedDataBadPackets,
+	pubKeys:   []*packet.PublicKey{testKey.PublicKey},
+	relerror:  ".*error parsing armored data:.*",
 }, {
 	summary:   "Invalid data: malformed clearsign text",
 	clearData: "foo\n",
@@ -238,6 +247,21 @@ VvD4PlSNTcSmpZTICEmLmb3DLlXezQ0Rgfwy6Q6X0kt9xztIJsNo5sgRxQUlpVl3
 -----END PGP SIGNATURE-----
 `
 
+// This should be an invalid clearsign data with invalid packets.
+// Obtained by removing some lines from clearSignedData above.
+const invalidSignedDataBadPackets = `
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+foo
+-----BEGIN PGP SIGNATURE-----
+
+qtWNWLmXMFLmNVILL9X+o/sRCtra1qCu6Vn59H+yPhye9CXiV+U/V8dB60YLs812
+cgcXWByCFx3J1hM=
+=1GLl
+-----END PGP SIGNATURE-----
+`
+
 // armoredDataWithNoKeys contains only a signature packet, to be
 // used for testing purposes. It does not contain any key packets.
 const armoredDataWithNoKeys = `
@@ -258,4 +282,13 @@ W/COxAOlKbz4KgP0HSNLdSAT9DdOkUHLNX1GgEBLc+gxsuc5EYUeKRkmZ/nRRE+z
 yVadRjJlRcYSHceghZt38RvEIzW+bXq3v2KivrjoHF58tVJcLQlM5a0mjw==
 =cp5f
 -----END PGP ARMORED FILE-----
+`
+
+// invalidArmoredKey contains bad packets.
+const invalidArmoredKey = `
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EZXAwcgEEAMBQ4Qx6xam1k1hyjPrKQfCnGRBBm2+Lw9DHQcz0lreH51iZEVkS
+=U79/
+-----END PGP PUBLIC KEY BLOCK-----
 `
