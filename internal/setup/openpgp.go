@@ -93,7 +93,7 @@ func VerifySignature(pubKey *packet.PublicKey, sig *packet.Signature, body []byt
 
 // VerifyAnySignature returns nil if any signature in sigs is a valid signature
 // mady by any of the public keys in pubKeys.
-func VerifyAnySignature(pubKeys []*packet.PublicKey, sigs []*packet.Signature, body []byte) (error) {
+func VerifyAnySignature(pubKeys []*packet.PublicKey, sigs []*packet.Signature, body []byte) error {
 	var err error
 	for _, sig := range sigs {
 		for _, key := range pubKeys {

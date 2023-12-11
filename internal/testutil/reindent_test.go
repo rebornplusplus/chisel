@@ -80,11 +80,11 @@ var PrefixEachLineTests = []PrefixEachLineTest{{
 	prefix: "foo",
 	result: "fooa\nfoo\tb\nfoo  \t\tc\td\nfoo\t \n",
 }, {
-	raw: "",
+	raw:    "",
 	prefix: "",
 	result: "\n",
 }, {
-	raw: "\n",
+	raw:    "\n",
 	prefix: "\t",
 	result: "\t\n\t\n",
 }}
