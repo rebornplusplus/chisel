@@ -509,7 +509,7 @@ var slicerTests = []slicerTest{{
 			public-keys:
 				test-key:
 					id: ` + testKey.ID + `
-					armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/base-files.yaml": `
 			package: base-files
@@ -537,7 +537,7 @@ var defaultChiselYaml = `
 	public-keys:
 		test-key:
 			id: ` + testKey.ID + `
-			armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+			armor: |` + "\n" + testutil.PrefixEachLine(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 `
 
 type testArchive struct {

@@ -206,20 +206,8 @@ func (index *ubuntuIndex) fetchRelease() error {
 	if err != nil {
 		return fmt.Errorf("corrupted archive InRelease file: invalid signature")
 	}
-	verified := false
-	for _, sig := range sigs {
-		for _, key := range index.archive.publicKeys {
-			err = setup.VerifySignature(key, sig, body)
-			if err == nil {
-				verified = true
-				break
-			}
-		}
-		if verified {
-			break
-		}
-	}
-	if !verified {
+	err = setup.VerifyAnySignature(index.archive.publicKeys, sigs, body)
+	if err != nil {
 		return fmt.Errorf("cannot verify signature in the InRelease file")
 	}
 

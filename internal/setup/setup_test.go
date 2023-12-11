@@ -64,7 +64,7 @@ var setupTests = []setupTest{{
 			public-keys:
 				test-key:
 					id: ` + testKey.ID + `
-					armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -783,7 +783,7 @@ var setupTests = []setupTest{{
 			public-keys:
 				test-key:
 					id: ` + testKey.ID + `
-					armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -837,10 +837,10 @@ var setupTests = []setupTest{{
 			public-keys:
 				extra-key:
 					id: ` + extraTestKey.ID + `
-					armor: |` + "\n" + testutil.IndentLines(extraTestKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+					armor: |` + "\n" + testutil.PrefixEachLine(extraTestKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 				test-key:
 					id: ` + testKey.ID + `
-					armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -949,7 +949,7 @@ var setupTests = []setupTest{{
 			public-keys:
 				extra-key:
 					id: ` + extraTestKey.ID + `
-					armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -968,7 +968,7 @@ var defaultChiselYaml = `
 	public-keys:
 		test-key:
 			id: ` + testKey.ID + `
-			armor: |` + "\n" + testutil.IndentLines(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
+			armor: |` + "\n" + testutil.PrefixEachLine(testKey.ArmoredPublicKey, "\t\t\t\t\t\t") + `
 `
 
 func (s *S) TestParseRelease(c *C) {

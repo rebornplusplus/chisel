@@ -36,9 +36,9 @@ func DecodeKeys(armoredData []byte) (pubKeys []*packet.PublicKey, privKeys []*pa
 	return pubKeys, privKeys, nil
 }
 
-// DecodeArchivePublicKey decodes a single public key packet from armored data.
-// The data should contain exactly one public key packet and no private key packets.
-func DecodeArchivePublicKey(armoredData []byte) (*packet.PublicKey, error) {
+// DecodePublicKey decodes a single public key packet from armored data. The
+// data should contain exactly one public key packet and no private key packets.
+func DecodePublicKey(armoredData []byte) (*packet.PublicKey, error) {
 	pubKeys, privKeys, err := DecodeKeys(armoredData)
 	if err != nil {
 		return nil, err
@@ -89,4 +89,22 @@ func VerifySignature(pubKey *packet.PublicKey, sig *packet.Signature, body []byt
 		return err
 	}
 	return pubKey.VerifySignature(hash, sig)
+}
+
+// VerifyAnySignature returns nil if any signature in sigs is a valid signature
+// mady by any of the public keys in pubKeys.
+func VerifyAnySignature(pubKeys []*packet.PublicKey, sigs []*packet.Signature, body []byte) (error) {
+	var err error
+	for _, sig := range sigs {
+		for _, key := range pubKeys {
+			err = VerifySignature(key, sig, body)
+			if err == nil {
+				return nil
+			}
+		}
+	}
+	if len(sigs) == 1 && len(pubKeys) == 1 {
+		return err
+	}
+	return fmt.Errorf("cannot verify any signatures")
 }

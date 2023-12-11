@@ -71,43 +71,29 @@ func (*S) testReindent(c *C, test reindentTest) {
 	c.Assert(string(reindented), Equals, test.result)
 }
 
-type indentLinesTest struct {
-	raw, prefix, result, error string
+type PrefixEachLineTest struct {
+	raw, prefix, result string
 }
 
-var indentLinesTests = []indentLinesTest{{
+var PrefixEachLineTests = []PrefixEachLineTest{{
 	raw:    "a\n\tb\n  \t\tc\td\n\t ",
 	prefix: "foo",
-	result: "fooa\nfoo\tb\nfoo  \t\tc\td\nfoo\t ",
+	result: "fooa\nfoo\tb\nfoo  \t\tc\td\nfoo\t \n",
+}, {
+	raw: "",
+	prefix: "",
+	result: "\n",
+}, {
+	raw: "\n",
+	prefix: "\t",
+	result: "\t\n\t\n",
 }}
 
-func (s *S) TestIndentLines(c *C) {
-	for _, test := range indentLinesTests {
-		s.testIndentLines(c, test)
+func (s *S) TestPrefixEachLine(c *C) {
+	for _, test := range PrefixEachLineTests {
+		c.Logf("Test: %#v", test)
+
+		indented := testutil.PrefixEachLine(test.raw, test.prefix)
+		c.Assert(string(indented), Equals, test.result)
 	}
-}
-
-func (s *S) testIndentLines(c *C, test indentLinesTest) {
-	defer func() {
-		if err := recover(); err != nil {
-			errMsg, ok := err.(string)
-			if !ok {
-				panic(err)
-			}
-			c.Assert(errMsg, Equals, test.error)
-		}
-	}()
-
-	c.Logf("Test: %#v", test)
-
-	if !strings.HasSuffix(test.result, "\n") {
-		test.result += "\n"
-	}
-
-	indented := testutil.IndentLines(test.raw, test.prefix)
-	if test.error != "" {
-		c.Errorf("Expected panic with message '%#v'", test.error)
-		return
-	}
-	c.Assert(string(indented), Equals, test.result)
 }

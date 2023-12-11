@@ -46,13 +46,12 @@ func (s *S) TestDecodeArchivePubKey(c *C) {
 	for _, test := range archiveKeyTests {
 		c.Logf("Summary: %s", test.summary)
 
-		pubKey, err := setup.DecodeArchivePublicKey([]byte(test.armored))
+		pubKey, err := setup.DecodePublicKey([]byte(test.armored))
 		if test.relerror != "" {
 			c.Assert(err, ErrorMatches, test.relerror)
 			continue
-		} else {
-			c.Assert(err, IsNil)
 		}
+		c.Assert(err, IsNil)
 
 		c.Assert(pubKey, DeepEquals, test.pubKey)
 	}
@@ -78,6 +77,10 @@ var verifyClearSignTests = []verifyClearSignTest{{
 	clearData: clearSignedWithMultipleSigns,
 	pubKeys:   []*packet.PublicKey{testKey.PublicKey},
 }, {
+	summary:   "Multiple signatures: no valid public keys",
+	clearData: clearSignedWithMultipleSigns,
+	relerror:  "cannot verify any signatures",
+}, {
 	summary:   "Invalid data: improper hash",
 	clearData: invalidSignedData,
 	pubKeys:   []*packet.PublicKey{testKey.PublicKey},
@@ -101,17 +104,7 @@ func (s *S) TestVerifySignature(c *C) {
 		sigs, body, _, err := setup.DecodeClearSigned([]byte(test.clearData))
 		if err == nil {
 			// Verify at least one signature with the set of public keys.
-			for _, sig := range sigs {
-				for _, pubKey := range test.pubKeys {
-					err = setup.VerifySignature(pubKey, sig, body)
-					if err == nil {
-						break
-					}
-				}
-				if err == nil {
-					break
-				}
-			}
+			err = setup.VerifyAnySignature(test.pubKeys, sigs, body)
 		}
 		if test.relerror != "" {
 			c.Assert(err, ErrorMatches, test.relerror)
