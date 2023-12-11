@@ -103,7 +103,6 @@ func (s *S) TestVerifySignature(c *C) {
 
 		sigs, body, _, err := setup.DecodeClearSigned([]byte(test.clearData))
 		if err == nil {
-			// Verify at least one signature with the set of public keys.
 			err = setup.VerifyAnySignature(test.pubKeys, sigs, body)
 		}
 		if test.relerror != "" {

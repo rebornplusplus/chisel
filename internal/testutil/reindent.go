@@ -42,8 +42,12 @@ func Reindent(in string) []byte {
 // PrefixEachLine indents each line in the provided string with the prefix.
 func PrefixEachLine(text string, prefix string) string {
 	var result strings.Builder
-	for _, line := range strings.Split(text, "\n") {
-		newLine := prefix + line + "\n"
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		newLine := prefix + line
+		if i < len(lines)-1 {
+			newLine += "\n"
+		}
 		_, err := result.WriteString(newLine)
 		if err != nil {
 			panic(err)

@@ -78,15 +78,19 @@ type PrefixEachLineTest struct {
 var PrefixEachLineTests = []PrefixEachLineTest{{
 	raw:    "a\n\tb\n  \t\tc\td\n\t ",
 	prefix: "foo",
-	result: "fooa\nfoo\tb\nfoo  \t\tc\td\nfoo\t \n",
+	result: "fooa\nfoo\tb\nfoo  \t\tc\td\nfoo\t ",
+}, {
+	raw:    "foo",
+	prefix: "pref",
+	result: "preffoo",
 }, {
 	raw:    "",
 	prefix: "",
-	result: "\n",
+	result: "",
 }, {
 	raw:    "\n",
 	prefix: "\t",
-	result: "\t\n\t\n",
+	result: "\t\n\t",
 }}
 
 func (s *S) TestPrefixEachLine(c *C) {
