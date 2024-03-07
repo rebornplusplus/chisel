@@ -183,6 +183,13 @@ func Run(options *RunOptions) (*Report, error) {
 					globbedPaths[extractInfo.Path] = append(globbedPaths[extractInfo.Path], relPath)
 					addKnownPath(relPath)
 				}
+
+				// Do not add paths with "until: mutate"
+				info, ok := pathInfos[extractInfo.Path]
+				if !ok || info.Until == setup.UntilMutate {
+					return nil
+				}
+
 				return report.Add(slice, entry)
 			},
 		})
@@ -242,6 +249,11 @@ func Run(options *RunOptions) (*Report, error) {
 			if err != nil {
 				return nil, err
 			}
+
+			// Do not add paths with "until: mutate"
+			if pathInfo.Until == setup.UntilMutate {
+				continue
+			}
 			err = report.Add(slice, entry)
 			if err != nil {
 				return nil, err
@@ -284,6 +296,13 @@ func Run(options *RunOptions) (*Report, error) {
 		RootDir:    targetDirAbs,
 		CheckWrite: checkWrite,
 		CheckRead:  checkRead,
+		Create: func(opts *fsutil.CreateOptions) error {
+			entry, err := fsutil.Create(opts)
+			if err != nil {
+				return err
+			}
+			return report.AddMutated(entry)
+		},
 	}
 	for _, slice := range options.Selection.Slices {
 		opts := scripts.RunOptions{

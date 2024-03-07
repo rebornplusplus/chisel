@@ -423,7 +423,7 @@ var slicerTests = []slicerTest{{
 		"/dir/text-file": "file 0644 d98cf53e",
 	},
 	report: map[string]string{
-		"/dir/text-file": "file 0644 5b41362b {test-package_myslice}",
+		"/dir/text-file": "file 0644 5b41362b d98cf53e {test-package_myslice}",
 	},
 }, {
 	summary: "Script: read a file",
@@ -449,7 +449,7 @@ var slicerTests = []slicerTest{{
 	},
 	report: map[string]string{
 		"/dir/text-file-1": "file 0644 5b41362b {test-package_myslice}",
-		"/foo/text-file-2": "file 0644 d98cf53e {test-package_myslice}",
+		"/foo/text-file-2": "file 0644 d98cf53e 5b41362b {test-package_myslice}",
 	},
 }, {
 	summary: "Script: use 'until' to remove file after mutate",
@@ -473,9 +473,7 @@ var slicerTests = []slicerTest{{
 		"/foo/text-file-2": "file 0644 5b41362b",
 	},
 	report: map[string]string{
-		// TODO this path needs to be removed from the report.
-		"/dir/text-file-1": "file 0644 5b41362b {test-package_myslice}",
-		"/foo/text-file-2": "file 0644 d98cf53e {test-package_myslice}",
+		"/foo/text-file-2": "file 0644 d98cf53e 5b41362b {test-package_myslice}",
 	},
 }, {
 	summary: "Script: use 'until' to remove wildcard after mutate",
@@ -493,14 +491,6 @@ var slicerTests = []slicerTest{{
 	filesystem: map[string]string{
 		"/dir/":       "dir 0755",
 		"/other-dir/": "dir 0755",
-	},
-	report: map[string]string{
-		// TODO These first three entries should be removed from the report.
-		"/dir/nested/":           "dir 0755 {test-package_myslice}",
-		"/dir/nested/file":       "file 0644 84237a05 {test-package_myslice}",
-		"/dir/nested/other-file": "file 0644 6b86b273 {test-package_myslice}",
-
-		"/other-dir/text-file": "file 0644 5b41362b {test-package_myslice}",
 	},
 }, {
 	summary: "Script: 'until' does not remove non-empty directories",
@@ -521,7 +511,6 @@ var slicerTests = []slicerTest{{
 		"/dir/nested/file-copy": "file 0644 cc55e2ec",
 	},
 	report: map[string]string{
-		"/dir/nested/":          "dir 0755 {test-package_myslice}",
 		"/dir/nested/file-copy": "file 0644 cc55e2ec {test-package_myslice}",
 	},
 }, {
@@ -915,6 +904,8 @@ func treeDumpReport(report *slicer.Report) map[string]string {
 		case 0: // Regular
 			if entry.Size == 0 {
 				fsDump = fmt.Sprintf("file %#o empty", entry.Mode.Perm())
+			} else if entry.Mutated {
+				fsDump = fmt.Sprintf("file %#o %s %s", fperm, entry.Hash[:8], entry.FinalHash[:8])
 			} else {
 				fsDump = fmt.Sprintf("file %#o %s", fperm, entry.Hash[:8])
 			}

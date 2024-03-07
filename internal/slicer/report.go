@@ -17,6 +17,9 @@ type ReportEntry struct {
 	Size   int
 	Slices map[*setup.Slice]bool
 	Link   string
+
+	Mutated   bool
+	FinalHash string
 }
 
 // Report holds the information about files and directories created when slicing
@@ -38,12 +41,9 @@ func NewReport(root string) *Report {
 }
 
 func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
-	if !strings.HasPrefix(fsEntry.Path, r.Root) {
-		return fmt.Errorf("cannot add path %q outside of root %q", fsEntry.Path, r.Root)
-	}
-	relPath := filepath.Clean("/" + strings.TrimPrefix(fsEntry.Path, r.Root))
-	if fsEntry.Mode.IsDir() {
-		relPath = relPath + "/"
+	relPath, err := r.relativePath(fsEntry.Path, fsEntry.Mode.IsDir())
+	if err != nil {
+		return fmt.Errorf("cannot add path: %w", err)
 	}
 
 	if entry, ok := r.Entries[relPath]; ok {
@@ -69,4 +69,40 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 		}
 	}
 	return nil
+}
+
+// AddMutated updates the initial entry of a mutated path with the final values
+// after mutation. It only updates FinalHash and Size. It assumes that an entry
+// already exists with the other values. AddMutated can be called at most once
+// for a path.
+func (r *Report) AddMutated(fsEntry *fsutil.Entry) error {
+	relPath, err := r.relativePath(fsEntry.Path, fsEntry.Mode.IsDir())
+	if err != nil {
+		return fmt.Errorf("cannot add path: %w", err)
+	}
+
+	entry, ok := r.Entries[relPath]
+	if !ok {
+		return fmt.Errorf("path %q has not been added before", relPath)
+	}
+	if entry.Mutated {
+		return fmt.Errorf("path %q has been mutated once before", relPath)
+	}
+	entry.Mutated = true
+	// Only update FinalHash and Size as mutation scripts only changes those.
+	entry.FinalHash = fsEntry.Hash
+	entry.Size = fsEntry.Size
+	r.Entries[relPath] = entry
+	return nil
+}
+
+func (r *Report) relativePath(path string, isDir bool) (string, error) {
+	if !strings.HasPrefix(path, r.Root) {
+		return "", fmt.Errorf("%q outside of root %q", path, r.Root)
+	}
+	relPath := filepath.Clean("/" + strings.TrimPrefix(path, r.Root))
+	if isDir {
+		relPath = relPath + "/"
+	}
+	return relPath, nil
 }

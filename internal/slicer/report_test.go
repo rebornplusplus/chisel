@@ -48,6 +48,12 @@ var sampleLink = fsutil.Entry{
 	Link: "/base/exampleFile",
 }
 
+var sampleFileMutated = fsutil.Entry{
+	Path: "/base/exampleFile",
+	Hash: "exampleFile_changed_hash",
+	Size: 1234,
+}
+
 type sliceAndEntry struct {
 	entry fsutil.Entry
 	slice *setup.Slice
@@ -56,6 +62,7 @@ type sliceAndEntry struct {
 var reportTests = []struct {
 	summary string
 	add     []sliceAndEntry
+	mutated []*fsutil.Entry
 	// indexed by path.
 	expected map[string]slicer.ReportEntry
 	// error after adding the last [sliceAndEntry].
@@ -207,6 +214,30 @@ var reportTests = []struct {
 		{entry: fsutil.Entry{Path: "/basefile"}, slice: oneSlice},
 	},
 	err: `cannot add path "/basefile" outside of root "/base/"`,
+}, {
+	summary: "Add mutated regular file",
+	add:     []sliceAndEntry{{entry: sampleFile, slice: oneSlice}},
+	mutated: []*fsutil.Entry{&sampleFileMutated},
+	expected: map[string]slicer.ReportEntry{
+		"/exampleFile": {
+			Path:      "/exampleFile",
+			Mode:      0777,
+			Hash:      "exampleFile_hash",
+			Size:      1234,
+			Slices:    map[*setup.Slice]bool{oneSlice: true},
+			Link:      "",
+			Mutated:   true,
+			FinalHash: "exampleFile_changed_hash",
+		}},
+}, {
+	summary: "Cannot add mutated files twice",
+	add:     []sliceAndEntry{{entry: sampleFile, slice: oneSlice}},
+	mutated: []*fsutil.Entry{&sampleFileMutated, &sampleFileMutated},
+	err:     `path "/exampleFile" has been mutated once before`,
+}, {
+	summary: "Mutated paths must be added before",
+	mutated: []*fsutil.Entry{&sampleFileMutated},
+	err:     `path "/exampleFile" has not been added before`,
 }}
 
 func (s *S) TestReportAdd(c *C) {
@@ -215,6 +246,9 @@ func (s *S) TestReportAdd(c *C) {
 		var err error
 		for _, si := range test.add {
 			err = report.Add(si.slice, &si.entry)
+		}
+		for _, e := range test.mutated {
+			err = report.AddMutated(e)
 		}
 		if test.err != "" {
 			c.Assert(err, ErrorMatches, test.err)

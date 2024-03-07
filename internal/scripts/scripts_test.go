@@ -7,9 +7,15 @@ import (
 
 	. "gopkg.in/check.v1"
 
+	"github.com/canonical/chisel/internal/fsutil"
 	"github.com/canonical/chisel/internal/scripts"
 	"github.com/canonical/chisel/internal/testutil"
 )
+
+var defaultCreate = func(opts *fsutil.CreateOptions) error {
+	_, err := fsutil.Create(opts)
+	return err
+}
 
 type scriptsTest struct {
 	summary string
@@ -19,6 +25,7 @@ type scriptsTest struct {
 	result  map[string]string
 	checkr  func(path string) error
 	checkw  func(path string) error
+	create  func(opts *fsutil.CreateOptions) error
 	error   string
 }
 
@@ -216,11 +223,15 @@ func (s *S) TestScripts(c *C) {
 		if test.hackdir != nil {
 			test.hackdir(c, rootDir)
 		}
+		if test.create == nil {
+			test.create = defaultCreate
+		}
 
 		content := &scripts.ContentValue{
 			RootDir:    rootDir,
 			CheckRead:  test.checkr,
 			CheckWrite: test.checkw,
+			Create:     test.create,
 		}
 		namespace := map[string]scripts.Value{
 			"content": content,
