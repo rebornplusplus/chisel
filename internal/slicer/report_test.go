@@ -230,11 +230,6 @@ var reportTests = []struct {
 			FinalHash: "exampleFile_changed_hash",
 		}},
 }, {
-	summary: "Cannot add mutated files twice",
-	add:     []sliceAndEntry{{entry: sampleFile, slice: oneSlice}},
-	mutated: []*fsutil.Entry{&sampleFileMutated, &sampleFileMutated},
-	err:     `path "/exampleFile" has been mutated once before`,
-}, {
 	summary: "Mutated paths must be added before",
 	mutated: []*fsutil.Entry{&sampleFileMutated},
 	err:     `path "/exampleFile" has not been added before`,
@@ -248,7 +243,7 @@ func (s *S) TestReportAdd(c *C) {
 			err = report.Add(si.slice, &si.entry)
 		}
 		for _, e := range test.mutated {
-			err = report.AddMutated(e)
+			err = report.Mutate(e)
 		}
 		if test.err != "" {
 			c.Assert(err, ErrorMatches, test.err)

@@ -11,13 +11,12 @@ import (
 )
 
 type ReportEntry struct {
-	Path   string
-	Mode   fs.FileMode
-	Hash   string
-	Size   int
-	Slices map[*setup.Slice]bool
-	Link   string
-
+	Path      string
+	Mode      fs.FileMode
+	Hash      string
+	Size      int
+	Slices    map[*setup.Slice]bool
+	Link      string
 	Mutated   bool
 	FinalHash string
 }
@@ -41,7 +40,7 @@ func NewReport(root string) *Report {
 }
 
 func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
-	relPath, err := r.relativePath(fsEntry.Path, fsEntry.Mode.IsDir())
+	relPath, err := r.sanitizePath(fsEntry.Path, fsEntry.Mode.IsDir())
 	if err != nil {
 		return fmt.Errorf("cannot add path: %w", err)
 	}
@@ -71,12 +70,9 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 	return nil
 }
 
-// AddMutated updates the initial entry of a mutated path with the final values
-// after mutation. It only updates FinalHash and Size. It assumes that an entry
-// already exists with the other values. AddMutated can be called at most once
-// for a path.
-func (r *Report) AddMutated(fsEntry *fsutil.Entry) error {
-	relPath, err := r.relativePath(fsEntry.Path, fsEntry.Mode.IsDir())
+// Mutate updates the FinalHash and Size of an existing path entry.
+func (r *Report) Mutate(fsEntry *fsutil.Entry) error {
+	relPath, err := r.sanitizePath(fsEntry.Path, fsEntry.Mode.IsDir())
 	if err != nil {
 		return fmt.Errorf("cannot add path: %w", err)
 	}
@@ -84,9 +80,6 @@ func (r *Report) AddMutated(fsEntry *fsutil.Entry) error {
 	entry, ok := r.Entries[relPath]
 	if !ok {
 		return fmt.Errorf("path %q has not been added before", relPath)
-	}
-	if entry.Mutated {
-		return fmt.Errorf("path %q has been mutated once before", relPath)
 	}
 	entry.Mutated = true
 	// Only update FinalHash and Size as mutation scripts only changes those.
@@ -96,7 +89,7 @@ func (r *Report) AddMutated(fsEntry *fsutil.Entry) error {
 	return nil
 }
 
-func (r *Report) relativePath(path string, isDir bool) (string, error) {
+func (r *Report) sanitizePath(path string, isDir bool) (string, error) {
 	if !strings.HasPrefix(path, r.Root) {
 		return "", fmt.Errorf("%q outside of root %q", path, r.Root)
 	}

@@ -301,7 +301,7 @@ func Run(options *RunOptions) (*Report, error) {
 			if err != nil {
 				return err
 			}
-			return report.AddMutated(entry)
+			return report.Mutate(entry)
 		},
 	}
 	for _, slice := range options.Selection.Slices {

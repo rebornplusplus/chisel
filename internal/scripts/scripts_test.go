@@ -12,11 +12,6 @@ import (
 	"github.com/canonical/chisel/internal/testutil"
 )
 
-var defaultCreate = func(opts *fsutil.CreateOptions) error {
-	_, err := fsutil.Create(opts)
-	return err
-}
-
 type scriptsTest struct {
 	summary string
 	content map[string]string
@@ -224,7 +219,10 @@ func (s *S) TestScripts(c *C) {
 			test.hackdir(c, rootDir)
 		}
 		if test.create == nil {
-			test.create = defaultCreate
+			test.create = func(opts *fsutil.CreateOptions) error {
+				_, err := fsutil.Create(opts)
+				return err
+			}
 		}
 
 		content := &scripts.ContentValue{
