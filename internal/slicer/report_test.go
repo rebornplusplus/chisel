@@ -239,9 +239,9 @@ var reportTests = []struct {
 			FinalHash: "exampleFile_hash_changed",
 		}},
 }, {
-	summary: "Mutated paths must be added before",
+	summary: "Mutated paths must refer to previously added entries",
 	mutated: []*fsutil.Entry{&sampleFileMutated},
-	err:     `cannot mutate path "/exampleFile": no entries in report`,
+	err:     `cannot mutate path "/exampleFile": no entry in report`,
 }}
 
 func (s *S) TestReportAdd(c *C) {

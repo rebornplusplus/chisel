@@ -37,8 +37,7 @@ type ContentValue struct {
 	RootDir    string
 	CheckRead  func(path string) error
 	CheckWrite func(path string) error
-	// Create should be called to write to file.
-	Create     func(opts *fsutil.CreateOptions) error
+	CreateFile func(opts *fsutil.CreateOptions) error
 }
 
 // Content starlark.Value interface
@@ -175,9 +174,7 @@ func (c *ContentValue) Write(thread *starlark.Thread, fn *starlark.Builtin, args
 	}
 	fdata := []byte(data.GoString())
 
-	// No mode parameter for now as slices are supposed to list files
-	// explicitly instead.
-	err = c.Create(&fsutil.CreateOptions{
+	err = c.CreateFile(&fsutil.CreateOptions{
 		Path: fpath,
 		Data: bytes.NewReader(fdata),
 		Mode: fs.FileMode(0644),

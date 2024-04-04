@@ -79,7 +79,7 @@ func (r *Report) Mutate(fsEntry *fsutil.Entry) error {
 
 	entry, ok := r.Entries[path]
 	if !ok {
-		return fmt.Errorf("cannot mutate path %q: no entries in report", path)
+		return fmt.Errorf("cannot mutate path %q: no entry in report", path)
 	}
 	entry.Mutated = true
 	entry.FinalHash = fsEntry.Hash

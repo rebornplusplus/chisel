@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	. "gopkg.in/check.v1"
 
@@ -18,6 +20,7 @@ type scriptsTest struct {
 	hackdir func(c *C, dir string)
 	script  string
 	result  map[string]string
+	mutated []string
 	checkr  func(path string) error
 	checkw  func(path string) error
 	error   string
@@ -45,6 +48,10 @@ var scriptsTests = []scriptsTest{{
 		"/foo/file1.txt": "file 0644 5b41362b",
 		"/foo/file2.txt": "file 0644 d98cf53e",
 	},
+	mutated: []string{
+		"/foo/file1.txt",
+		"/foo/file2.txt",
+	},
 }, {
 	summary: "Read a file",
 	content: map[string]string{
@@ -59,6 +66,9 @@ var scriptsTests = []scriptsTest{{
 		"/foo/":          "dir 0755",
 		"/foo/file1.txt": "file 0644 5b41362b",
 		"/foo/file2.txt": "file 0644 5b41362b",
+	},
+	mutated: []string{
+		"/foo/file2.txt",
 	},
 }, {
 	summary: "List a directory",
@@ -77,6 +87,31 @@ var scriptsTests = []scriptsTest{{
 		"/foo/file2.txt": "file 0644 47c22b01", // "bar/,foo/"
 		"/bar/":          "dir 0755",
 		"/bar/file3.txt": "file 0644 5b41362b",
+	},
+	mutated: []string{
+		"/foo/file1.txt",
+		"/foo/file2.txt",
+	},
+}, {
+	summary: "Check mode is retained",
+	content: map[string]string{
+		"foo/file1.txt": ``,
+		"foo/file2.txt": ``,
+	},
+	hackdir: func(c *C, dir string) {
+		fpath1 := filepath.Join(dir, "foo/file1.txt")
+		os.Chmod(fpath1, 0744)
+	},
+	script: `
+		content.write("/foo/file1.txt", "data")
+	`,
+	result: map[string]string{
+		"/foo/":          "dir 0755",
+		"/foo/file1.txt": "file 0744 3a6eb079",
+		"/foo/file2.txt": "file 0644 empty",
+	},
+	mutated: []string{
+		"/foo/file1.txt",
 	},
 }, {
 	summary: "Forbid relative paths",
@@ -200,22 +235,6 @@ var scriptsTests = []scriptsTest{{
 		return nil
 	},
 	error: `no write: /foo/file2.txt`,
-}, {
-	summary: "Check mode is retained",
-	content: map[string]string{
-		"foo/file1.txt": ``,
-	},
-	hackdir: func(c *C, dir string) {
-		fpath1 := filepath.Join(dir, "foo/file1.txt")
-		os.Chmod(fpath1, 0744)
-	},
-	script: `
-		content.write("/foo/file1.txt", "data")
-	`,
-	result: map[string]string{
-		"/foo/":          "dir 0755",
-		"/foo/file1.txt": "file 0744 3a6eb079",
-	},
 }}
 
 func (s *S) TestScripts(c *C) {
@@ -234,11 +253,17 @@ func (s *S) TestScripts(c *C) {
 			test.hackdir(c, rootDir)
 		}
 
+		var mutatedFiles []string
 		content := &scripts.ContentValue{
 			RootDir:    rootDir,
 			CheckRead:  test.checkr,
 			CheckWrite: test.checkw,
-			Create: func(opts *fsutil.CreateOptions) error {
+			CreateFile: func(opts *fsutil.CreateOptions) error {
+				relPath := filepath.Clean("/" + strings.TrimPrefix(opts.Path, rootDir))
+				if opts.Mode.IsDir() {
+					relPath = relPath + "/"
+				}
+				mutatedFiles = append(mutatedFiles, relPath)
 				_, err := fsutil.Create(opts)
 				return err
 			},
@@ -258,6 +283,10 @@ func (s *S) TestScripts(c *C) {
 		}
 
 		c.Assert(testutil.TreeDump(rootDir), DeepEquals, test.result)
+
+		sort.Strings(mutatedFiles)
+		sort.Strings(test.mutated)
+		c.Assert(mutatedFiles, DeepEquals, test.mutated)
 	}
 }
 

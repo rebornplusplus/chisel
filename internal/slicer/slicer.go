@@ -294,17 +294,18 @@ func Run(options *RunOptions) (*Report, error) {
 		}
 		return err
 	}
+	createFile := func(opts *fsutil.CreateOptions) error {
+		entry, err := fsutil.Create(opts)
+		if err != nil {
+			return err
+		}
+		return report.Mutate(entry)
+	}
 	content := &scripts.ContentValue{
 		RootDir:    targetDirAbs,
 		CheckWrite: checkWrite,
 		CheckRead:  checkRead,
-		Create: func(opts *fsutil.CreateOptions) error {
-			entry, err := fsutil.Create(opts)
-			if err != nil {
-				return err
-			}
-			return report.Mutate(entry)
-		},
+		CreateFile: createFile,
 	}
 	for _, slice := range options.Selection.Slices {
 		opts := scripts.RunOptions{
