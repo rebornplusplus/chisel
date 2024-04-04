@@ -40,26 +40,26 @@ func NewReport(root string) *Report {
 }
 
 func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
-	relPath, err := r.sanitizePath(fsEntry.Path, fsEntry.Mode.IsDir())
+	path, err := r.sanitizePath(fsEntry.Path, fsEntry.Mode.IsDir())
 	if err != nil {
 		return fmt.Errorf("cannot add path: %s", err)
 	}
 
-	if entry, ok := r.Entries[relPath]; ok {
+	if entry, ok := r.Entries[path]; ok {
 		if fsEntry.Mode != entry.Mode {
-			return fmt.Errorf("path %q reported twice with diverging mode: %q != %q", relPath, fsEntry.Mode, entry.Mode)
+			return fmt.Errorf("path %q reported twice with diverging mode: %q != %q", path, fsEntry.Mode, entry.Mode)
 		} else if fsEntry.Link != entry.Link {
-			return fmt.Errorf("path %q reported twice with diverging link: %q != %q", relPath, fsEntry.Link, entry.Link)
+			return fmt.Errorf("path %q reported twice with diverging link: %q != %q", path, fsEntry.Link, entry.Link)
 		} else if fsEntry.Size != entry.Size {
-			return fmt.Errorf("path %q reported twice with diverging size: %d != %d", relPath, fsEntry.Size, entry.Size)
+			return fmt.Errorf("path %q reported twice with diverging size: %d != %d", path, fsEntry.Size, entry.Size)
 		} else if fsEntry.Hash != entry.Hash {
-			return fmt.Errorf("path %q reported twice with diverging hash: %q != %q", relPath, fsEntry.Hash, entry.Hash)
+			return fmt.Errorf("path %q reported twice with diverging hash: %q != %q", path, fsEntry.Hash, entry.Hash)
 		}
 		entry.Slices[slice] = true
-		r.Entries[relPath] = entry
+		r.Entries[path] = entry
 	} else {
-		r.Entries[relPath] = ReportEntry{
-			Path:   relPath,
+		r.Entries[path] = ReportEntry{
+			Path:   path,
 			Mode:   fsEntry.Mode,
 			Hash:   fsEntry.Hash,
 			Size:   fsEntry.Size,
