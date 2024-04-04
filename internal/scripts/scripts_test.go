@@ -20,7 +20,6 @@ type scriptsTest struct {
 	result  map[string]string
 	checkr  func(path string) error
 	checkw  func(path string) error
-	create  func(opts *fsutil.CreateOptions) error
 	error   string
 }
 
@@ -201,6 +200,22 @@ var scriptsTests = []scriptsTest{{
 		return nil
 	},
 	error: `no write: /foo/file2.txt`,
+}, {
+	summary: "Check mode is retained",
+	content: map[string]string{
+		"foo/file1.txt": ``,
+	},
+	hackdir: func(c *C, dir string) {
+		fpath1 := filepath.Join(dir, "foo/file1.txt")
+		os.Chmod(fpath1, 0744)
+	},
+	script: `
+		content.write("/foo/file1.txt", "data")
+	`,
+	result: map[string]string{
+		"/foo/":          "dir 0755",
+		"/foo/file1.txt": "file 0744 3a6eb079",
+	},
 }}
 
 func (s *S) TestScripts(c *C) {
@@ -218,18 +233,15 @@ func (s *S) TestScripts(c *C) {
 		if test.hackdir != nil {
 			test.hackdir(c, rootDir)
 		}
-		if test.create == nil {
-			test.create = func(opts *fsutil.CreateOptions) error {
-				_, err := fsutil.Create(opts)
-				return err
-			}
-		}
 
 		content := &scripts.ContentValue{
 			RootDir:    rootDir,
 			CheckRead:  test.checkr,
 			CheckWrite: test.checkw,
-			Create:     test.create,
+			Create: func(opts *fsutil.CreateOptions) error {
+				_, err := fsutil.Create(opts)
+				return err
+			},
 		}
 		namespace := map[string]scripts.Value{
 			"content": content,

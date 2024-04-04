@@ -49,9 +49,9 @@ var sampleLink = fsutil.Entry{
 }
 
 var sampleFileMutated = fsutil.Entry{
-	Path: "/base/exampleFile",
-	Hash: "exampleFile_changed_hash",
-	Size: 1234,
+	Path: sampleFile.Path,
+	Hash: sampleFile.Hash + "_changed",
+	Size: sampleFile.Size + 10,
 }
 
 type sliceAndEntry struct {
@@ -207,32 +207,41 @@ var reportTests = []struct {
 	add: []sliceAndEntry{
 		{entry: fsutil.Entry{Path: "/file"}, slice: oneSlice},
 	},
-	err: `cannot add path "/file" outside of root "/base/"`,
+	err: `cannot add path: "/file" outside of root "/base/"`,
 }, {
 	summary: "File name has root prefix but without the directory slash",
 	add: []sliceAndEntry{
 		{entry: fsutil.Entry{Path: "/basefile"}, slice: oneSlice},
 	},
-	err: `cannot add path "/basefile" outside of root "/base/"`,
+	err: `cannot add path: "/basefile" outside of root "/base/"`,
 }, {
 	summary: "Add mutated regular file",
-	add:     []sliceAndEntry{{entry: sampleFile, slice: oneSlice}},
+	add: []sliceAndEntry{
+		{entry: sampleFile, slice: oneSlice},
+		{entry: sampleDir, slice: oneSlice},
+	},
 	mutated: []*fsutil.Entry{&sampleFileMutated},
 	expected: map[string]slicer.ReportEntry{
+		"/exampleDir/": {
+			Path:   "/exampleDir/",
+			Mode:   fs.ModeDir | 0654,
+			Slices: map[*setup.Slice]bool{oneSlice: true},
+			Link:   "",
+		},
 		"/exampleFile": {
 			Path:      "/exampleFile",
 			Mode:      0777,
 			Hash:      "exampleFile_hash",
-			Size:      1234,
+			Size:      5688,
 			Slices:    map[*setup.Slice]bool{oneSlice: true},
 			Link:      "",
 			Mutated:   true,
-			FinalHash: "exampleFile_changed_hash",
+			FinalHash: "exampleFile_hash_changed",
 		}},
 }, {
 	summary: "Mutated paths must be added before",
 	mutated: []*fsutil.Entry{&sampleFileMutated},
-	err:     `path "/exampleFile" has not been added before`,
+	err:     `cannot mutate path "/exampleFile": no entries in report`,
 }}
 
 func (s *S) TestReportAdd(c *C) {

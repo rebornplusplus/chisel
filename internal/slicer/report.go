@@ -42,7 +42,7 @@ func NewReport(root string) *Report {
 func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 	relPath, err := r.sanitizePath(fsEntry.Path, fsEntry.Mode.IsDir())
 	if err != nil {
-		return fmt.Errorf("cannot add path: %w", err)
+		return fmt.Errorf("cannot add path: %s", err)
 	}
 
 	if entry, ok := r.Entries[relPath]; ok {
@@ -72,20 +72,19 @@ func (r *Report) Add(slice *setup.Slice, fsEntry *fsutil.Entry) error {
 
 // Mutate updates the FinalHash and Size of an existing path entry.
 func (r *Report) Mutate(fsEntry *fsutil.Entry) error {
-	relPath, err := r.sanitizePath(fsEntry.Path, fsEntry.Mode.IsDir())
+	path, err := r.sanitizePath(fsEntry.Path, fsEntry.Mode.IsDir())
 	if err != nil {
 		return fmt.Errorf("cannot add path: %w", err)
 	}
 
-	entry, ok := r.Entries[relPath]
+	entry, ok := r.Entries[path]
 	if !ok {
-		return fmt.Errorf("path %q has not been added before", relPath)
+		return fmt.Errorf("cannot mutate path %q: no entries in report", path)
 	}
 	entry.Mutated = true
-	// Only update FinalHash and Size as mutation scripts only changes those.
 	entry.FinalHash = fsEntry.Hash
 	entry.Size = fsEntry.Size
-	r.Entries[relPath] = entry
+	r.Entries[path] = entry
 	return nil
 }
 

@@ -492,6 +492,7 @@ var slicerTests = []slicerTest{{
 		"/dir/":       "dir 0755",
 		"/other-dir/": "dir 0755",
 	},
+	report: map[string]string{},
 }, {
 	summary: "Script: 'until' does not remove non-empty directories",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},

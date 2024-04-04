@@ -184,9 +184,12 @@ func Run(options *RunOptions) (*Report, error) {
 					addKnownPath(relPath)
 				}
 
-				// Do not add paths with "until: mutate"
-				info, ok := pathInfos[extractInfo.Path]
-				if !ok || info.Until == setup.UntilMutate {
+				// Do not add paths with "until: mutate".
+				pathInfo, ok := pathInfos[extractInfo.Path]
+				if !ok {
+					return fmt.Errorf("internal error: cannot find path info for %q", extractInfo.Path)
+				}
+				if pathInfo.Until == setup.UntilMutate {
 					return nil
 				}
 
@@ -250,13 +253,12 @@ func Run(options *RunOptions) (*Report, error) {
 				return nil, err
 			}
 
-			// Do not add paths with "until: mutate"
-			if pathInfo.Until == setup.UntilMutate {
-				continue
-			}
-			err = report.Add(slice, entry)
-			if err != nil {
-				return nil, err
+			// Do not add paths with "until: mutate".
+			if pathInfo.Until != setup.UntilMutate {
+				err = report.Add(slice, entry)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
