@@ -103,15 +103,17 @@ var scriptsTests = []scriptsTest{{
 		os.Chmod(fpath1, 0744)
 	},
 	script: `
-		content.write("/foo/file1.txt", "data")
+		content.write("/foo/file1.txt", "data1")
+		content.write("/foo/file2.txt", "data2")
 	`,
 	result: map[string]string{
 		"/foo/":          "dir 0755",
-		"/foo/file1.txt": "file 0744 3a6eb079",
-		"/foo/file2.txt": "file 0644 empty",
+		"/foo/file1.txt": "file 0744 5b41362b",
+		"/foo/file2.txt": "file 0644 d98cf53e",
 	},
 	mutated: []string{
 		"/foo/file1.txt",
+		"/foo/file2.txt",
 	},
 }, {
 	summary: "Forbid relative paths",
