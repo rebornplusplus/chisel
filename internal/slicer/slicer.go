@@ -114,10 +114,9 @@ func Run(options *RunOptions) (*Report, error) {
 					hasCopyright = true
 				}
 			} else if pathInfo.Kind == setup.GeneratePath {
-				extractPackage[targetPath] = append(extractPackage[targetPath], deb.ExtractInfo{
-					Path:     targetPath,
-					Optional: true,
-				})
+				// "generate" implies generating new things in a path. Thus, we
+				// do not want anything from the package for GeneratePath.
+				continue
 			} else {
 				targetDir := filepath.Dir(strings.TrimRight(targetPath, "/")) + "/"
 				if targetDir == "" || targetDir == "/" {

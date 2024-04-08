@@ -804,7 +804,7 @@ var slicerTests = []slicerTest{{
 		"/other-dir/file": "symlink ../dir/file {test-package_myslice}",
 	},
 }, {
-	summary: "Generate (chisel-state) directory is extracted from package if exists",
+	summary: "Generate (chisel-state) directory is not extracted from package if exists",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
 	release: map[string]string{
 		"slices/mydir/test-package.yaml": `
@@ -815,17 +815,8 @@ var slicerTests = []slicerTest{{
 						/dir/nested/**: {generate: chisel-state}
 		`,
 	},
-	filesystem: map[string]string{
-		"/dir/":                  "dir 0755",
-		"/dir/nested/":           "dir 0755",
-		"/dir/nested/file":       "file 0644 84237a05",
-		"/dir/nested/other-file": "file 0644 6b86b273",
-	},
-	report: map[string]string{
-		"/dir/nested/":           "dir 0755 {test-package_myslice}",
-		"/dir/nested/file":       "file 0644 84237a05 {test-package_myslice}",
-		"/dir/nested/other-file": "file 0644 6b86b273 {test-package_myslice}",
-	},
+	filesystem: map[string]string{},
+	report:     map[string]string{},
 }}
 
 var defaultChiselYaml = `
