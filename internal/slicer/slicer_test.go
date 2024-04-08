@@ -769,6 +769,63 @@ var slicerTests = []slicerTest{{
 	report: map[string]string{
 		"/dir/nested/file": "file 0644 84237a05 {test-package_myslice}",
 	},
+}, {
+	summary: "Generate (chisel-state) does not impact the fs",
+	slices:  []setup.SliceKey{{"test-package", "myslice"}},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/dir/file:
+						/dir/file-copy:  {copy: /dir/file}
+						/other-dir/file: {symlink: ../dir/file}
+						/dir/text-file:  {text: data1}
+						/dir/foo/bar/:   {make: true, mode: 01777}
+						/var/lib/foo/**: {generate: chisel-state}
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":           "dir 0755",
+		"/dir/file":       "file 0644 cc55e2ec",
+		"/dir/file-copy":  "file 0644 cc55e2ec",
+		"/dir/foo/":       "dir 0755",
+		"/dir/foo/bar/":   "dir 01777",
+		"/dir/text-file":  "file 0644 5b41362b",
+		"/other-dir/":     "dir 0755",
+		"/other-dir/file": "symlink ../dir/file",
+	},
+	report: map[string]string{
+		"/dir/file":       "file 0644 cc55e2ec {test-package_myslice}",
+		"/dir/file-copy":  "file 0644 cc55e2ec {test-package_myslice}",
+		"/dir/foo/bar/":   "dir 01777 {test-package_myslice}",
+		"/dir/text-file":  "file 0644 5b41362b {test-package_myslice}",
+		"/other-dir/file": "symlink ../dir/file {test-package_myslice}",
+	},
+}, {
+	summary: "Generate (chisel-state) directory is extracted from package if exists",
+	slices:  []setup.SliceKey{{"test-package", "myslice"}},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/dir/nested/**: {generate: chisel-state}
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":                  "dir 0755",
+		"/dir/nested/":           "dir 0755",
+		"/dir/nested/file":       "file 0644 84237a05",
+		"/dir/nested/other-file": "file 0644 6b86b273",
+	},
+	report: map[string]string{
+		"/dir/nested/":           "dir 0755 {test-package_myslice}",
+		"/dir/nested/file":       "file 0644 84237a05 {test-package_myslice}",
+		"/dir/nested/other-file": "file 0644 6b86b273 {test-package_myslice}",
+	},
 }}
 
 var defaultChiselYaml = `

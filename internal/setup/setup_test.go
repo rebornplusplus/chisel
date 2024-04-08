@@ -1063,6 +1063,114 @@ var setupTests = []setupTest{{
 		`,
 	},
 	relerror: `invalid slice definition filename: "a.yaml"`,
+}, {
+	summary: "Specify generate: chisel-state",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/path/**: {generate: "chisel-state"}
+		`,
+	},
+	release: &setup.Release{
+		DefaultArchive: "ubuntu",
+
+		Archives: map[string]*setup.Archive{
+			"ubuntu": {
+				Name:       "ubuntu",
+				Version:    "22.04",
+				Suites:     []string{"jammy"},
+				Components: []string{"main", "universe"},
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+		},
+		Packages: map[string]*setup.Package{
+			"mypkg": {
+				Archive: "ubuntu",
+				Name:    "mypkg",
+				Path:    "slices/mydir/mypkg.yaml",
+				Slices: map[string]*setup.Slice{
+					"myslice": {
+						Package: "mypkg",
+						Name:    "myslice",
+						Contents: map[string]setup.PathInfo{
+							"/path/**": {Kind: "generate", Generate: "chisel-state"},
+						},
+					},
+				},
+			},
+		},
+	},
+}, {
+	summary: "Cannot specify generate with invalid value",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/path/**: {generate: "foo"}
+		`,
+	},
+	relerror: "slice mypkg_myslice has invalid 'generate' for path /path/\\*\\*: \"foo\"",
+}, {
+	summary: "Cannot specify generate: chisel-state in two slices",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/path/**: {generate: "chisel-state"}
+		`,
+		"slices/mydir/foo.yaml": `
+			package: foo
+			slices:
+				bar:
+					contents:
+						/foo/**: {generate: "chisel-state"}
+		`,
+	},
+	relerror: `slices foo_bar and mypkg_myslice cannot both specify "generate: chisel-state"`,
+}, {
+	summary: "Cannot specify generate: chisel-state twice in a slice",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/path/**: {generate: "chisel-state"}
+						/foo/**: {generate: "chisel-state"}
+		`,
+	},
+	relerror: `slice mypkg_myslice cannot specify "generate: chisel-state" twice`,
+}, {
+	summary: "Paths with generate: chisel-state must have trailing /**",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/path/: {generate: "chisel-state"}
+		`,
+	},
+	relerror: "slice mypkg_myslice path /path/ must end with /\\*\\* for 'generate: chisel-state' to be valid",
+}, {
+	summary: "Paths with generate: chisel-state must not have any other wildcard except the trailing **",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/pat*h/to/dir/**: {generate: "chisel-state"}
+		`,
+	},
+	relerror: "slice mypkg_myslice path /pat\\*h/to/dir/\\*\\* must not contain any other wildcard characters except trailing \\*\\* for 'generate: chisel-state' to be valid",
 }}
 
 var defaultChiselYaml = `

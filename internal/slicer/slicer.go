@@ -113,6 +113,11 @@ func Run(options *RunOptions) (*Report, error) {
 				if sourcePath == copyrightPath && targetPath == copyrightPath {
 					hasCopyright = true
 				}
+			} else if pathInfo.Kind == setup.GeneratePath {
+				extractPackage[targetPath] = append(extractPackage[targetPath], deb.ExtractInfo{
+					Path:     targetPath,
+					Optional: true,
+				})
 			} else {
 				targetDir := filepath.Dir(strings.TrimRight(targetPath, "/")) + "/"
 				if targetDir == "" || targetDir == "/" {
@@ -201,7 +206,7 @@ func Run(options *RunOptions) (*Report, error) {
 			if len(pathInfo.Arch) > 0 && !contains(pathInfo.Arch, arch) {
 				continue
 			}
-			if done[targetPath] || pathInfo.Kind == setup.CopyPath || pathInfo.Kind == setup.GlobPath {
+			if done[targetPath] || pathInfo.Kind == setup.CopyPath || pathInfo.Kind == setup.GlobPath || pathInfo.Kind == setup.GeneratePath {
 				continue
 			}
 			done[targetPath] = true
