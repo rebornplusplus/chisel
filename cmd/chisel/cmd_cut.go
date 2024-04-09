@@ -1,15 +1,18 @@
 package main
 
 import (
-	"github.com/jessevdk/go-flags"
-
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/jessevdk/go-flags"
+
 	"github.com/canonical/chisel/internal/archive"
 	"github.com/canonical/chisel/internal/cache"
+	"github.com/canonical/chisel/internal/db"
 	"github.com/canonical/chisel/internal/setup"
 	"github.com/canonical/chisel/internal/slicer"
 )
@@ -99,12 +102,137 @@ func (cmd *cmdCut) Execute(args []string) error {
 		archives[archiveName] = openArchive
 	}
 
-	_, err = slicer.Run(&slicer.RunOptions{
+	report, err := slicer.Run(&slicer.RunOptions{
 		Selection: selection,
 		Archives:  archives,
 		TargetDir: cmd.RootDir,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	_, chiselStatePath, err := release.FindChiselState()
+	if err != nil {
+		logf("Will not generate Chisel DB: %s", err)
+	} else {
+		chiselStatePath = strings.TrimRight(chiselStatePath, "*")
+		chiselStatePath = filepath.Join(cmd.RootDir, chiselStatePath) + "/"
+
+		pkgInfo, err := gatherPackageInfo(selection, archives)
+		if err != nil {
+			return err
+		}
+		_, err = GenerateDB(&GenerateDBOptions{
+			Dir:         chiselStatePath,
+			PackageInfo: pkgInfo,
+			Slices:      selection.Slices,
+			Report:      report,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+type GenerateDBOptions struct {
+	// The directory where to generate the Chisel DB at.
+	Dir string
+	// List of package information to write to Chisel DB.
+	PackageInfo []archive.PackageInfo
+	// List of slices to write to Chisel DB.
+	Slices []*setup.Slice
+	// Path entries to write to Chisel DB.
+	Report *slicer.Report
+}
+
+// GenerateDB generates the Chisel DB with the specified options. It returns the
+// path of the DB if successful.
+func GenerateDB(opts *GenerateDBOptions) (string, error) {
+	logf("Generating Chisel DB at %s...", opts.Dir)
+
+	dbw := db.NewDBWriter(opts.Dir)
+	// Add packages to the DB.
+	for _, info := range opts.PackageInfo {
+		err := dbw.AddPackage(&db.Package{
+			Name:    info.Name(),
+			Version: info.Version(),
+			Digest:  info.Hash(),
+			Arch:    info.Arch(),
+		})
+		if err != nil {
+			return "", err
+		}
+	}
+	// Add slices to the DB.
+	for _, s := range opts.Slices {
+		err := dbw.AddSlice(&db.Slice{
+			Name: s.String(),
+		})
+		if err != nil {
+			return "", err
+		}
+	}
+	// Add paths to the DB.
+	for _, entry := range opts.Report.Entries {
+		mode := fmt.Sprintf("0%o", entry.Mode&fs.ModePerm)
+		sliceNames := []string{}
+		for s := range entry.Slices {
+			sliceNames = append(sliceNames, s.String())
+		}
+		err := dbw.AddPath(&db.Path{
+			Path:   entry.Path,
+			Mode:   mode,
+			Slices: sliceNames,
+			Hash:   entry.Hash,
+			Size:   uint64(entry.Size),
+			Link:   entry.Link,
+		})
+		if err != nil {
+			return "", err
+		}
+	}
+	// Add contents to the DB.
+	for _, entry := range opts.Report.Entries {
+		for s := range entry.Slices {
+			err := dbw.AddContent(&db.Content{
+				Slice: s.String(),
+				Path:  entry.Path,
+			})
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+	return dbw.WriteDB()
+}
+
+// gatherPackageInfo returns a list of PackageInfo for packages who belong to
+// the selected slices.
+func gatherPackageInfo(selection *setup.Selection, archives map[string]archive.Archive) ([]archive.PackageInfo, error) {
+	if selection == nil {
+		return nil, fmt.Errorf("cannot gather package info: selection is nil")
+	}
+	pkgInfo := []archive.PackageInfo{}
+	done := make(map[string]bool)
+	for _, s := range selection.Slices {
+		if done[s.Package] {
+			continue
+		}
+		done[s.Package] = true
+		pkg := selection.Release.Packages[s.Package]
+		archive, err := slicer.PackageArchive(pkg, archives)
+		if err != nil {
+			return nil, err
+		}
+		info, err := archive.Info(s.Package)
+		if err != nil {
+			return nil, err
+		}
+		pkgInfo = append(pkgInfo, info)
+	}
+	return pkgInfo, nil
 }
 
 // TODO These need testing, and maybe moving into a common file.

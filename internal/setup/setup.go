@@ -765,27 +765,25 @@ func essentialSlices(release *Release) []*Slice {
 
 	essential := []*Slice{}
 	// Add the slice with "generate: chisel-state" property.
-	stateSlice := findChiselStateSlice(release)
-	if stateSlice != nil {
+	stateSlice, _, err := release.FindChiselState()
+	if err == nil {
 		essential = append(essential, stateSlice)
 	}
 	return essential
 }
 
-// findChiselStateSlice returns the slice which contains the path with
-// "generate: chisel-state" property. If there is no such slice, return nil.
-func findChiselStateSlice(release *Release) *Slice {
-	if release == nil {
-		return nil
-	}
-	for _, pkg := range release.Packages {
+// FindChiselStateSlice returns the slice which contains the path with
+// "generate: chisel-state" property and the respective path. If there is no
+// such slice, return nil.
+func (r *Release) FindChiselState() (*Slice, string, error) {
+	for _, pkg := range r.Packages {
 		for _, slice := range pkg.Slices {
-			for _, info := range slice.Contents {
+			for path, info := range slice.Contents {
 				if info.Kind == GeneratePath && info.Generate == GenerateState {
-					return slice
+					return slice, path, nil
 				}
 			}
 		}
 	}
-	return nil
+	return nil, "", fmt.Errorf("cannot find slice or path which generates chisel-state")
 }
