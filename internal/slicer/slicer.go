@@ -75,13 +75,9 @@ func Run(options *RunOptions) (*Report, error) {
 	for _, slice := range options.Selection.Slices {
 		extractPackage := extract[slice.Package]
 		if extractPackage == nil {
-			archiveName := release.Packages[slice.Package].Archive
-			archive := options.Archives[archiveName]
-			if archive == nil {
-				return nil, fmt.Errorf("archive %q not defined", archiveName)
-			}
-			if !archive.Exists(slice.Package) {
-				return nil, fmt.Errorf("slice package %q missing from archive", slice.Package)
+			archive, err := PackageArchive(slice.Package, release, options.Archives)
+			if err != nil {
+				return nil, err
 			}
 			archives[slice.Package] = archive
 			extractPackage = make(map[string][]deb.ExtractInfo)
@@ -345,4 +341,18 @@ func contains(l []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// PackageArchive takes in package name, release and a map of archives by
+// archive names and returns the appropriate archive for the specified package.
+func PackageArchive(pkg string, release *setup.Release, archives map[string]archive.Archive) (archive.Archive, error) {
+	archiveName := release.Packages[pkg].Archive
+	archive := archives[archiveName]
+	if archive == nil {
+		return nil, fmt.Errorf("archive %q not defined", archiveName)
+	}
+	if !archive.Exists(pkg) {
+		return nil, fmt.Errorf("slice package %q missing from archive", pkg)
+	}
+	return archive, nil
 }
