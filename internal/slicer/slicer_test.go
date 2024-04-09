@@ -878,6 +878,12 @@ func (a *testArchive) Exists(pkg string) bool {
 	return ok
 }
 
+func (a *testArchive) Info(pkg string) (archive.PackageInfo, error) {
+	// TODO Currently we do not need PackageInfo for slicer_test. Hence, we are
+	// returning nil here. In future, add necessary structs as needed.
+	return nil, nil
+}
+
 func (s *S) TestRun(c *C) {
 	// Run tests for format chisel-v1.
 	runSlicerTests(c, slicerTests)
