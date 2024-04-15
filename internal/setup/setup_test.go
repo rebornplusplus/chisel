@@ -1064,14 +1064,14 @@ var setupTests = []setupTest{{
 	},
 	relerror: `invalid slice definition filename: "a.yaml"`,
 }, {
-	summary: "Specify generate: chisel-state",
+	summary: "Specify generate: manifest",
 	input: map[string]string{
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
 			slices:
 				myslice:
 					contents:
-						/path/**: {generate: "chisel-state"}
+						/path/**: {generate: "manifest"}
 		`,
 	},
 	release: &setup.Release{
@@ -1096,7 +1096,7 @@ var setupTests = []setupTest{{
 						Package: "mypkg",
 						Name:    "myslice",
 						Contents: map[string]setup.PathInfo{
-							"/path/**": {Kind: "generate", Generate: "chisel-state"},
+							"/path/**": {Kind: "generate", Generate: "manifest"},
 						},
 					},
 				},
@@ -1116,61 +1116,61 @@ var setupTests = []setupTest{{
 	},
 	relerror: "slice mypkg_myslice has invalid 'generate' for path /path/\\*\\*: \"foo\"",
 }, {
-	summary: "Cannot specify generate: chisel-state in two slices",
+	summary: "Cannot specify generate: manifest in two slices",
 	input: map[string]string{
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
 			slices:
 				myslice:
 					contents:
-						/path/**: {generate: "chisel-state"}
+						/path/**: {generate: "manifest"}
 		`,
 		"slices/mydir/foo.yaml": `
 			package: foo
 			slices:
 				bar:
 					contents:
-						/foo/**: {generate: "chisel-state"}
+						/foo/**: {generate: "manifest"}
 		`,
 	},
-	relerror: `slices foo_bar and mypkg_myslice cannot both specify "generate: chisel-state"`,
+	relerror: `slices foo_bar and mypkg_myslice cannot both specify "generate: manifest"`,
 }, {
-	summary: "Cannot specify generate: chisel-state twice in a slice",
+	summary: "Cannot specify generate: manifest twice in a slice",
 	input: map[string]string{
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
 			slices:
 				myslice:
 					contents:
-						/path/**: {generate: "chisel-state"}
-						/foo/**: {generate: "chisel-state"}
+						/path/**: {generate: "manifest"}
+						/foo/**: {generate: "manifest"}
 		`,
 	},
-	relerror: `slice mypkg_myslice cannot specify "generate: chisel-state" twice`,
+	relerror: `slice mypkg_myslice cannot specify "generate: manifest" twice`,
 }, {
-	summary: "Paths with generate: chisel-state must have trailing /**",
+	summary: "Paths with generate: manifest must have trailing /**",
 	input: map[string]string{
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
 			slices:
 				myslice:
 					contents:
-						/path/: {generate: "chisel-state"}
+						/path/: {generate: "manifest"}
 		`,
 	},
-	relerror: "slice mypkg_myslice path /path/ must end with /\\*\\* for 'generate: chisel-state' to be valid",
+	relerror: "slice mypkg_myslice path /path/ must end with /\\*\\* for 'generate: manifest' to be valid",
 }, {
-	summary: "Paths with generate: chisel-state must not have any other wildcard except the trailing **",
+	summary: "Paths with generate: manifest must not have any other wildcard except the trailing **",
 	input: map[string]string{
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
 			slices:
 				myslice:
 					contents:
-						/pat*h/to/dir/**: {generate: "chisel-state"}
+						/pat*h/to/dir/**: {generate: "manifest"}
 		`,
 	},
-	relerror: "slice mypkg_myslice path /pat\\*h/to/dir/\\*\\* must not contain any other wildcard characters except trailing \\*\\* for 'generate: chisel-state' to be valid",
+	relerror: "slice mypkg_myslice path /pat\\*h/to/dir/\\*\\* must not contain any other wildcard characters except trailing \\*\\* for 'generate: manifest' to be valid",
 }}
 
 var defaultChiselYaml = `

@@ -73,7 +73,7 @@ const (
 	//   /foo/bar
 	// There are only two possible values of "generate" as of now:
 	//   "" (empty)
-	//   "chisel-state"
+	//   "manifest"
 	// Empty value signifies that the path is not a GeneratePath.
 	GeneratePath PathKind = "generate"
 
@@ -91,8 +91,8 @@ const (
 type GenerateKind string
 
 const (
-	GenerateNone  GenerateKind = ""
-	GenerateState GenerateKind = "chisel-state"
+	GenerateNone     GenerateKind = ""
+	GenerateManifest GenerateKind = "manifest"
 )
 
 type PathInfo struct {
@@ -645,7 +645,7 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 				generate = yamlPath.Generate
 				switch yamlPath.Generate {
 				case GenerateNone:
-				case GenerateState:
+				case GenerateManifest:
 					if err := validateGeneratePath(contPath, generate); err != nil {
 						return nil, fmt.Errorf("slice %s_%s %w", pkgName, sliceName, err)
 					}

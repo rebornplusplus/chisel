@@ -770,7 +770,7 @@ var slicerTests = []slicerTest{{
 		"/dir/nested/file": "file 0644 84237a05 {test-package_myslice}",
 	},
 }, {
-	summary: "Generate (chisel-state) does not impact the fs",
+	summary: "Generate (manifest) does not impact the fs",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
 	release: map[string]string{
 		"slices/mydir/test-package.yaml": `
@@ -783,7 +783,7 @@ var slicerTests = []slicerTest{{
 						/other-dir/file: {symlink: ../dir/file}
 						/dir/text-file:  {text: data1}
 						/dir/foo/bar/:   {make: true, mode: 01777}
-						/var/lib/foo/**: {generate: chisel-state}
+						/var/lib/foo/**: {generate: manifest}
 		`,
 	},
 	filesystem: map[string]string{
@@ -804,7 +804,7 @@ var slicerTests = []slicerTest{{
 		"/other-dir/file": "symlink ../dir/file {test-package_myslice}",
 	},
 }, {
-	summary: "Generate (chisel-state) directory is not extracted from package if exists",
+	summary: "Generate (manifest) directory is not extracted from package if exists",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
 	release: map[string]string{
 		"slices/mydir/test-package.yaml": `
@@ -812,7 +812,7 @@ var slicerTests = []slicerTest{{
 			slices:
 				myslice:
 					contents:
-						/dir/nested/**: {generate: chisel-state}
+						/dir/nested/**: {generate: manifest}
 		`,
 	},
 	filesystem: map[string]string{},
