@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -102,35 +101,13 @@ func (cmd *cmdCut) Execute(args []string) error {
 		archives[archiveName] = openArchive
 	}
 
-	report, err := slicer.Run(&slicer.RunOptions{
+	_, err = slicer.Run(&slicer.RunOptions{
 		Selection: selection,
 		Archives:  archives,
 		TargetDir: cmd.RootDir,
 	})
 	if err != nil {
 		return err
-	}
-
-	_, chiselStatePath, err := release.FindChiselState()
-	if err != nil {
-		logf("Will not generate Chisel DB: %s", err)
-	} else {
-		chiselStatePath = strings.TrimRight(chiselStatePath, "*")
-		chiselStatePath = filepath.Join(cmd.RootDir, chiselStatePath) + "/"
-
-		pkgInfo, err := gatherPackageInfo(selection, archives)
-		if err != nil {
-			return err
-		}
-		_, err = GenerateDB(&GenerateDBOptions{
-			Dir:         chiselStatePath,
-			PackageInfo: pkgInfo,
-			Slices:      selection.Slices,
-			Report:      report,
-		})
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
