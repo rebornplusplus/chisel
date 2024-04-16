@@ -1204,6 +1204,25 @@ var setupTests = []setupTest{{
 		`,
 	},
 	relerror: "slice mypkg_myslice path /pat\\*h/to/dir/\\*\\* must not contain any other wildcard characters except trailing \\*\\* for 'generate: manifest' to be valid",
+}, {
+	summary: "Same paths conflict if one is generate and the other is not",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/path/**: {generate: "manifest"}
+		`,
+		"slices/mydir/foo.yaml": `
+			package: foo
+			slices:
+				bar:
+					contents:
+						/path/**:
+		`,
+	},
+	relerror: "slices foo_bar and mypkg_myslice conflict on /path/\\*\\*",
 }}
 
 var defaultChiselYaml = `
