@@ -25,7 +25,7 @@ type RunOptions struct {
 
 func Run(options *RunOptions) (*Report, error) {
 
-	archives := make(map[string]archive.Archive)
+	archives := options.Archives
 	extract := make(map[string]map[string][]deb.ExtractInfo)
 	pathInfos := make(map[string]setup.PathInfo)
 	report := NewReport(options.TargetDir)
@@ -60,7 +60,6 @@ func Run(options *RunOptions) (*Report, error) {
 		syscall.Umask(oldUmask)
 	}()
 
-	release := options.Selection.Release
 	targetDir := filepath.Clean(options.TargetDir)
 	targetDirAbs := targetDir
 	if !filepath.IsAbs(targetDirAbs) {
@@ -75,11 +74,6 @@ func Run(options *RunOptions) (*Report, error) {
 	for _, slice := range options.Selection.Slices {
 		extractPackage := extract[slice.Package]
 		if extractPackage == nil {
-			archive, err := PackageArchive(release.Packages[slice.Package], options.Archives)
-			if err != nil {
-				return nil, err
-			}
-			archives[slice.Package] = archive
 			extractPackage = make(map[string][]deb.ExtractInfo)
 			extract[slice.Package] = extractPackage
 		}

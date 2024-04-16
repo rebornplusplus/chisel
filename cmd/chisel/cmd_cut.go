@@ -85,21 +85,9 @@ func (cmd *cmdCut) Execute(args []string) error {
 		return err
 	}
 
-	archives := make(map[string]archive.Archive)
-	for archiveName, archiveInfo := range release.Archives {
-		openArchive, err := archive.Open(&archive.Options{
-			Label:      archiveName,
-			Version:    archiveInfo.Version,
-			Arch:       cmd.Arch,
-			Suites:     archiveInfo.Suites,
-			Components: archiveInfo.Components,
-			CacheDir:   cache.DefaultDir("chisel"),
-			PubKeys:    archiveInfo.PubKeys,
-		})
-		if err != nil {
-			return err
-		}
-		archives[archiveName] = openArchive
+	archives, err := cmd.packageArchives(release)
+	if err != nil {
+		return err
 	}
 
 	report, err := slicer.Run(&slicer.RunOptions{
@@ -130,6 +118,38 @@ func (cmd *cmdCut) Execute(args []string) error {
 	}
 
 	return nil
+}
+
+// packageArchives returns a map of archives indexed by package names.
+func (cmd *cmdCut) packageArchives(release *setup.Release) (map[string]archive.Archive, error) {
+	archives := make(map[string]archive.Archive)
+	for archiveName, archiveInfo := range release.Archives {
+		openArchive, err := archive.Open(&archive.Options{
+			Label:      archiveName,
+			Version:    archiveInfo.Version,
+			Arch:       cmd.Arch,
+			Suites:     archiveInfo.Suites,
+			Components: archiveInfo.Components,
+			CacheDir:   cache.DefaultDir("chisel"),
+			PubKeys:    archiveInfo.PubKeys,
+		})
+		if err != nil {
+			return nil, err
+		}
+		archives[archiveName] = openArchive
+	}
+	pkgArchives := make(map[string]archive.Archive)
+	for _, pkg := range release.Packages {
+		if _, ok := pkgArchives[pkg.Name]; ok {
+			continue
+		}
+		archive, err := slicer.PackageArchive(pkg, archives)
+		if err != nil {
+			return nil, err
+		}
+		pkgArchives[pkg.Name] = archive
+	}
+	return pkgArchives, nil
 }
 
 // findManifestDir finds the path with "generate: manifest" in the selected
@@ -230,10 +250,9 @@ func gatherPackageInfo(selection *setup.Selection, archives map[string]archive.A
 			continue
 		}
 		done[s.Package] = true
-		pkg := selection.Release.Packages[s.Package]
-		archive, err := slicer.PackageArchive(pkg, archives)
-		if err != nil {
-			return nil, err
+		archive, ok := archives[s.Package]
+		if !ok {
+			return nil, fmt.Errorf("no archive found for package %q", s.Package)
 		}
 		info, err := archive.Info(s.Package)
 		if err != nil {
