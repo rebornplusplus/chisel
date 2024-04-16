@@ -203,12 +203,21 @@ func GenerateDB(opts *GenerateDBOptions) (string, error) {
 			return "", err
 		}
 	}
-	// Add paths to the DB.
+	// Add paths and contents to the DB.
 	for _, entry := range opts.Report.Entries {
 		mode := fmt.Sprintf("0%o", entry.Mode&fs.ModePerm)
 		sliceNames := []string{}
 		for s := range entry.Slices {
-			sliceNames = append(sliceNames, s.String())
+			name := s.String()
+			// Add contents to the DB.
+			err := dbw.AddContent(&db.Content{
+				Slice: name,
+				Path:  entry.Path,
+			})
+			if err != nil {
+				return "", err
+			}
+			sliceNames = append(sliceNames, name)
 		}
 		err := dbw.AddPath(&db.Path{
 			Path:   entry.Path,
@@ -220,18 +229,6 @@ func GenerateDB(opts *GenerateDBOptions) (string, error) {
 		})
 		if err != nil {
 			return "", err
-		}
-	}
-	// Add contents to the DB.
-	for _, entry := range opts.Report.Entries {
-		for s := range entry.Slices {
-			err := dbw.AddContent(&db.Content{
-				Slice: s.String(),
-				Path:  entry.Path,
-			})
-			if err != nil {
-				return "", err
-			}
 		}
 	}
 	return dbw.WriteDB()
