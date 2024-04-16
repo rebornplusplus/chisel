@@ -1223,6 +1223,18 @@ var setupTests = []setupTest{{
 		`,
 	},
 	relerror: "slices foo_bar and mypkg_myslice conflict on /path/\\*\\*",
+}, {
+	summary: "No other options in \"generate\" paths",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/path/**: {generate: "manifest", until: mutate}
+		`,
+	},
+	relerror: "slice mypkg_myslice path /path/\\*\\* has invalid generate options",
 }}
 
 var defaultChiselYaml = `

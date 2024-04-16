@@ -588,20 +588,21 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 			var until PathUntil
 			var arch []string
 			var generate GenerateKind
-			if strings.ContainsAny(contPath, "*?") {
+			if yamlPath != nil && yamlPath.Generate != "" {
+				zeroPathGenerate := zeroPath
+				zeroPathGenerate.Generate = yamlPath.Generate
+				if !yamlPath.SameContent(&zeroPathGenerate) || yamlPath.Until != UntilNone {
+					return nil, fmt.Errorf("slice %s_%s path %s has invalid generate options",
+						pkgName, sliceName, contPath)
+				}
+			} else if strings.ContainsAny(contPath, "*?") {
 				if yamlPath != nil {
-					if len(yamlPath.Generate) == 0 {
-						kinds = append(kinds, GlobPath)
-					}
-					tempPath := zeroPath
-					tempPath.Generate = yamlPath.Generate
-					if !yamlPath.SameContent(&tempPath) {
+					if !yamlPath.SameContent(&zeroPath) {
 						return nil, fmt.Errorf("slice %s_%s path %s has invalid wildcard options",
 							pkgName, sliceName, contPath)
 					}
-				} else {
-					kinds = append(kinds, GlobPath)
 				}
+				kinds = append(kinds, GlobPath)
 			}
 			if yamlPath != nil {
 				mode = yamlPath.Mode
