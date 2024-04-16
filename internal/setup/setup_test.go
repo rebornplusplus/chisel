@@ -1135,41 +1135,7 @@ var setupTests = []setupTest{{
 		}},
 	},
 }, {
-	summary: "Cannot select two slices both defining generate: manifest",
-	input: map[string]string{
-		"slices/mydir/mypkg.yaml": `
-			package: mypkg
-			slices:
-				myslice:
-					contents:
-						/path/**: {generate: "manifest"}
-		`,
-		"slices/mydir/foo.yaml": `
-			package: foo
-			slices:
-				bar:
-					contents:
-						/foo/**: {generate: "manifest"}
-		`,
-	},
-	selslices: []setup.SliceKey{{"mypkg", "myslice"}, {"foo", "bar"}},
-	selerror:  "slices foo_bar and mypkg_myslice cannot both specify \"generate: manifest\"",
-}, {
-	summary: "Cannot select a slice with multiple generate: manifest",
-	input: map[string]string{
-		"slices/mydir/mypkg.yaml": `
-			package: mypkg
-			slices:
-				myslice:
-					contents:
-						/path/**: {generate: "manifest"}
-						/foo/**: {generate: "manifest"}
-		`,
-	},
-	selslices: []setup.SliceKey{{"mypkg", "myslice"}},
-	selerror:  "slice mypkg_myslice cannot specify \"generate: manifest\" twice",
-}, {
-	summary: "Cannot specify generate with invalid value",
+	summary: "Can specify generate with bogus value but cannot SELECT those slices",
 	input: map[string]string{
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -1179,7 +1145,37 @@ var setupTests = []setupTest{{
 						/path/**: {generate: "foo"}
 		`,
 	},
-	relerror: "slice mypkg_myslice has invalid 'generate' for path /path/\\*\\*: \"foo\"",
+	release: &setup.Release{
+		DefaultArchive: "ubuntu",
+
+		Archives: map[string]*setup.Archive{
+			"ubuntu": {
+				Name:       "ubuntu",
+				Version:    "22.04",
+				Suites:     []string{"jammy"},
+				Components: []string{"main", "universe"},
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+		},
+		Packages: map[string]*setup.Package{
+			"mypkg": {
+				Archive: "ubuntu",
+				Name:    "mypkg",
+				Path:    "slices/mydir/mypkg.yaml",
+				Slices: map[string]*setup.Slice{
+					"myslice": {
+						Package: "mypkg",
+						Name:    "myslice",
+						Contents: map[string]setup.PathInfo{
+							"/path/**": {Kind: "generate", Generate: "foo"},
+						},
+					},
+				},
+			},
+		},
+	},
+	selslices: []setup.SliceKey{{"mypkg", "myslice"}},
+	selerror:  "slice mypkg_myslice has invalid 'generate' for path /path/\\*\\*: \"foo\", consider an update if available",
 }, {
 	summary: "Paths with generate: manifest must have trailing /**",
 	input: map[string]string{

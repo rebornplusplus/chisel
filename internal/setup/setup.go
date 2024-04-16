@@ -629,19 +629,12 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 						info = ""
 					}
 				}
+				generate = yamlPath.Generate
 				if len(yamlPath.Generate) > 0 {
 					kinds = append(kinds, GeneratePath)
-				}
-				generate = yamlPath.Generate
-				switch yamlPath.Generate {
-				case GenerateNone:
-				case GenerateManifest:
 					if err := validateGeneratePath(contPath, generate); err != nil {
 						return nil, fmt.Errorf("slice %s_%s %w", pkgName, sliceName, err)
 					}
-				default:
-					return nil, fmt.Errorf("slice %s_%s has invalid 'generate' for path %s: %q",
-						pkgName, sliceName, contPath, generate)
 				}
 				until = yamlPath.Until
 				switch until {
@@ -720,7 +713,6 @@ func Select(release *Release, slices []SliceKey) (*Selection, error) {
 	}
 
 	paths := make(map[string]*Slice)
-	generatePaths := make(map[GenerateKind]*Slice)
 	for _, new := range selection.Slices {
 		for newPath, newInfo := range new.Contents {
 			if old, ok := paths[newPath]; ok {
@@ -734,23 +726,11 @@ func Select(release *Release, slices []SliceKey) (*Selection, error) {
 			} else {
 				paths[newPath] = new
 			}
-			// Do not allow two selected slices to have "generate: x" defined in
-			// the contents.
-			// TODO this restriction might need to be lifted in future upon
-			// deliberation.
-			if len(newInfo.Generate) > 0 {
-				if old, ok := generatePaths[newInfo.Generate]; ok {
-					if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
-						old, new = new, old
-					}
-					if old == new {
-						return nil, fmt.Errorf("slice %s cannot specify \"generate: %s\" twice",
-							new, newInfo.Generate)
-					}
-					return nil, fmt.Errorf("slices %s and %s cannot both specify \"generate: %s\"",
-						old, new, newInfo.Generate)
-				}
-				generatePaths[newInfo.Generate] = new
+			switch newInfo.Generate {
+			case GenerateNone, GenerateManifest:
+			default:
+				return nil, fmt.Errorf("slice %s has invalid 'generate' for path %s: %q, consider an update if available",
+					new, newPath, newInfo.Generate)
 			}
 		}
 	}
