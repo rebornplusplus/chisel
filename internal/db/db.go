@@ -44,6 +44,7 @@ func (dbw *DBWriter) WriteDB() (path string, err error) {
 		return "", err
 	}
 
+	debugf("writing DB at %s...", path)
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return "", err
