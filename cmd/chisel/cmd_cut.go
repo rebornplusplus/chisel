@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -101,7 +102,7 @@ func (cmd *cmdCut) Execute(args []string) error {
 		archives[archiveName] = openArchive
 	}
 
-	_, err = slicer.Run(&slicer.RunOptions{
+	report, err := slicer.Run(&slicer.RunOptions{
 		Selection: selection,
 		Archives:  archives,
 		TargetDir: cmd.RootDir,
@@ -110,7 +111,38 @@ func (cmd *cmdCut) Execute(args []string) error {
 		return err
 	}
 
+	manifestDir, err := findManifestDir(selection.Slices)
+	if err == nil {
+		manifestDir = filepath.Join(cmd.RootDir, manifestDir) + "/"
+		pkgInfo, err := gatherPackageInfo(selection, archives)
+		if err != nil {
+			return err
+		}
+		_, err = GenerateDB(&GenerateDBOptions{
+			Dir:         manifestDir,
+			PackageInfo: pkgInfo,
+			Slices:      selection.Slices,
+			Report:      report,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+// findManifestDir finds the path with "generate: manifest" in the selected
+// slices. It returns an error if no such path is found.
+func findManifestDir(slices []*setup.Slice) (string, error) {
+	for _, s := range slices {
+		for path, info := range s.Contents {
+			if info.Generate == setup.GenerateManifest {
+				return strings.TrimRight(path, "*"), nil
+			}
+		}
+	}
+	return "", fmt.Errorf("no path with \"generate: manifest\" found")
 }
 
 type GenerateDBOptions struct {
