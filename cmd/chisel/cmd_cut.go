@@ -169,7 +169,7 @@ type GenerateDBOptions struct {
 	// The directory where to generate the Chisel DB at.
 	Dir string
 	// List of package information to write to Chisel DB.
-	PackageInfo []archive.PackageInfo
+	PackageInfo []*archive.PackageInfo
 	// List of slices to write to Chisel DB.
 	Slices []*setup.Slice
 	// Path entries to write to Chisel DB.
@@ -185,10 +185,10 @@ func GenerateDB(opts *GenerateDBOptions) (string, error) {
 	// Add packages to the DB.
 	for _, info := range opts.PackageInfo {
 		err := dbw.AddPackage(&db.Package{
-			Name:    info.Name(),
-			Version: info.Version(),
-			Digest:  info.Hash(),
-			Arch:    info.Arch(),
+			Name:    info.Name,
+			Version: info.Version,
+			Digest:  info.Hash,
+			Arch:    info.Arch,
 		})
 		if err != nil {
 			return "", err
@@ -239,11 +239,11 @@ func GenerateDB(opts *GenerateDBOptions) (string, error) {
 
 // gatherPackageInfo returns a list of PackageInfo for packages who belong to
 // the selected slices.
-func gatherPackageInfo(selection *setup.Selection, archives map[string]archive.Archive) ([]archive.PackageInfo, error) {
+func gatherPackageInfo(selection *setup.Selection, archives map[string]archive.Archive) ([]*archive.PackageInfo, error) {
 	if selection == nil {
 		return nil, fmt.Errorf("cannot gather package info: selection is nil")
 	}
-	pkgInfo := []archive.PackageInfo{}
+	pkgInfo := []*archive.PackageInfo{}
 	done := make(map[string]bool)
 	for _, s := range selection.Slices {
 		if done[s.Package] {
