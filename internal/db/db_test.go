@@ -134,8 +134,9 @@ func (s *S) TestWriteDB(c *C) {
 		path, err := dbw.WriteDB()
 		if test.err != "" {
 			c.Assert(err, ErrorMatches, test.err)
+		} else {
+			c.Assert(err, IsNil)
 		}
-		c.Assert(err, IsNil)
 
 		contents, err := extractZSTD(path)
 		c.Assert(err, IsNil)
