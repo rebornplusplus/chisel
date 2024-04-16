@@ -163,7 +163,6 @@ func (r *Release) validate() error {
 	keys := []SliceKey(nil)
 	paths := make(map[string]*Slice)
 	globs := make(map[string]*Slice)
-	generate := make(map[GenerateKind]*Slice)
 
 	// Check for info conflicts and prepare for following checks.
 	for _, pkg := range r.Packages {
@@ -183,19 +182,6 @@ func (r *Release) validate() error {
 						globs[newPath] = new
 					}
 					paths[newPath] = new
-				}
-				if newInfo.Kind == GeneratePath {
-					if old, ok := generate[newInfo.Generate]; ok {
-						if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
-							old, new = new, old
-						}
-						if old == new {
-							return fmt.Errorf("slice %s cannot specify \"generate: %s\" twice", new, newInfo.Generate)
-						} else {
-							return fmt.Errorf("slices %s and %s cannot both specify \"generate: %s\"", old, new, newInfo.Generate)
-						}
-					}
-					generate[newInfo.Generate] = new
 				}
 			}
 		}
@@ -730,6 +716,7 @@ func Select(release *Release, slices []SliceKey) (*Selection, error) {
 	}
 
 	paths := make(map[string]*Slice)
+	generatePaths := make(map[GenerateKind]*Slice)
 	for _, new := range selection.Slices {
 		for newPath, newInfo := range new.Contents {
 			if old, ok := paths[newPath]; ok {
@@ -740,9 +727,27 @@ func Select(release *Release, slices []SliceKey) (*Selection, error) {
 					}
 					return nil, fmt.Errorf("slices %s and %s conflict on %s", old, new, newPath)
 				}
-				continue
+			} else {
+				paths[newPath] = new
 			}
-			paths[newPath] = new
+			// Do not allow two selected slices to have "generate: x" defined in
+			// the contents.
+			// TODO this restriction might need to be lifted in future upon
+			// deliberation.
+			if len(newInfo.Generate) > 0 {
+				if old, ok := generatePaths[newInfo.Generate]; ok {
+					if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
+						old, new = new, old
+					}
+					if old == new {
+						return nil, fmt.Errorf("slice %s cannot specify \"generate: %s\" twice",
+							new, newInfo.Generate)
+					}
+					return nil, fmt.Errorf("slices %s and %s cannot both specify \"generate: %s\"",
+						old, new, newInfo.Generate)
+				}
+				generatePaths[newInfo.Generate] = new
+			}
 		}
 	}
 
