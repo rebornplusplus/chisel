@@ -3,6 +3,7 @@ package db
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,9 +14,11 @@ import (
 
 const dbFile = "chisel.db"
 const dbSchema = "1.0"
+const dbMode = 0644
 
 type DBWriter struct {
-	dbPath string
+	Path   string
+	Mode   fs.FileMode
 	writer *jsonwall.DBWriter
 }
 
@@ -30,7 +33,8 @@ func NewDBWriter(dir string) *DBWriter {
 		Schema: dbSchema,
 	})
 	return &DBWriter{
-		dbPath: path,
+		Path:   path,
+		Mode:   dbMode,
 		writer: writer,
 	}
 }
@@ -39,13 +43,13 @@ func NewDBWriter(dir string) *DBWriter {
 // file. It returns the path of the generated Chisel DB file. The file
 // chisel.db is a zstd compressed file.
 func (dbw *DBWriter) WriteDB() (path string, err error) {
-	path = dbw.dbPath
+	path = dbw.Path
 	if err = os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return "", err
 	}
 
 	debugf("writing DB at %s...", path)
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, dbw.Mode)
 	if err != nil {
 		return "", err
 	}
@@ -65,6 +69,7 @@ func (dbw *DBWriter) WriteDB() (path string, err error) {
 }
 
 type Package struct {
+	Kind    string `json:"kind"`
 	Name    string `json:"name"`
 	Version string `json:"version"`
 	Digest  string `json:"sha256"`
@@ -72,10 +77,12 @@ type Package struct {
 }
 
 type Slice struct {
+	Kind string `json:"kind"`
 	Name string `json:"name"`
 }
 
 type Path struct {
+	Kind      string   `json:"kind"`
 	Path      string   `json:"path"`
 	Mode      string   `json:"mode"`
 	Slices    []string `json:"slices"`
@@ -86,32 +93,9 @@ type Path struct {
 }
 
 type Content struct {
+	Kind  string `json:"kind"`
 	Slice string `json:"slice"`
 	Path  string `json:"path"`
-}
-
-type dbBase struct {
-	Kind string `json:"kind"`
-}
-
-type dbPackage struct {
-	dbBase
-	Package
-}
-
-type dbSlice struct {
-	dbBase
-	Slice
-}
-
-type dbPath struct {
-	dbBase
-	Path
-}
-
-type dbContent struct {
-	dbBase
-	Content
 }
 
 // AddPackage adds a "package"-kind entry to the DB.
@@ -119,11 +103,8 @@ func (dbw *DBWriter) AddPackage(pkg *Package) error {
 	if pkg == nil {
 		return fmt.Errorf("cannot add nil package to DB")
 	}
-	pkgEntry := &dbPackage{
-		dbBase:  dbBase{Kind: "package"},
-		Package: *pkg,
-	}
-	err := dbw.writer.Add(pkgEntry)
+	pkg.Kind = "package"
+	err := dbw.writer.Add(pkg)
 	if err != nil {
 		return fmt.Errorf("cannot add package %s to DB: %w", pkg.Name, err)
 	}
@@ -135,11 +116,8 @@ func (dbw *DBWriter) AddSlice(slice *Slice) error {
 	if slice == nil {
 		return fmt.Errorf("cannot add nil slice to DB")
 	}
-	sliceEntry := &dbSlice{
-		dbBase: dbBase{Kind: "slice"},
-		Slice:  *slice,
-	}
-	err := dbw.writer.Add(sliceEntry)
+	slice.Kind = "slice"
+	err := dbw.writer.Add(slice)
 	if err != nil {
 		return fmt.Errorf("cannot add slice %s to DB: %w", slice.Name, err)
 	}
@@ -151,11 +129,8 @@ func (dbw *DBWriter) AddPath(path *Path) error {
 	if path == nil {
 		return fmt.Errorf("cannot add nil path to DB")
 	}
-	pathEntry := &dbPath{
-		dbBase: dbBase{Kind: "path"},
-		Path:   *path,
-	}
-	err := dbw.writer.Add(pathEntry)
+	path.Kind = "path"
+	err := dbw.writer.Add(path)
 	if err != nil {
 		return fmt.Errorf("cannot add path %s to DB: %w", path.Path, err)
 	}
@@ -167,11 +142,8 @@ func (dbw *DBWriter) AddContent(content *Content) error {
 	if content == nil {
 		return fmt.Errorf("cannot add nil content to DB")
 	}
-	contentEntry := &dbContent{
-		dbBase:  dbBase{Kind: "content"},
-		Content: *content,
-	}
-	err := dbw.writer.Add(contentEntry)
+	content.Kind = "content"
+	err := dbw.writer.Add(content)
 	if err != nil {
 		return fmt.Errorf("cannot add content %v to DB: %w", content, err)
 	}
