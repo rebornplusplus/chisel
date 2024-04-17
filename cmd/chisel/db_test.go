@@ -1,67 +1,80 @@
-package db_test
+package main_test
 
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
-	"github.com/canonical/chisel/internal/db"
 	"github.com/klauspost/compress/zstd"
 	. "gopkg.in/check.v1"
+
+	chisel "github.com/canonical/chisel/cmd/chisel"
+	"github.com/canonical/chisel/internal/jsonwall"
 )
 
-type dbTest struct {
+type writeDBTest struct {
 	summary    string
-	packages   []*db.Package
-	slices     []*db.Slice
-	paths      []*db.Path
-	contents   []*db.Content
+	packages   []*chisel.Package
+	slices     []*chisel.Slice
+	paths      []*chisel.Path
+	contents   []*chisel.Content
 	expectedDB string
 	err        string
 }
 
-var dbTests = []dbTest{{
+var writeDBTests = []writeDBTest{{
 	summary: "Write Chisel DB",
-	packages: []*db.Package{{
+	packages: []*chisel.Package{{
+		Kind:    "package",
 		Name:    "mypkg",
 		Version: "12ubuntu4.6",
 		Digest:  "522d1a2a9a41a86428d20e1a1b619946245ad5a62a348890f1630a6316b69f68",
 		Arch:    "amd64",
 	}, {
+		Kind:    "package",
 		Name:    "foo",
 		Version: "1ubuntu2.9",
 		Digest:  "b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c",
 		Arch:    "amd64",
 	}},
-	slices: []*db.Slice{{
+	slices: []*chisel.Slice{{
+		Kind: "slice",
 		Name: "mypkg_myslice",
 	}, {
+		Kind: "slice",
 		Name: "mypkg_otherslice",
 	}, {
+		Kind: "slice",
 		Name: "foo_bar",
 	}},
-	paths: []*db.Path{{
+	paths: []*chisel.Path{{
+		Kind:   "path",
 		Path:   "/usr/bin/foo",
 		Mode:   "0644",
 		Slices: []string{"foo_bar"},
 		Hash:   "ebd0b5aaefd98c0f3a56f03d11cb27f858f257eb1206cb8f6264dc72aa8a2947",
 		Size:   1234,
 	}, {
+		Kind:   "path",
 		Path:   "/bin/foo",
 		Mode:   "0644",
 		Slices: []string{"foo_bar"},
 		Link:   "/usr/bin/foo",
 	}, {
+		Kind:   "path",
 		Path:   "/usr/bin/mypkg",
 		Mode:   "0775",
 		Slices: []string{"mypkg_myslice"},
 		Hash:   "c4ce8495a690e25636f83c00b5ee9128f78dcfea24523d2697dbd37114bb967a",
 		Size:   49357,
 	}, {
+		Kind:   "path",
 		Path:   "/bin/",
 		Mode:   "0775",
 		Slices: []string{"mypkg_myslice", "foo_bar"},
 	}, {
+		Kind:      "path",
 		Path:      "/etc/mypkg.conf",
 		Mode:      "0775",
 		Slices:    []string{"mypkg_otherslice"},
@@ -69,22 +82,28 @@ var dbTests = []dbTest{{
 		FinalHash: "71f28b05f5b0a3af1776ae55d578c16a11f10aef7dd408421c35dac17ca7cbad",
 		Size:      489,
 	}},
-	contents: []*db.Content{{
+	contents: []*chisel.Content{{
+		Kind:  "content",
 		Slice: "foo_bar",
 		Path:  "/usr/bin/foo",
 	}, {
+		Kind:  "content",
 		Slice: "foo_bar",
 		Path:  "/bin/foo",
 	}, {
+		Kind:  "content",
 		Slice: "foo_bar",
 		Path:  "/bin/",
 	}, {
+		Kind:  "content",
 		Slice: "mypkg_myslice",
 		Path:  "/usr/bin/mypkg",
 	}, {
+		Kind:  "content",
 		Slice: "mypkg_myslice",
 		Path:  "/bin/",
 	}, {
+		Kind:  "content",
 		Slice: "mypkg_otherslice",
 		Path:  "/etc/mypkg.conf",
 	}},
@@ -109,36 +128,39 @@ var dbTests = []dbTest{{
 `, "\n"),
 }}
 
-func (s *S) TestWriteDB(c *C) {
-	for _, test := range dbTests {
+func (s *ChiselSuite) TestWriteDB(c *C) {
+	for _, test := range writeDBTests {
 		c.Logf("Summary: %s", test.summary)
 
-		dir := c.MkDir()
-		dbw := db.NewDBWriter(dir)
+		dbw := jsonwall.NewDBWriter(&jsonwall.DBWriterOptions{
+			Schema: "1.0",
+		})
 
 		var err error
 		for _, pkg := range test.packages {
-			err = dbw.AddPackage(pkg)
+			err = dbw.Add(pkg)
 		}
 		for _, slice := range test.slices {
-			err = dbw.AddSlice(slice)
+			err = dbw.Add(slice)
 		}
 		for _, path := range test.paths {
-			err = dbw.AddPath(path)
+			err = dbw.Add(path)
 		}
 		for _, content := range test.contents {
-			err = dbw.AddContent(content)
+			err = dbw.Add(content)
 		}
 		c.Assert(err, IsNil)
 
-		path, err := dbw.WriteDB()
+		dir := c.MkDir()
+		dbPath := filepath.Join(dir, "chisel.db")
+		err = chisel.WriteDB(dbw, dbPath, 0644)
 		if test.err != "" {
 			c.Assert(err, ErrorMatches, test.err)
 		} else {
 			c.Assert(err, IsNil)
 		}
 
-		contents, err := extractZSTD(path)
+		contents, err := extractZSTD(dbPath)
 		c.Assert(err, IsNil)
 		c.Assert(contents, Equals, test.expectedDB)
 	}
