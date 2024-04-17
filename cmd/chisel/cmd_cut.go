@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -12,7 +10,6 @@ import (
 
 	"github.com/canonical/chisel/internal/archive"
 	"github.com/canonical/chisel/internal/cache"
-	"github.com/canonical/chisel/internal/db"
 	"github.com/canonical/chisel/internal/setup"
 	"github.com/canonical/chisel/internal/slicer"
 )
@@ -99,18 +96,18 @@ func (cmd *cmdCut) Execute(args []string) error {
 		return err
 	}
 
-	manifestDir, err := findManifestDir(selection.Slices)
-	if err == nil {
-		manifestDir = filepath.Join(cmd.RootDir, manifestDir) + "/"
+	manifestInfo := locateManifests(selection.Slices)
+	if len(manifestInfo) > 0 {
 		pkgInfo, err := gatherPackageInfo(selection, archives)
 		if err != nil {
 			return err
 		}
 		_, err = GenerateDB(&GenerateDBOptions{
-			Dir:         manifestDir,
-			PackageInfo: pkgInfo,
-			Slices:      selection.Slices,
-			Report:      report,
+			RootDir:      cmd.RootDir,
+			ManifestInfo: manifestInfo,
+			PackageInfo:  pkgInfo,
+			Slices:       selection.Slices,
+			Report:       report,
 		})
 		if err != nil {
 			return err
@@ -150,114 +147,6 @@ func (cmd *cmdCut) packageArchives(release *setup.Release) (map[string]archive.A
 		pkgArchives[pkg.Name] = archive
 	}
 	return pkgArchives, nil
-}
-
-// findManifestDir finds the path with "generate: manifest" in the selected
-// slices. It returns an error if no such path is found.
-func findManifestDir(slices []*setup.Slice) (string, error) {
-	for _, s := range slices {
-		for path, info := range s.Contents {
-			if info.Generate == setup.GenerateManifest {
-				return strings.TrimRight(path, "*"), nil
-			}
-		}
-	}
-	return "", fmt.Errorf("no path with \"generate: manifest\" found")
-}
-
-type GenerateDBOptions struct {
-	// The directory where to generate the Chisel DB at.
-	Dir string
-	// List of package information to write to Chisel DB.
-	PackageInfo []*archive.PackageInfo
-	// List of slices to write to Chisel DB.
-	Slices []*setup.Slice
-	// Path entries to write to Chisel DB.
-	Report *slicer.Report
-}
-
-// GenerateDB generates the Chisel DB with the specified options. It returns the
-// path of the DB if successful.
-func GenerateDB(opts *GenerateDBOptions) (string, error) {
-	logf("Generating Chisel DB at %s...", opts.Dir)
-
-	dbw := db.NewDBWriter(opts.Dir)
-	// Add packages to the DB.
-	for _, info := range opts.PackageInfo {
-		err := dbw.AddPackage(&db.Package{
-			Name:    info.Name,
-			Version: info.Version,
-			Digest:  info.Hash,
-			Arch:    info.Arch,
-		})
-		if err != nil {
-			return "", err
-		}
-	}
-	// Add slices to the DB.
-	for _, s := range opts.Slices {
-		err := dbw.AddSlice(&db.Slice{
-			Name: s.String(),
-		})
-		if err != nil {
-			return "", err
-		}
-	}
-	// Add paths and contents to the DB.
-	for _, entry := range opts.Report.Entries {
-		mode := fmt.Sprintf("0%o", entry.Mode&fs.ModePerm)
-		sliceNames := []string{}
-		for s := range entry.Slices {
-			name := s.String()
-			// Add contents to the DB.
-			err := dbw.AddContent(&db.Content{
-				Slice: name,
-				Path:  entry.Path,
-			})
-			if err != nil {
-				return "", err
-			}
-			sliceNames = append(sliceNames, name)
-		}
-		err := dbw.AddPath(&db.Path{
-			Path:   entry.Path,
-			Mode:   mode,
-			Slices: sliceNames,
-			Hash:   entry.Hash,
-			Size:   uint64(entry.Size),
-			Link:   entry.Link,
-		})
-		if err != nil {
-			return "", err
-		}
-	}
-	return dbw.WriteDB()
-}
-
-// gatherPackageInfo returns a list of PackageInfo for packages who belong to
-// the selected slices.
-func gatherPackageInfo(selection *setup.Selection, archives map[string]archive.Archive) ([]*archive.PackageInfo, error) {
-	if selection == nil {
-		return nil, fmt.Errorf("cannot gather package info: selection is nil")
-	}
-	pkgInfo := []*archive.PackageInfo{}
-	done := make(map[string]bool)
-	for _, s := range selection.Slices {
-		if done[s.Package] {
-			continue
-		}
-		done[s.Package] = true
-		archive, ok := archives[s.Package]
-		if !ok {
-			return nil, fmt.Errorf("no archive found for package %q", s.Package)
-		}
-		info, err := archive.Info(s.Package)
-		if err != nil {
-			return nil, err
-		}
-		pkgInfo = append(pkgInfo, info)
-	}
-	return pkgInfo, nil
 }
 
 // TODO These need testing, and maybe moving into a common file.
