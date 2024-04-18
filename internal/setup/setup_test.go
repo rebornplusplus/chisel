@@ -1073,12 +1073,12 @@ var setupTests = []setupTest{{
 					contents:
 						/path/**: {generate: "manifest"}
 		`,
-		"slices/mydir/foo.yaml": `
-			package: foo
+		"slices/mydir/mypkg2.yaml": `
+			package: mypkg2
 			slices:
-				bar:
+				myslice:
 					contents:
-						/foo/**: {generate: "manifest"}
+						/path-2/**: {generate: "manifest"}
 		`,
 	},
 	release: &setup.Release{
@@ -1108,16 +1108,16 @@ var setupTests = []setupTest{{
 					},
 				},
 			},
-			"foo": {
+			"mypkg2": {
 				Archive: "ubuntu",
-				Name:    "foo",
-				Path:    "slices/mydir/foo.yaml",
+				Name:    "mypkg2",
+				Path:    "slices/mydir/mypkg2.yaml",
 				Slices: map[string]*setup.Slice{
-					"bar": {
-						Package: "foo",
-						Name:    "bar",
+					"myslice": {
+						Package: "mypkg2",
+						Name:    "myslice",
 						Contents: map[string]setup.PathInfo{
-							"/foo/**": {Kind: "generate", Generate: "manifest"},
+							"/path-2/**": {Kind: "generate", Generate: "manifest"},
 						},
 					},
 				},
@@ -1135,7 +1135,7 @@ var setupTests = []setupTest{{
 		}},
 	},
 }, {
-	summary: "Can specify generate with bogus value but cannot SELECT those slices",
+	summary: "Can specify generate with bogus value but cannot select those slices",
 	input: map[string]string{
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -1175,7 +1175,7 @@ var setupTests = []setupTest{{
 		},
 	},
 	selslices: []setup.SliceKey{{"mypkg", "myslice"}},
-	selerror:  "slice mypkg_myslice has invalid 'generate' for path /path/\\*\\*: \"foo\", consider an update if available",
+	selerror:  `slice mypkg_myslice has invalid 'generate' for path /path/\*\*: "foo", consider an update if available`,
 }, {
 	summary: "Paths with generate: manifest must have trailing /**",
 	input: map[string]string{
@@ -1187,7 +1187,7 @@ var setupTests = []setupTest{{
 						/path/: {generate: "manifest"}
 		`,
 	},
-	relerror: "slice mypkg_myslice path /path/ must end with /\\*\\* for 'generate: manifest' to be valid",
+	relerror: `slice mypkg_myslice has invalid path /path/: does not end with /\*\*`,
 }, {
 	summary: "Paths with generate: manifest must not have any other wildcard except the trailing **",
 	input: map[string]string{
@@ -1199,7 +1199,7 @@ var setupTests = []setupTest{{
 						/pat*h/to/dir/**: {generate: "manifest"}
 		`,
 	},
-	relerror: "slice mypkg_myslice path /pat\\*h/to/dir/\\*\\* must not contain any other wildcard characters except trailing \\*\\* for 'generate: manifest' to be valid",
+	relerror: `slice mypkg_myslice has invalid path /pat\*h/to/dir/\*\*: contains wildcard characters in addition to trailing \*\*`,
 }, {
 	summary: "Same paths conflict if one is generate and the other is not",
 	input: map[string]string{
@@ -1210,17 +1210,17 @@ var setupTests = []setupTest{{
 					contents:
 						/path/**: {generate: "manifest"}
 		`,
-		"slices/mydir/foo.yaml": `
-			package: foo
+		"slices/mydir/mypkg2.yaml": `
+			package: mypkg2
 			slices:
-				bar:
+				myslice:
 					contents:
 						/path/**:
 		`,
 	},
-	relerror: "slices foo_bar and mypkg_myslice conflict on /path/\\*\\*",
+	relerror: "slices mypkg_myslice and mypkg2_myslice conflict on /path/\\*\\*",
 }, {
-	summary: "No other options in \"generate\" paths",
+	summary: `No other options in "generate" paths`,
 	input: map[string]string{
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg

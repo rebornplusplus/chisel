@@ -89,7 +89,7 @@ var slicerTests = []slicerTest{{
 						/other-dir/file: {symlink: ../dir/file}
 						/dir/text-file:  {text: data1}
 						/dir/foo/bar/:   {make: true, mode: 01777}
-						/var/lib/foo/**: {generate: manifest}
+						/db/**: {generate: manifest}
 		`,
 	},
 	filesystem: map[string]string{
@@ -802,7 +802,7 @@ var slicerTests = []slicerTest{{
 						/dir/foo/bar/:   {make: true, mode: 01777}
 				manifest:
 					contents:
-						/var/lib/foo/**: {generate: manifest}
+						/db/**: {generate: manifest}
 				a-slice:
 					contents:
 						/dir/other-file:
@@ -938,16 +938,16 @@ func runSlicerTests(c *C, tests []slicerTest) {
 			if _, ok := pkgArchives[pkg.Name]; ok {
 				continue
 			}
-			archive, err := slicer.PackageArchive(pkg, archives)
+			archive, err := archive.PackageArchive(pkg, archives)
 			c.Assert(err, IsNil)
 			pkgArchives[pkg.Name] = archive
 		}
 
 		targetDir := c.MkDir()
 		options := slicer.RunOptions{
-			Selection: selection,
-			Archives:  pkgArchives,
-			TargetDir: targetDir,
+			Selection:   selection,
+			PkgArchives: pkgArchives,
+			TargetDir:   targetDir,
 		}
 		if test.hackopt != nil {
 			test.hackopt(c, &options)

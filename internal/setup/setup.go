@@ -595,6 +595,10 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 					return nil, fmt.Errorf("slice %s_%s path %s has invalid generate options",
 						pkgName, sliceName, contPath)
 				}
+				if err := validateGeneratePath(contPath); err != nil {
+					return nil, fmt.Errorf("slice %s_%s %s", pkgName, sliceName, err)
+				}
+				kinds = append(kinds, GeneratePath)
 			} else if strings.ContainsAny(contPath, "*?") {
 				if yamlPath != nil {
 					if !yamlPath.SameContent(&zeroPath) {
@@ -607,6 +611,7 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 			if yamlPath != nil {
 				mode = yamlPath.Mode
 				mutable = yamlPath.Mutable
+				generate = yamlPath.Generate
 				if yamlPath.Dir {
 					if !strings.HasSuffix(contPath, "/") {
 						return nil, fmt.Errorf("slice %s_%s path %s must end in / for 'make' to be valid",
@@ -627,13 +632,6 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 					info = yamlPath.Copy
 					if info == contPath {
 						info = ""
-					}
-				}
-				generate = yamlPath.Generate
-				if len(yamlPath.Generate) > 0 {
-					kinds = append(kinds, GeneratePath)
-					if err := validateGeneratePath(contPath, generate); err != nil {
-						return nil, fmt.Errorf("slice %s_%s %w", pkgName, sliceName, err)
 					}
 				}
 				until = yamlPath.Until
@@ -679,14 +677,13 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 	return &pkg, err
 }
 
-func validateGeneratePath(path string, kind GenerateKind) error {
+func validateGeneratePath(path string) error {
 	if !strings.HasSuffix(path, "/**") {
-		return fmt.Errorf("path %s must end with /** for 'generate: %s' to be valid", path, kind)
+		return fmt.Errorf("has invalid path %s: does not end with /**", path)
 	}
-	dirPath := path[:len(path)-2]
+	dirPath := strings.TrimSuffix(path, "**")
 	if strings.ContainsAny(dirPath, "*?") {
-		return fmt.Errorf("path %s must not contain any other wildcard characters except trailing ** for 'generate: %s' to be valid",
-			path, kind)
+		return fmt.Errorf("has invalid path %s: contains wildcard characters in addition to trailing **", path)
 	}
 	return nil
 }

@@ -14,7 +14,6 @@ import (
 	chisel "github.com/canonical/chisel/cmd/chisel"
 	"github.com/canonical/chisel/internal/archive"
 	"github.com/canonical/chisel/internal/setup"
-	"github.com/canonical/chisel/internal/slicer"
 	"github.com/canonical/chisel/internal/testutil"
 )
 
@@ -546,7 +545,7 @@ func openArchives(release *setup.Release, arch string) (map[string]archive.Archi
 		if _, ok := pkgArchives[pkg.Name]; ok {
 			continue
 		}
-		archive, err := slicer.PackageArchive(pkg, archives)
+		archive, err := archive.PackageArchive(pkg, archives)
 		if err != nil {
 			return nil, err
 		}

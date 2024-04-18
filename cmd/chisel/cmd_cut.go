@@ -88,26 +88,26 @@ func (cmd *cmdCut) Execute(args []string) error {
 	}
 
 	report, err := slicer.Run(&slicer.RunOptions{
-		Selection: selection,
-		Archives:  archives,
-		TargetDir: cmd.RootDir,
+		Selection:   selection,
+		PkgArchives: archives,
+		TargetDir:   cmd.RootDir,
 	})
 	if err != nil {
 		return err
 	}
 
-	manifestInfo := locateManifests(selection.Slices)
-	if len(manifestInfo) > 0 {
+	manifestSlices := locateManifests(selection.Slices)
+	if len(manifestSlices) > 0 {
 		pkgInfo, err := gatherPackageInfo(selection, archives)
 		if err != nil {
 			return err
 		}
-		_, err = GenerateDB(&GenerateDBOptions{
-			RootDir:      cmd.RootDir,
-			ManifestInfo: manifestInfo,
-			PackageInfo:  pkgInfo,
-			Slices:       selection.Slices,
-			Report:       report,
+		_, err = generateDB(&generateDBOptions{
+			RootDir:        cmd.RootDir,
+			ManifestSlices: manifestSlices,
+			PackageInfo:    pkgInfo,
+			Slices:         selection.Slices,
+			Report:         report,
 		})
 		if err != nil {
 			return err
@@ -143,7 +143,7 @@ func openArchives(release *setup.Release, arch string) (map[string]archive.Archi
 		if _, ok := pkgArchives[pkg.Name]; ok {
 			continue
 		}
-		archive, err := slicer.PackageArchive(pkg, archives)
+		archive, err := archive.PackageArchive(pkg, archives)
 		if err != nil {
 			return nil, err
 		}

@@ -18,11 +18,11 @@ const dbFile = "chisel.db"
 const dbSchema = "1.0"
 const dbMode = 0644
 
-type GenerateDBOptions struct {
+type generateDBOptions struct {
 	// The root dir of the fs.
 	RootDir string
 	// Map of slices indexed by paths which generate manifest.
-	ManifestInfo map[string][]*setup.Slice
+	ManifestSlices map[string][]*setup.Slice
 	// List of package information to write to Chisel DB.
 	PackageInfo []*archive.PackageInfo
 	// List of slices to write to Chisel DB.
@@ -31,16 +31,16 @@ type GenerateDBOptions struct {
 	Report *slicer.Report
 }
 
-// GenerateDB generates the Chisel DB(s) at the specified paths. It returns the
+// generateDB generates the Chisel DB(s) at the specified paths. It returns the
 // paths inside the rootfs where the DB(s) are generated.
-func GenerateDB(opts *GenerateDBOptions) ([]string, error) {
+func generateDB(opts *generateDBOptions) ([]string, error) {
 	dbWriters := make(map[string]*jsonwall.DBWriter)
 	// Paths to generate DB at.
 	dbPaths := make(map[string]string)
 	// Path entry for the DB itself.
 	dbPathEntries := []*Path{}
 
-	for path, slices := range opts.ManifestInfo {
+	for path, slices := range opts.ManifestSlices {
 		dbWriters[path] = jsonwall.NewDBWriter(&jsonwall.DBWriterOptions{
 			Schema: dbSchema,
 		})
@@ -184,7 +184,7 @@ func WriteDB(writer *jsonwall.DBWriter, path string, mode fs.FileMode) (err erro
 		return err
 	}
 
-	debugf("writing DB at %s...", path)
+	debugf("Writing DB at %s", path)
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
 	if err != nil {
 		return err
@@ -198,29 +198,24 @@ func WriteDB(writer *jsonwall.DBWriter, path string, mode fs.FileMode) (err erro
 	defer w.Close()
 
 	_, err = writer.WriteTo(w)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // locateManifests returns a map of slices which contains paths with
 // "generate:manifest". Those paths are used as keys of the returning map.
 func locateManifests(slices []*setup.Slice) map[string][]*setup.Slice {
-	manifestInfo := make(map[string][]*setup.Slice)
+	manifestSlices := make(map[string][]*setup.Slice)
 	for _, s := range slices {
 		for path, info := range s.Contents {
 			if info.Generate == setup.GenerateManifest {
-				if manifestInfo[path] == nil {
-					manifestInfo[path] = []*setup.Slice{}
+				if manifestSlices[path] == nil {
+					manifestSlices[path] = []*setup.Slice{}
 				}
-				if len(manifestInfo[path]) == 0 || manifestInfo[path][len(manifestInfo[path])-1] != s {
-					manifestInfo[path] = append(manifestInfo[path], s)
-				}
+				manifestSlices[path] = append(manifestSlices[path], s)
 			}
 		}
 	}
-	return manifestInfo
+	return manifestSlices
 }
 
 // gatherPackageInfo returns a list of PackageInfo for packages who belong to
