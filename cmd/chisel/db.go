@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -37,6 +38,7 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 	dbw := jsonwall.NewDBWriter(&jsonwall.DBWriterOptions{
 		Schema: dbSchema,
 	})
+	dbPaths := []string{}
 
 	// Add packages to the DB.
 	for _, info := range opts.PackageInfo {
@@ -94,6 +96,7 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 	// Add the DB path and content entries.
 	for path, slices := range opts.ManifestSlices {
 		dbPath := filepath.Join(strings.TrimRight(path, "*"), dbFile)
+		dbPaths = append(dbPaths, dbPath)
 		sliceNames := []string{}
 		for _, s := range slices {
 			name := s.String()
@@ -118,18 +121,15 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 		}
 	}
 
-	generatedPaths := []string{}
-	for path := range opts.ManifestSlices {
-		relPath := filepath.Join(strings.TrimRight(path, "*"), dbFile)
-		absPath := filepath.Join(opts.RootDir, relPath)
-		logf("Generating Chisel DB at %s...", absPath)
-		err := WriteDB(dbw, absPath)
-		if err != nil {
-			return nil, err
-		}
-		generatedPaths = append(generatedPaths, relPath)
+	filePaths := []string{}
+	for _, path := range dbPaths {
+		filePaths = append(filePaths, filepath.Join(opts.RootDir, path))
 	}
-	return generatedPaths, nil
+	err := WriteDB(dbw, filePaths)
+	if err != nil {
+		return nil, err
+	}
+	return dbPaths, nil
 }
 
 type Package struct {
@@ -163,19 +163,27 @@ type Content struct {
 }
 
 // WriteDB writes all added entries and generates the Chisel DB file.
-func WriteDB(writer *jsonwall.DBWriter, path string) (err error) {
-	if err = os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return err
+func WriteDB(writer *jsonwall.DBWriter, paths []string) (err error) {
+	files := []io.Writer{}
+	for _, path := range paths {
+		if err = os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			return err
+		}
+
+		logf("Generating DB at %s...", path)
+		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, dbMode)
+		if err != nil {
+			return err
+		}
+		files = append(files, file)
+		defer file.Close()
 	}
 
-	debugf("Writing DB at %s", path)
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, dbMode)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	// Using a MultiWriter allows to compress the data only once and write the
+	// compressed data to each path.
+	multiWriter := io.MultiWriter(files...)
 
-	w, err := zstd.NewWriter(file)
+	w, err := zstd.NewWriter(multiWriter)
 	if err != nil {
 		return err
 	}

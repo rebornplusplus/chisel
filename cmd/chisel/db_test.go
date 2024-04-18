@@ -151,18 +151,25 @@ func (s *ChiselSuite) TestWriteDB(c *C) {
 		}
 		c.Assert(err, IsNil)
 
-		dir := c.MkDir()
-		dbPath := filepath.Join(dir, "chisel.db")
-		err = chisel.WriteDB(dbw, dbPath)
+		// Write DB at 2 separate locations.
+		dbPaths := []string{}
+		for i := 0; i < 2; i++ {
+			dir := c.MkDir()
+			dbPaths = append(dbPaths, filepath.Join(dir, "chisel.db"))
+		}
+
+		err = chisel.WriteDB(dbw, dbPaths)
 		if test.err != "" {
 			c.Assert(err, ErrorMatches, test.err)
 		} else {
 			c.Assert(err, IsNil)
 		}
 
-		contents, err := extractZSTD(dbPath)
-		c.Assert(err, IsNil)
-		c.Assert(contents, Equals, test.expectedDB)
+		for _, path := range dbPaths {
+			contents, err := extractZSTD(path)
+			c.Assert(err, IsNil)
+			c.Assert(contents, Equals, test.expectedDB)
+		}
 	}
 }
 
