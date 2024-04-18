@@ -28,6 +28,7 @@ func Run(options *RunOptions) (*Report, error) {
 	archives := options.Archives
 	extract := make(map[string]map[string][]deb.ExtractInfo)
 	pathInfos := make(map[string]setup.PathInfo)
+	pathOwner := make(map[string][]*setup.Slice)
 	report := NewReport(options.TargetDir)
 
 	knownPaths := make(map[string]bool)
@@ -92,6 +93,7 @@ func Run(options *RunOptions) (*Report, error) {
 				addKnownPath(targetPath)
 			}
 			pathInfos[targetPath] = pathInfo
+			pathOwner[targetPath] = append(pathOwner[targetPath], slice)
 			if pathInfo.Kind == setup.CopyPath || pathInfo.Kind == setup.GlobPath {
 				sourcePath := pathInfo.Info
 				if sourcePath == "" {
@@ -164,8 +166,17 @@ func Run(options *RunOptions) (*Report, error) {
 				if extractInfo == nil {
 					return nil
 				}
-				if _, ok := slice.Contents[extractInfo.Path]; !ok {
+				if _, ok := pathOwner[extractInfo.Path]; !ok {
 					return nil
+				}
+				for _, s := range pathOwner[extractInfo.Path] {
+					if s.Package != slice.Package {
+						continue
+					}
+					err := report.Add(s, entry)
+					if err != nil {
+						return err
+					}
 				}
 
 				// Check whether the file was created because it matched a glob.
@@ -177,7 +188,7 @@ func Run(options *RunOptions) (*Report, error) {
 					globbedPaths[extractInfo.Path] = append(globbedPaths[extractInfo.Path], relPath)
 					addKnownPath(relPath)
 				}
-				return report.Add(slice, entry)
+				return nil
 			},
 		})
 		reader.Close()

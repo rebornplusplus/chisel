@@ -784,6 +784,49 @@ var slicerTests = []slicerTest{{
 	},
 	filesystem: map[string]string{},
 	report:     map[string]string{},
+}, {
+	summary: "Multiple slices of same package",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice"}, {"test-package", "manifest"}, {"test-package", "a-slice"},
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/dir/file:
+						/dir/file-copy:  {copy: /dir/file}
+						/other-dir/file: {symlink: ../dir/file}
+						/dir/text-file:  {text: data1}
+						/dir/foo/bar/:   {make: true, mode: 01777}
+				manifest:
+					contents:
+						/var/lib/foo/**: {generate: manifest}
+				a-slice:
+					contents:
+						/dir/other-file:
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":           "dir 0755",
+		"/dir/file":       "file 0644 cc55e2ec",
+		"/dir/file-copy":  "file 0644 cc55e2ec",
+		"/dir/foo/":       "dir 0755",
+		"/dir/foo/bar/":   "dir 01777",
+		"/dir/other-file": "file 0644 63d5dd49",
+		"/dir/text-file":  "file 0644 5b41362b",
+		"/other-dir/":     "dir 0755",
+		"/other-dir/file": "symlink ../dir/file",
+	},
+	report: map[string]string{
+		"/dir/file":       "file 0644 cc55e2ec {test-package_myslice}",
+		"/dir/file-copy":  "file 0644 cc55e2ec {test-package_myslice}",
+		"/dir/foo/bar/":   "dir 01777 {test-package_myslice}",
+		"/dir/other-file": "file 0644 63d5dd49 {test-package_a-slice}",
+		"/dir/text-file":  "file 0644 5b41362b {test-package_myslice}",
+		"/other-dir/file": "symlink ../dir/file {test-package_myslice}",
+	},
 }}
 
 var defaultChiselYaml = `
