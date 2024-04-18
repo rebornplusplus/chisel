@@ -38,11 +38,11 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 	dbw := jsonwall.NewDBWriter(&jsonwall.DBWriterOptions{
 		Schema: dbSchema,
 	})
-	dbPaths := []string{}
+	genPaths := []string{}
 
 	// Add packages to the DB.
 	for _, info := range opts.PackageInfo {
-		err := dbw.Add(&Package{
+		err := dbw.Add(&dbPackage{
 			Kind:    "package",
 			Name:    info.Name,
 			Version: info.Version,
@@ -55,7 +55,7 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 	}
 	// Add slices to the DB.
 	for _, s := range opts.Slices {
-		err := dbw.Add(&Slice{
+		err := dbw.Add(&dbSlice{
 			Kind: "slice",
 			Name: s.String(),
 		})
@@ -70,7 +70,7 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 		for s := range entry.Slices {
 			name := s.String()
 			// Add contents to the DB.
-			err := dbw.Add(&Content{
+			err := dbw.Add(&dbContent{
 				Kind:  "content",
 				Slice: name,
 				Path:  entry.Path,
@@ -80,7 +80,7 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 			}
 			sliceNames = append(sliceNames, name)
 		}
-		err := dbw.Add(&Path{
+		err := dbw.Add(&dbPath{
 			Kind:   "path",
 			Path:   entry.Path,
 			Mode:   mode,
@@ -95,24 +95,24 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 	}
 	// Add the DB path and content entries.
 	for path, slices := range opts.ManifestSlices {
-		dbPath := filepath.Join(strings.TrimRight(path, "*"), dbFile)
-		dbPaths = append(dbPaths, dbPath)
+		fPath := filepath.Join(strings.TrimRight(path, "*"), dbFile)
+		genPaths = append(genPaths, fPath)
 		sliceNames := []string{}
 		for _, s := range slices {
 			name := s.String()
-			err := dbw.Add(&Content{
+			err := dbw.Add(&dbContent{
 				Kind:  "content",
 				Slice: name,
-				Path:  dbPath,
+				Path:  fPath,
 			})
 			if err != nil {
 				return nil, err
 			}
 			sliceNames = append(sliceNames, name)
 		}
-		err := dbw.Add(&Path{
+		err := dbw.Add(&dbPath{
 			Kind:   "path",
-			Path:   dbPath,
+			Path:   fPath,
 			Mode:   fmt.Sprintf("0%o", dbMode&fs.ModePerm),
 			Slices: sliceNames,
 		})
@@ -122,17 +122,17 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 	}
 
 	filePaths := []string{}
-	for _, path := range dbPaths {
+	for _, path := range genPaths {
 		filePaths = append(filePaths, filepath.Join(opts.RootDir, path))
 	}
-	err := WriteDB(dbw, filePaths)
+	err := writeDB(dbw, filePaths)
 	if err != nil {
 		return nil, err
 	}
-	return dbPaths, nil
+	return genPaths, nil
 }
 
-type Package struct {
+type dbPackage struct {
 	Kind    string `json:"kind"`
 	Name    string `json:"name"`
 	Version string `json:"version"`
@@ -140,12 +140,12 @@ type Package struct {
 	Arch    string `json:"arch"`
 }
 
-type Slice struct {
+type dbSlice struct {
 	Kind string `json:"kind"`
 	Name string `json:"name"`
 }
 
-type Path struct {
+type dbPath struct {
 	Kind      string   `json:"kind"`
 	Path      string   `json:"path"`
 	Mode      string   `json:"mode"`
@@ -156,14 +156,14 @@ type Path struct {
 	Link      string   `json:"link,omitempty"`
 }
 
-type Content struct {
+type dbContent struct {
 	Kind  string `json:"kind"`
 	Slice string `json:"slice"`
 	Path  string `json:"path"`
 }
 
-// WriteDB writes all added entries and generates the Chisel DB file.
-func WriteDB(writer *jsonwall.DBWriter, paths []string) (err error) {
+// writeDB writes all added entries and generates the Chisel DB file.
+func writeDB(writer *jsonwall.DBWriter, paths []string) (err error) {
 	files := []io.Writer{}
 	for _, path := range paths {
 		if err = os.MkdirAll(filepath.Dir(path), 0755); err != nil {

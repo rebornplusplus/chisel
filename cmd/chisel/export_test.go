@@ -1,6 +1,13 @@
 package main
 
-var RunMain = run
+var (
+	WriteDB = writeDB
+)
+
+type DBPackage dbPackage
+type DBSlice dbSlice
+type DBPath dbPath
+type DBContent dbContent
 
 func FakeIsStdoutTTY(t bool) (restore func()) {
 	oldIsStdoutTTY := isStdoutTTY

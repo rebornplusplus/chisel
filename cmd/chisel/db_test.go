@@ -15,17 +15,17 @@ import (
 
 type writeDBTest struct {
 	summary    string
-	packages   []*chisel.Package
-	slices     []*chisel.Slice
-	paths      []*chisel.Path
-	contents   []*chisel.Content
+	packages   []*chisel.DBPackage
+	slices     []*chisel.DBSlice
+	paths      []*chisel.DBPath
+	contents   []*chisel.DBContent
 	expectedDB string
 	err        string
 }
 
 var writeDBTests = []writeDBTest{{
 	summary: "Write Chisel DB",
-	packages: []*chisel.Package{{
+	packages: []*chisel.DBPackage{{
 		Kind:    "package",
 		Name:    "mypkg",
 		Version: "12ubuntu4.6",
@@ -38,7 +38,7 @@ var writeDBTests = []writeDBTest{{
 		Digest:  "b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c",
 		Arch:    "amd64",
 	}},
-	slices: []*chisel.Slice{{
+	slices: []*chisel.DBSlice{{
 		Kind: "slice",
 		Name: "mypkg_myslice",
 	}, {
@@ -48,7 +48,7 @@ var writeDBTests = []writeDBTest{{
 		Kind: "slice",
 		Name: "foo_bar",
 	}},
-	paths: []*chisel.Path{{
+	paths: []*chisel.DBPath{{
 		Kind:   "path",
 		Path:   "/usr/bin/foo",
 		Mode:   "0644",
@@ -82,7 +82,7 @@ var writeDBTests = []writeDBTest{{
 		FinalHash: "71f28b05f5b0a3af1776ae55d578c16a11f10aef7dd408421c35dac17ca7cbad",
 		Size:      489,
 	}},
-	contents: []*chisel.Content{{
+	contents: []*chisel.DBContent{{
 		Kind:  "content",
 		Slice: "foo_bar",
 		Path:  "/usr/bin/foo",
