@@ -82,7 +82,7 @@ func (cmd *cmdCut) Execute(args []string) error {
 		return err
 	}
 
-	archives, err := OpenArchives(release, cmd.Arch)
+	archives, err := openArchives(release, cmd.Arch)
 	if err != nil {
 		return err
 	}
@@ -117,14 +117,12 @@ func (cmd *cmdCut) Execute(args []string) error {
 	return nil
 }
 
-var OpenArchives = openArchives
-
 // openArchives opens the archives listed in the release and returns the
 // archives mapped by package names.
 func openArchives(release *setup.Release, arch string) (map[string]archive.Archive, error) {
 	archives := make(map[string]archive.Archive)
 	for archiveName, archiveInfo := range release.Archives {
-		openArchive, err := archive.Open(&archive.Options{
+		openArchive, err := OpenArchive(&archive.Options{
 			Label:      archiveName,
 			Version:    archiveInfo.Version,
 			Arch:       arch,

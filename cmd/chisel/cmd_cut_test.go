@@ -13,7 +13,6 @@ import (
 
 	chisel "github.com/canonical/chisel/cmd/chisel"
 	"github.com/canonical/chisel/internal/archive"
-	"github.com/canonical/chisel/internal/setup"
 	"github.com/canonical/chisel/internal/testutil"
 )
 
@@ -475,7 +474,7 @@ func (s *ChiselSuite) TestCut(c *C) {
 			c.Assert(err, IsNil)
 		}
 
-		restore := fakeOpenArchives(openArchives)
+		restore := fakeOpenArchive(openArchive)
 		defer restore()
 
 		targetDir := c.MkDir()
@@ -525,37 +524,15 @@ func findManifestPaths(release map[string]string) []string {
 	return paths
 }
 
-func openArchives(release *setup.Release, arch string) (map[string]archive.Archive, error) {
-	archives := map[string]archive.Archive{}
-	for name, setupArchive := range release.Archives {
-		archive := &testArchive{
-			options: archive.Options{
-				Label:      setupArchive.Name,
-				Version:    setupArchive.Version,
-				Suites:     setupArchive.Suites,
-				Components: setupArchive.Components,
-				Arch:       arch,
-			},
-			pkgs: archivePackages,
-		}
-		archives[name] = archive
-	}
-	pkgArchives := make(map[string]archive.Archive)
-	for _, pkg := range release.Packages {
-		if _, ok := pkgArchives[pkg.Name]; ok {
-			continue
-		}
-		archive, err := archive.PackageArchive(pkg, archives)
-		if err != nil {
-			return nil, err
-		}
-		pkgArchives[pkg.Name] = archive
-	}
-	return pkgArchives, nil
+func openArchive(opts *archive.Options) (archive.Archive, error) {
+	return &testArchive{
+		options: *opts,
+		pkgs:    archivePackages,
+	}, nil
 }
 
-func fakeOpenArchives(f func(*setup.Release, string) (map[string]archive.Archive, error)) (restore func()) {
-	old := chisel.OpenArchives
-	chisel.OpenArchives = f
-	return func() { chisel.OpenArchives = old }
+func fakeOpenArchive(f func(opts *archive.Options) (archive.Archive, error)) (restore func()) {
+	old := chisel.OpenArchive
+	chisel.OpenArchive = f
+	return func() { chisel.OpenArchive = old }
 }
