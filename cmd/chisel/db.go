@@ -34,115 +34,101 @@ type generateDBOptions struct {
 // generateDB generates the Chisel DB(s) at the specified paths. It returns the
 // paths inside the rootfs where the DB(s) are generated.
 func generateDB(opts *generateDBOptions) ([]string, error) {
-	dbWriters := make(map[string]*jsonwall.DBWriter)
-	// Paths to generate DB at.
-	dbPaths := make(map[string]string)
-	// Path entry for the DB itself.
-	dbPathEntries := []*Path{}
+	dbw := jsonwall.NewDBWriter(&jsonwall.DBWriterOptions{
+		Schema: dbSchema,
+	})
 
-	for path, slices := range opts.ManifestSlices {
-		dbWriters[path] = jsonwall.NewDBWriter(&jsonwall.DBWriterOptions{
-			Schema: dbSchema,
+	// Add packages to the DB.
+	for _, info := range opts.PackageInfo {
+		err := dbw.Add(&Package{
+			Kind:    "package",
+			Name:    info.Name,
+			Version: info.Version,
+			Digest:  info.Hash,
+			Arch:    info.Arch,
 		})
-		dbPath := filepath.Join(opts.RootDir, strings.TrimRight(path, "*"), dbFile)
-		dbPaths[path] = filepath.Clean(dbPath)
-
-		slicesNames := []string{}
-		for _, s := range slices {
-			slicesNames = append(slicesNames, s.String())
-		}
-		relPath := filepath.Clean("/" + strings.TrimPrefix(dbPaths[path], opts.RootDir))
-		dbPathEntries = append(dbPathEntries, &Path{
-			Kind:   "path",
-			Path:   relPath,
-			Mode:   fmt.Sprintf("0%o", dbMode&fs.ModePerm),
-			Slices: slicesNames,
-		})
-	}
-
-	generatedPaths := []string{}
-	for path, dbw := range dbWriters {
-		// Add packages to the DB.
-		for _, info := range opts.PackageInfo {
-			err := dbw.Add(&Package{
-				Kind:    "package",
-				Name:    info.Name,
-				Version: info.Version,
-				Digest:  info.Hash,
-				Arch:    info.Arch,
-			})
-			if err != nil {
-				return nil, err
-			}
-		}
-		// Add slices to the DB.
-		for _, s := range opts.Slices {
-			err := dbw.Add(&Slice{
-				Kind: "slice",
-				Name: s.String(),
-			})
-			if err != nil {
-				return nil, err
-			}
-		}
-		// Add paths and contents to the DB.
-		for _, entry := range opts.Report.Entries {
-			mode := fmt.Sprintf("0%o", entry.Mode&fs.ModePerm)
-			sliceNames := []string{}
-			for s := range entry.Slices {
-				name := s.String()
-				// Add contents to the DB.
-				err := dbw.Add(&Content{
-					Kind:  "content",
-					Slice: name,
-					Path:  entry.Path,
-				})
-				if err != nil {
-					return nil, err
-				}
-				sliceNames = append(sliceNames, name)
-			}
-			err := dbw.Add(&Path{
-				Kind:   "path",
-				Path:   entry.Path,
-				Mode:   mode,
-				Slices: sliceNames,
-				Hash:   entry.Hash,
-				Size:   uint64(entry.Size),
-				Link:   entry.Link,
-			})
-			if err != nil {
-				return nil, err
-			}
-		}
-		// Add the DB path and content entries.
-		for _, pathEntry := range dbPathEntries {
-			err := dbw.Add(pathEntry)
-			if err != nil {
-				return nil, err
-			}
-			for _, s := range pathEntry.Slices {
-				err := dbw.Add(&Content{
-					Kind:  "content",
-					Slice: s,
-					Path:  pathEntry.Path,
-				})
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
-
-		dbPath := dbPaths[path]
-		logf("Generating Chisel DB at %s...", dbPath)
-		err := WriteDB(dbw, dbPath, dbMode)
 		if err != nil {
 			return nil, err
 		}
-		relPath := filepath.Clean("/" + strings.TrimPrefix(dbPath, opts.RootDir))
-		generatedPaths = append(generatedPaths, relPath)
+	}
+	// Add slices to the DB.
+	for _, s := range opts.Slices {
+		err := dbw.Add(&Slice{
+			Kind: "slice",
+			Name: s.String(),
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Add paths and contents to the DB.
+	for _, entry := range opts.Report.Entries {
+		mode := fmt.Sprintf("0%o", entry.Mode&fs.ModePerm)
+		sliceNames := []string{}
+		for s := range entry.Slices {
+			name := s.String()
+			// Add contents to the DB.
+			err := dbw.Add(&Content{
+				Kind:  "content",
+				Slice: name,
+				Path:  entry.Path,
+			})
+			if err != nil {
+				return nil, err
+			}
+			sliceNames = append(sliceNames, name)
+		}
+		err := dbw.Add(&Path{
+			Kind:   "path",
+			Path:   entry.Path,
+			Mode:   mode,
+			Slices: sliceNames,
+			Hash:   entry.Hash,
+			Size:   uint64(entry.Size),
+			Link:   entry.Link,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Add the DB path and content entries.
+	for path, slices := range opts.ManifestSlices {
+		dbPath := filepath.Join(strings.TrimRight(path, "*"), dbFile)
+		sliceNames := []string{}
+		for _, s := range slices {
+			name := s.String()
+			err := dbw.Add(&Content{
+				Kind:  "content",
+				Slice: name,
+				Path:  dbPath,
+			})
+			if err != nil {
+				return nil, err
+			}
+			sliceNames = append(sliceNames, name)
+		}
+		err := dbw.Add(&Path{
+			Kind:   "path",
+			Path:   dbPath,
+			Mode:   fmt.Sprintf("0%o", dbMode&fs.ModePerm),
+			Slices: sliceNames,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
+	generatedPaths := []string{}
+	for path := range opts.ManifestSlices {
+		relPath := filepath.Join(strings.TrimRight(path, "*"), dbFile)
+		absPath := filepath.Join(opts.RootDir, relPath)
+		logf("Generating Chisel DB at %s...", absPath)
+		err := WriteDB(dbw, absPath)
+		if err != nil {
+			return nil, err
+		}
+		generatedPaths = append(generatedPaths, relPath)
+	}
 	return generatedPaths, nil
 }
 
@@ -176,16 +162,14 @@ type Content struct {
 	Path  string `json:"path"`
 }
 
-// WriteDB writes all added entries to the Chisel DB and generates the actual
-// file. It returns the path of the generated Chisel DB file. The file
-// chisel.db is a zstd compressed file.
-func WriteDB(writer *jsonwall.DBWriter, path string, mode fs.FileMode) (err error) {
+// WriteDB writes all added entries and generates the Chisel DB file.
+func WriteDB(writer *jsonwall.DBWriter, path string) (err error) {
 	if err = os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
 
 	debugf("Writing DB at %s", path)
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, dbMode)
 	if err != nil {
 		return err
 	}

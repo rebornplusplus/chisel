@@ -153,7 +153,7 @@ func (s *ChiselSuite) TestWriteDB(c *C) {
 
 		dir := c.MkDir()
 		dbPath := filepath.Join(dir, "chisel.db")
-		err = chisel.WriteDB(dbw, dbPath, 0644)
+		err = chisel.WriteDB(dbw, dbPath)
 		if test.err != "" {
 			c.Assert(err, ErrorMatches, test.err)
 		} else {
