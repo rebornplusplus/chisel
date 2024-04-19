@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/klauspost/compress/zstd"
 	. "gopkg.in/check.v1"
 
 	chisel "github.com/canonical/chisel/cmd/chisel"
@@ -535,4 +536,25 @@ func fakeOpenArchive(f func(opts *archive.Options) (archive.Archive, error)) (re
 	old := chisel.OpenArchive
 	chisel.OpenArchive = f
 	return func() { chisel.OpenArchive = old }
+}
+
+// Extract a zstd-compressed file "src" at path "dest"
+func extractZSTD(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	reader, err := zstd.NewReader(file)
+	if err != nil {
+		return "", err
+	}
+	defer reader.Close()
+
+	bytes, err := io.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
