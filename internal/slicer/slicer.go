@@ -28,7 +28,7 @@ func Run(options *RunOptions) (*Report, error) {
 	archives := options.PkgArchives
 	extract := make(map[string]map[string][]deb.ExtractInfo)
 	pathInfos := make(map[string]setup.PathInfo)
-	pathOwner := make(map[string][]*setup.Slice)
+	pkgSlices := make(map[string][]*setup.Slice)
 	report := NewReport(options.TargetDir)
 
 	knownPaths := make(map[string]bool)
@@ -73,6 +73,7 @@ func Run(options *RunOptions) (*Report, error) {
 
 	// Build information to process the selection.
 	for _, slice := range options.Selection.Slices {
+		pkgSlices[slice.Package] = append(pkgSlices[slice.Package], slice)
 		extractPackage := extract[slice.Package]
 		if extractPackage == nil {
 			extractPackage = make(map[string][]deb.ExtractInfo)
@@ -93,7 +94,6 @@ func Run(options *RunOptions) (*Report, error) {
 				addKnownPath(targetPath)
 			}
 			pathInfos[targetPath] = pathInfo
-			pathOwner[targetPath] = append(pathOwner[targetPath], slice)
 			if pathInfo.Kind == setup.CopyPath || pathInfo.Kind == setup.GlobPath {
 				sourcePath := pathInfo.Info
 				if sourcePath == "" {
@@ -166,11 +166,11 @@ func Run(options *RunOptions) (*Report, error) {
 				if extractInfo == nil {
 					return nil
 				}
-				if _, ok := pathOwner[extractInfo.Path]; !ok {
+				if _, ok := pathInfos[extractInfo.Path]; !ok {
 					return nil
 				}
-				for _, s := range pathOwner[extractInfo.Path] {
-					if s.Package != slice.Package {
+				for _, s := range pkgSlices[slice.Package] {
+					if _, ok := s.Contents[extractInfo.Path]; !ok {
 						continue
 					}
 					err := report.Add(s, entry)
