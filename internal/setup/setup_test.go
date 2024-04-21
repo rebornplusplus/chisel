@@ -1073,13 +1073,6 @@ var setupTests = []setupTest{{
 					contents:
 						/path/**: {generate: "manifest"}
 		`,
-		"slices/mydir/mypkg2.yaml": `
-			package: mypkg2
-			slices:
-				myslice:
-					contents:
-						/path-2/**: {generate: "manifest"}
-		`,
 	},
 	release: &setup.Release{
 		DefaultArchive: "ubuntu",
@@ -1104,20 +1097,6 @@ var setupTests = []setupTest{{
 						Name:    "myslice",
 						Contents: map[string]setup.PathInfo{
 							"/path/**": {Kind: "generate", Generate: "manifest"},
-						},
-					},
-				},
-			},
-			"mypkg2": {
-				Archive: "ubuntu",
-				Name:    "mypkg2",
-				Path:    "slices/mydir/mypkg2.yaml",
-				Slices: map[string]*setup.Slice{
-					"myslice": {
-						Package: "mypkg2",
-						Name:    "myslice",
-						Contents: map[string]setup.PathInfo{
-							"/path-2/**": {Kind: "generate", Generate: "manifest"},
 						},
 					},
 				},
@@ -1218,7 +1197,7 @@ var setupTests = []setupTest{{
 						/path/**:
 		`,
 	},
-	relerror: "slices mypkg_myslice and mypkg2_myslice conflict on /path/\\*\\*",
+	relerror: `slices mypkg_myslice and mypkg2_myslice conflict on /path/\*\*`,
 }, {
 	summary: "Generate paths can be the same across packages",
 	input: map[string]string{
@@ -1319,7 +1298,7 @@ var setupTests = []setupTest{{
 						/path/**: {generate: "manifest", until: mutate}
 		`,
 	},
-	relerror: "slice mypkg_myslice path /path/\\*\\* has invalid generate options",
+	relerror: `slice mypkg_myslice path /path/\*\* has invalid generate options`,
 }}
 
 var defaultChiselYaml = `

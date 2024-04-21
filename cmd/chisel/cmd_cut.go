@@ -82,23 +82,23 @@ func (cmd *cmdCut) Execute(args []string) error {
 		return err
 	}
 
-	archives, err := openArchives(release, cmd.Arch)
+	pkgArchives, err := openPkgArchives(release, cmd.Arch)
 	if err != nil {
 		return err
 	}
 
 	report, err := slicer.Run(&slicer.RunOptions{
 		Selection:   selection,
-		PkgArchives: archives,
+		PkgArchives: pkgArchives,
 		TargetDir:   cmd.RootDir,
 	})
 	if err != nil {
 		return err
 	}
 
-	manifestSlices := locateManifests(selection.Slices)
+	manifestSlices := locateManifestSlices(selection.Slices)
 	if len(manifestSlices) > 0 {
-		pkgInfo, err := gatherPackageInfo(selection, archives)
+		pkgInfo, err := gatherPackageInfo(selection, pkgArchives)
 		if err != nil {
 			return err
 		}
@@ -117,12 +117,13 @@ func (cmd *cmdCut) Execute(args []string) error {
 	return nil
 }
 
-// openArchives opens the archives listed in the release and returns the
-// archives mapped by package names.
-func openArchives(release *setup.Release, arch string) (map[string]archive.Archive, error) {
+// openPkgArchives opens the archives listed in the release, and then for each
+// package in the release, selects the archive for that package. It returns a
+// map of archives indexed by package names.
+func openPkgArchives(release *setup.Release, arch string) (map[string]archive.Archive, error) {
 	archives := make(map[string]archive.Archive)
 	for archiveName, archiveInfo := range release.Archives {
-		openArchive, err := OpenArchive(&archive.Options{
+		archive, err := OpenArchive(&archive.Options{
 			Label:      archiveName,
 			Version:    archiveInfo.Version,
 			Arch:       arch,
@@ -134,16 +135,19 @@ func openArchives(release *setup.Release, arch string) (map[string]archive.Archi
 		if err != nil {
 			return nil, err
 		}
-		archives[archiveName] = openArchive
+		archives[archiveName] = archive
 	}
 	pkgArchives := make(map[string]archive.Archive)
 	for _, pkg := range release.Packages {
 		if _, ok := pkgArchives[pkg.Name]; ok {
 			continue
 		}
-		archive, err := archive.PackageArchive(pkg, archives)
-		if err != nil {
-			return nil, err
+		archive := archives[pkg.Archive]
+		if archive == nil {
+			return nil, fmt.Errorf("archive %q not defined", pkg.Archive)
+		}
+		if !archive.Exists(pkg.Name) {
+			return nil, fmt.Errorf("slice package %q missing from archive", pkg.Name)
 		}
 		pkgArchives[pkg.Name] = archive
 	}

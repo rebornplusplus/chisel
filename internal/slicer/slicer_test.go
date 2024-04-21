@@ -906,12 +906,7 @@ func runSlicerTests(c *C, tests []slicerTest) {
 		}
 		pkgArchives := make(map[string]archive.Archive)
 		for _, pkg := range release.Packages {
-			if _, ok := pkgArchives[pkg.Name]; ok {
-				continue
-			}
-			archive, err := archive.PackageArchive(pkg, archives)
-			c.Assert(err, IsNil)
-			pkgArchives[pkg.Name] = archive
+			pkgArchives[pkg.Name] = archives[pkg.Archive]
 		}
 
 		targetDir := c.MkDir()

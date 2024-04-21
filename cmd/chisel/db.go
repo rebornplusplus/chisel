@@ -19,119 +19,6 @@ const dbFile = "chisel.db"
 const dbSchema = "1.0"
 const dbMode = 0644
 
-type generateDBOptions struct {
-	// The root dir of the fs.
-	RootDir string
-	// Map of slices indexed by paths which generate manifest.
-	ManifestSlices map[string][]*setup.Slice
-	// List of package information to write to Chisel DB.
-	PackageInfo []*archive.PackageInfo
-	// List of slices to write to Chisel DB.
-	Slices []*setup.Slice
-	// Path entries to write to Chisel DB.
-	Report *slicer.Report
-}
-
-// generateDB generates the Chisel DB(s) at the specified paths. It returns the
-// paths inside the rootfs where the DB(s) are generated.
-func generateDB(opts *generateDBOptions) ([]string, error) {
-	dbw := jsonwall.NewDBWriter(&jsonwall.DBWriterOptions{
-		Schema: dbSchema,
-	})
-	genPaths := []string{}
-
-	// Add packages to the DB.
-	for _, info := range opts.PackageInfo {
-		err := dbw.Add(&dbPackage{
-			Kind:    "package",
-			Name:    info.Name,
-			Version: info.Version,
-			Digest:  info.Hash,
-			Arch:    info.Arch,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	// Add slices to the DB.
-	for _, s := range opts.Slices {
-		err := dbw.Add(&dbSlice{
-			Kind: "slice",
-			Name: s.String(),
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	// Add paths and contents to the DB.
-	for _, entry := range opts.Report.Entries {
-		mode := fmt.Sprintf("0%o", entry.Mode&fs.ModePerm)
-		sliceNames := []string{}
-		for s := range entry.Slices {
-			name := s.String()
-			// Add contents to the DB.
-			err := dbw.Add(&dbContent{
-				Kind:  "content",
-				Slice: name,
-				Path:  entry.Path,
-			})
-			if err != nil {
-				return nil, err
-			}
-			sliceNames = append(sliceNames, name)
-		}
-		err := dbw.Add(&dbPath{
-			Kind:   "path",
-			Path:   entry.Path,
-			Mode:   mode,
-			Slices: sliceNames,
-			Hash:   entry.Hash,
-			Size:   uint64(entry.Size),
-			Link:   entry.Link,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	// Add the DB path and content entries.
-	for path, slices := range opts.ManifestSlices {
-		fPath := filepath.Join(strings.TrimRight(path, "*"), dbFile)
-		genPaths = append(genPaths, fPath)
-		sliceNames := []string{}
-		for _, s := range slices {
-			name := s.String()
-			err := dbw.Add(&dbContent{
-				Kind:  "content",
-				Slice: name,
-				Path:  fPath,
-			})
-			if err != nil {
-				return nil, err
-			}
-			sliceNames = append(sliceNames, name)
-		}
-		err := dbw.Add(&dbPath{
-			Kind:   "path",
-			Path:   fPath,
-			Mode:   fmt.Sprintf("0%o", dbMode&fs.ModePerm),
-			Slices: sliceNames,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	filePaths := []string{}
-	for _, path := range genPaths {
-		filePaths = append(filePaths, filepath.Join(opts.RootDir, path))
-	}
-	err := writeDB(dbw, filePaths)
-	if err != nil {
-		return nil, err
-	}
-	return genPaths, nil
-}
-
 type dbPackage struct {
 	Kind    string `json:"kind"`
 	Name    string `json:"name"`
@@ -162,7 +49,117 @@ type dbContent struct {
 	Path  string `json:"path"`
 }
 
-// writeDB writes all added entries and generates the Chisel DB file.
+type generateDBOptions struct {
+	// The root dir of the fs.
+	RootDir string
+	// Map of slices indexed by paths which generate manifest.
+	ManifestSlices map[string][]*setup.Slice
+	// List of package information to write to manifest.
+	PackageInfo []*archive.PackageInfo
+	// List of slices to write to manifest.
+	Slices []*setup.Slice
+	// Path entries to write to manifest.
+	Report *slicer.Report
+}
+
+// generateDB generates the Chisel manifest(s) at the specified paths. It
+// returns the paths inside the rootfs where the manifest(s) are generated.
+func generateDB(opts *generateDBOptions) ([]string, error) {
+	dbw := jsonwall.NewDBWriter(&jsonwall.DBWriterOptions{
+		Schema: dbSchema,
+	})
+	genPaths := []string{}
+
+	// Add packages to the manifest.
+	for _, info := range opts.PackageInfo {
+		err := dbw.Add(&dbPackage{
+			Kind:    "package",
+			Name:    info.Name,
+			Version: info.Version,
+			Digest:  info.Hash,
+			Arch:    info.Arch,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Add slices to the manifest.
+	for _, s := range opts.Slices {
+		err := dbw.Add(&dbSlice{
+			Kind: "slice",
+			Name: s.String(),
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Add paths and contents to the manifest.
+	for _, entry := range opts.Report.Entries {
+		sliceNames := []string{}
+		for s := range entry.Slices {
+			// Add contents to the DB.
+			err := dbw.Add(&dbContent{
+				Kind:  "content",
+				Slice: s.String(),
+				Path:  entry.Path,
+			})
+			if err != nil {
+				return nil, err
+			}
+			sliceNames = append(sliceNames, s.String())
+		}
+		err := dbw.Add(&dbPath{
+			Kind:   "path",
+			Path:   entry.Path,
+			Mode:   fmt.Sprintf("0%o", entry.Mode&fs.ModePerm),
+			Slices: sliceNames,
+			Hash:   entry.Hash,
+			Size:   uint64(entry.Size),
+			Link:   entry.Link,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Add the manifest path and content entries.
+	for path, slices := range opts.ManifestSlices {
+		fPath := getManifestPath(path)
+		genPaths = append(genPaths, fPath)
+		sliceNames := []string{}
+		for _, s := range slices {
+			err := dbw.Add(&dbContent{
+				Kind:  "content",
+				Slice: s.String(),
+				Path:  fPath,
+			})
+			if err != nil {
+				return nil, err
+			}
+			sliceNames = append(sliceNames, s.String())
+		}
+		err := dbw.Add(&dbPath{
+			Kind:   "path",
+			Path:   fPath,
+			Mode:   fmt.Sprintf("0%o", dbMode&fs.ModePerm),
+			Slices: sliceNames,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	filePaths := []string{}
+	for _, path := range genPaths {
+		filePaths = append(filePaths, filepath.Join(opts.RootDir, path))
+	}
+	err := writeDB(dbw, filePaths)
+	if err != nil {
+		return nil, err
+	}
+	return genPaths, nil
+}
+
+// writeDB writes all added entries and generates the manifest file.
 func writeDB(writer *jsonwall.DBWriter, paths []string) (err error) {
 	files := []io.Writer{}
 	for _, path := range paths {
@@ -170,7 +167,7 @@ func writeDB(writer *jsonwall.DBWriter, paths []string) (err error) {
 			return err
 		}
 
-		logf("Generating DB at %s...", path)
+		logf("Generating manifest at %s...", path)
 		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, dbMode)
 		if err != nil {
 			return err
@@ -182,7 +179,6 @@ func writeDB(writer *jsonwall.DBWriter, paths []string) (err error) {
 	// Using a MultiWriter allows to compress the data only once and write the
 	// compressed data to each path.
 	multiWriter := io.MultiWriter(files...)
-
 	w, err := zstd.NewWriter(multiWriter)
 	if err != nil {
 		return err
@@ -193,9 +189,13 @@ func writeDB(writer *jsonwall.DBWriter, paths []string) (err error) {
 	return err
 }
 
-// locateManifests returns a map of slices which contains paths with
-// "generate:manifest". Those paths are used as keys of the returning map.
-func locateManifests(slices []*setup.Slice) map[string][]*setup.Slice {
+func getManifestPath(generatePath string) string {
+	return filepath.Join(strings.TrimRight(generatePath, "*"), dbFile)
+}
+
+// locateManifestSlices finds the paths marked with "generate:manifest" and
+// returns a map from said path to all the slices that declare it.
+func locateManifestSlices(slices []*setup.Slice) map[string][]*setup.Slice {
 	manifestSlices := make(map[string][]*setup.Slice)
 	for _, s := range slices {
 		for path, info := range s.Contents {

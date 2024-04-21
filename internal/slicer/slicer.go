@@ -25,7 +25,7 @@ type RunOptions struct {
 
 func Run(options *RunOptions) (*Report, error) {
 
-	archives := options.PkgArchives
+	pkgArchives := options.PkgArchives
 	extract := make(map[string]map[string][]deb.ExtractInfo)
 	pathInfos := make(map[string]setup.PathInfo)
 	pkgSlices := make(map[string][]*setup.Slice)
@@ -79,7 +79,7 @@ func Run(options *RunOptions) (*Report, error) {
 			extractPackage = make(map[string][]deb.ExtractInfo)
 			extract[slice.Package] = extractPackage
 		}
-		arch := archives[slice.Package].Options().Arch
+		arch := pkgArchives[slice.Package].Options().Arch
 		copyrightPath := "/usr/share/doc/" + slice.Package + "/copyright"
 		addKnownPath(copyrightPath)
 		hasCopyright := false
@@ -106,8 +106,8 @@ func Run(options *RunOptions) (*Report, error) {
 					hasCopyright = true
 				}
 			} else if pathInfo.Kind == setup.GeneratePath {
-				// "generate" implies generating new things in a path. Thus, we
-				// do not want anything from the package for GeneratePath.
+				// "GeneratePath" type implies generating new files. Thus, we do
+				// not want to extract anything from the package.
 				continue
 			} else {
 				targetDir := filepath.Dir(strings.TrimRight(targetPath, "/")) + "/"
@@ -134,7 +134,7 @@ func Run(options *RunOptions) (*Report, error) {
 		if packages[slice.Package] != nil {
 			continue
 		}
-		reader, err := archives[slice.Package].Fetch(slice.Package)
+		reader, err := pkgArchives[slice.Package].Fetch(slice.Package)
 		if err != nil {
 			return nil, err
 		}
@@ -201,7 +201,7 @@ func Run(options *RunOptions) (*Report, error) {
 	// Create new content not coming from packages.
 	done := make(map[string]bool)
 	for _, slice := range options.Selection.Slices {
-		arch := archives[slice.Package].Options().Arch
+		arch := pkgArchives[slice.Package].Options().Arch
 		for targetPath, pathInfo := range slice.Contents {
 			if len(pathInfo.Arch) > 0 && !contains(pathInfo.Arch, arch) {
 				continue
@@ -347,4 +347,3 @@ func contains(l []string, s string) bool {
 	}
 	return false
 }
-

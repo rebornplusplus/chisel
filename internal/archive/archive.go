@@ -14,7 +14,6 @@ import (
 	"github.com/canonical/chisel/internal/control"
 	"github.com/canonical/chisel/internal/deb"
 	"github.com/canonical/chisel/internal/pgputil"
-	"github.com/canonical/chisel/internal/setup"
 )
 
 type Archive interface {
@@ -357,18 +356,4 @@ func (index *ubuntuIndex) fetch(suffix, digest string, flags fetchFlags) (io.Rea
 	}
 
 	return index.archive.cache.Open(writer.Digest())
-}
-
-// PackageArchive takes in a package and a map of archives by archive names and
-// returns the appropriate archive for the specified package.
-func PackageArchive(pkg *setup.Package, archives map[string]Archive) (Archive, error) {
-	archiveName := pkg.Archive
-	archive := archives[archiveName]
-	if archive == nil {
-		return nil, fmt.Errorf("archive %q not defined", archiveName)
-	}
-	if !archive.Exists(pkg.Name) {
-		return nil, fmt.Errorf("slice package %q missing from archive", pkg.Name)
-	}
-	return archive, nil
 }

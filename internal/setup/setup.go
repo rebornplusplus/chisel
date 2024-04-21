@@ -66,15 +66,8 @@ const (
 	SymlinkPath PathKind = "symlink"
 	// GeneratePath is a special kind of globs with the following format:
 	//   /absolute/explicit/path/to/dir/**
-	// Thus, the path /foo/bar/** is valid while the folllowing are not:
-	//   ../foo/bar/**
-	//   /fo*/bar/**
-	//   /foo/bar/
-	//   /foo/bar
-	// There are only two possible values of "generate" as of now:
-	//   "" (empty)
-	//   "manifest"
-	// Empty value signifies that the path is not a GeneratePath.
+	// Wildcard characters can only appear at the end as **, and the path before
+	// those wildcards must be a directory.
 	GeneratePath PathKind = "generate"
 
 	// TODO Maybe in the future, for binary support.
@@ -91,6 +84,10 @@ const (
 type GenerateKind string
 
 const (
+	// There are only two possible values of "generate" as of now:
+	//   "" (empty)
+	//   "manifest"
+	// Empty value signifies that the path is not a GeneratePath.
 	GenerateNone     GenerateKind = ""
 	GenerateManifest GenerateKind = "manifest"
 )

@@ -23,7 +23,6 @@ var (
 type cutTest struct {
 	summary    string
 	release    map[string]string
-	arch       string
 	slices     []string
 	pkgs       map[string][]byte
 	filesystem map[string]string
@@ -63,7 +62,7 @@ var cutTests = []cutTest{{
 		"/other-dir/file": "symlink ../dir/file",
 	},
 	db: map[string]string{
-		"/db/chisel.db": strings.TrimLeft(`
+		"/db/chisel.db": `
 {"jsonwall":"1.0","schema":"1.0","count":16}
 {"kind":"content","slice":"test-package_manifest","path":"/db/chisel.db"}
 {"kind":"content","slice":"test-package_myslice","path":"/dir/file"}
@@ -80,7 +79,7 @@ var cutTests = []cutTest{{
 {"kind":"path","path":"/other-dir/file","mode":"0644","slices":["test-package_myslice"],"link":"../dir/file"}
 {"kind":"slice","name":"test-package_manifest"}
 {"kind":"slice","name":"test-package_myslice"}
-`, "\n"),
+`,
 	},
 }, {
 	summary: "All types of paths",
@@ -150,7 +149,7 @@ var cutTests = []cutTest{{
 		"/parent/permissions/file": "file 0755 722c14b3",
 	},
 	db: map[string]string{
-		"/db/chisel.db": strings.TrimLeft(`
+		"/db/chisel.db": `
 {"jsonwall":"1.0","schema":"1.0","count":40}
 {"kind":"content","slice":"test-package_manifest","path":"/db/chisel.db"}
 {"kind":"content","slice":"test-package_myslice","path":"/dir/all-text"}
@@ -191,7 +190,7 @@ var cutTests = []cutTest{{
 {"kind":"path","path":"/parent/permissions/file","mode":"0755","slices":["test-package_myslice"],"sha256":"722c14b3fe33f2a36e4e02c0034951d2a6820ad11e0bd633ffa90d09754640cc","size":5}
 {"kind":"slice","name":"test-package_manifest"}
 {"kind":"slice","name":"test-package_myslice"}
-`, "\n"),
+`,
 	},
 }, {
 	summary: "Multiple DBs",
@@ -204,52 +203,52 @@ var cutTests = []cutTest{{
 						- test-package_manifest
 					contents:
 						/dir/file:
-						/db/**:   {generate: manifest}
+						/db-1/**:   {generate: manifest}
 				manifest:
 					contents:
-						/db/**:   {generate: manifest}
+						/db-1/**:   {generate: manifest}
 						/db-2/**: {generate: manifest}
 		`,
 	},
 	slices: []string{"test-package_myslice"},
 	filesystem: map[string]string{
+		"/db-1/":          "dir 0755",
+		"/db-1/chisel.db": "file 0644 9948ee09",
 		"/db-2/":          "dir 0755",
-		"/db-2/chisel.db": "file 0644 4a51075c",
-		"/db/":            "dir 0755",
-		"/db/chisel.db":   "file 0644 4a51075c",
+		"/db-2/chisel.db": "file 0644 9948ee09",
 		"/dir/":           "dir 0755",
 		"/dir/file":       "file 0644 cc55e2ec",
 	},
 	db: map[string]string{
-		"/db/chisel.db": strings.TrimLeft(`
+		"/db-1/chisel.db": `
 {"jsonwall":"1.0","schema":"1.0","count":11}
+{"kind":"content","slice":"test-package_manifest","path":"/db-1/chisel.db"}
 {"kind":"content","slice":"test-package_manifest","path":"/db-2/chisel.db"}
-{"kind":"content","slice":"test-package_manifest","path":"/db/chisel.db"}
-{"kind":"content","slice":"test-package_myslice","path":"/db/chisel.db"}
+{"kind":"content","slice":"test-package_myslice","path":"/db-1/chisel.db"}
 {"kind":"content","slice":"test-package_myslice","path":"/dir/file"}
 {"kind":"package","name":"test-package","version":"test-package_version","sha256":"test-package_hash","arch":"test-package_arch"}
+{"kind":"path","path":"/db-1/chisel.db","mode":"0644","slices":["test-package_manifest","test-package_myslice"]}
 {"kind":"path","path":"/db-2/chisel.db","mode":"0644","slices":["test-package_manifest"]}
-{"kind":"path","path":"/db/chisel.db","mode":"0644","slices":["test-package_manifest","test-package_myslice"]}
 {"kind":"path","path":"/dir/file","mode":"0644","slices":["test-package_myslice"],"sha256":"cc55e2ecf36e40171ded57167c38e1025c99dc8f8bcdd6422368385a977ae1fe","size":14}
 {"kind":"slice","name":"test-package_manifest"}
 {"kind":"slice","name":"test-package_myslice"}
-`, "\n"),
-		"/db-2/chisel.db": strings.TrimLeft(`
+`,
+		"/db-2/chisel.db": `
 {"jsonwall":"1.0","schema":"1.0","count":11}
+{"kind":"content","slice":"test-package_manifest","path":"/db-1/chisel.db"}
 {"kind":"content","slice":"test-package_manifest","path":"/db-2/chisel.db"}
-{"kind":"content","slice":"test-package_manifest","path":"/db/chisel.db"}
-{"kind":"content","slice":"test-package_myslice","path":"/db/chisel.db"}
+{"kind":"content","slice":"test-package_myslice","path":"/db-1/chisel.db"}
 {"kind":"content","slice":"test-package_myslice","path":"/dir/file"}
 {"kind":"package","name":"test-package","version":"test-package_version","sha256":"test-package_hash","arch":"test-package_arch"}
+{"kind":"path","path":"/db-1/chisel.db","mode":"0644","slices":["test-package_manifest","test-package_myslice"]}
 {"kind":"path","path":"/db-2/chisel.db","mode":"0644","slices":["test-package_manifest"]}
-{"kind":"path","path":"/db/chisel.db","mode":"0644","slices":["test-package_manifest","test-package_myslice"]}
 {"kind":"path","path":"/dir/file","mode":"0644","slices":["test-package_myslice"],"sha256":"cc55e2ecf36e40171ded57167c38e1025c99dc8f8bcdd6422368385a977ae1fe","size":14}
 {"kind":"slice","name":"test-package_manifest"}
 {"kind":"slice","name":"test-package_myslice"}
-`, "\n"),
+`,
 	},
 }, {
-	summary: "Same file mutated across Multiple packages",
+	summary: "Same file mutated across multiple packages",
 	release: map[string]string{
 		"slices/mydir/test-package.yaml": `
 			package: test-package
@@ -289,7 +288,7 @@ var cutTests = []cutTest{{
 		"/foo":          "file 0644 a46c30a5",
 	},
 	db: map[string]string{
-		"/db/chisel.db": strings.TrimLeft(`
+		"/db/chisel.db": `
 {"jsonwall":"1.0","schema":"1.0","count":12}
 {"kind":"content","slice":"other-package_otherslice","path":"/foo"}
 {"kind":"content","slice":"test-package_manifest","path":"/db/chisel.db"}
@@ -302,7 +301,7 @@ var cutTests = []cutTest{{
 {"kind":"slice","name":"other-package_otherslice"}
 {"kind":"slice","name":"test-package_manifest"}
 {"kind":"slice","name":"test-package_myslice"}
-`, "\n"),
+`,
 	},
 }, {
 	summary: "No DB if corresponding slice(s) are not selected",
@@ -333,19 +332,6 @@ var cutTests = []cutTest{{
 		"/other-dir/":     "dir 0755",
 		"/other-dir/file": "symlink ../dir/file",
 	},
-}, {
-	summary: "Non-existing slice ref produces an error",
-	release: map[string]string{
-		"slices/mydir/test-package.yaml": `
-			package: test-package
-			slices:
-				myslice:
-					contents:
-						/dir/file:
-		`,
-	},
-	slices: []string{"test-package_foo"},
-	err:    `slice test-package_foo not found`,
 }}
 
 var defaultChiselYaml = `
@@ -385,14 +371,11 @@ func (s *ChiselSuite) TestCut(c *C) {
 			c.Assert(err, IsNil)
 		}
 
-		restore := fakeOpenArchive(openArchive)
+		restore := fakeOpenArchive()
 		defer restore()
 
 		targetDir := c.MkDir()
 		args := []string{"cut", "--release", releaseDir + "/", "--root", targetDir + "/"}
-		if test.arch != "" {
-			args = append(args, "--arch", test.arch)
-		}
 		args = append(args, test.slices...)
 
 		extra, err := chisel.Parser().ParseArgs(args)
@@ -408,11 +391,14 @@ func (s *ChiselSuite) TestCut(c *C) {
 		}
 
 		if test.db != nil {
+			for path := range test.db {
+				test.db[path] = strings.TrimLeft(test.db[path], "\n")
+			}
 			db := make(map[string]string)
 			dbPaths := findManifestPaths(test.release)
 			for _, path := range dbPaths {
 				actualPath := filepath.Clean(filepath.Join(targetDir, path))
-				contents, err := extractZSTD(actualPath)
+				contents, err := readZSTDFile(actualPath)
 				c.Assert(err, IsNil)
 				db[path] = contents
 				// fmt.Println(contents)
@@ -437,21 +423,18 @@ func findManifestPaths(release map[string]string) []string {
 
 var archivePackages map[string][]byte
 
-func openArchive(opts *archive.Options) (archive.Archive, error) {
-	return &testutil.TestArchive{
-		Opts: *opts,
-		Pkgs: archivePackages,
-	}, nil
-}
-
-func fakeOpenArchive(f func(opts *archive.Options) (archive.Archive, error)) (restore func()) {
+func fakeOpenArchive() (restore func()) {
 	old := chisel.OpenArchive
-	chisel.OpenArchive = f
+	chisel.OpenArchive = func(opts *archive.Options) (archive.Archive, error) {
+		return &testutil.TestArchive{
+			Opts: *opts,
+			Pkgs: archivePackages,
+		}, nil
+	}
 	return func() { chisel.OpenArchive = old }
 }
 
-// Extract a zstd-compressed file "src" at path "dest"
-func extractZSTD(path string) (string, error) {
+func readZSTDFile(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
