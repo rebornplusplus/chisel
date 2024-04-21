@@ -174,7 +174,7 @@ func (r *Release) validate() error {
 			for newPath, newInfo := range new.Contents {
 				if old, ok := paths[newPath]; ok {
 					oldInfo := old.Contents[newPath]
-					if !newInfo.SameContent(&oldInfo) || (newInfo.Kind == CopyPath || newInfo.Kind == GlobPath || newInfo.Kind == GeneratePath) && new.Package != old.Package {
+					if !newInfo.SameContent(&oldInfo) || (newInfo.Kind == CopyPath || newInfo.Kind == GlobPath) && new.Package != old.Package {
 						if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
 							old, new = new, old
 						}
@@ -199,7 +199,10 @@ func (r *Release) validate() error {
 	// Check for glob conflicts.
 	for newPath, new := range globs {
 		for oldPath, old := range paths {
-			if new.Package == old.Package {
+			if new.Package == old.Package && new.Contents[newPath].Kind == GlobPath {
+				continue
+			}
+			if new == old && newPath == oldPath {
 				continue
 			}
 			if strdist.GlobPath(newPath, oldPath) {
@@ -714,7 +717,7 @@ func Select(release *Release, slices []SliceKey) (*Selection, error) {
 		for newPath, newInfo := range new.Contents {
 			if old, ok := paths[newPath]; ok {
 				oldInfo := old.Contents[newPath]
-				if !newInfo.SameContent(&oldInfo) || (newInfo.Kind == CopyPath || newInfo.Kind == GlobPath || newInfo.Kind == GeneratePath) && new.Package != old.Package {
+				if !newInfo.SameContent(&oldInfo) || (newInfo.Kind == CopyPath || newInfo.Kind == GlobPath) && new.Package != old.Package {
 					if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
 						old, new = new, old
 					}

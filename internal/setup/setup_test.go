@@ -1220,6 +1220,95 @@ var setupTests = []setupTest{{
 	},
 	relerror: "slices mypkg_myslice and mypkg2_myslice conflict on /path/\\*\\*",
 }, {
+	summary: "Generate paths can be the same across packages",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/path/**: {generate: manifest}
+		`,
+		"slices/mydir/mypkg2.yaml": `
+			package: mypkg2
+			slices:
+				myslice:
+					contents:
+						/path/**: {generate: manifest}
+		`,
+	},
+	release: &setup.Release{
+		DefaultArchive: "ubuntu",
+
+		Archives: map[string]*setup.Archive{
+			"ubuntu": {
+				Name:       "ubuntu",
+				Version:    "22.04",
+				Suites:     []string{"jammy"},
+				Components: []string{"main", "universe"},
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+		},
+		Packages: map[string]*setup.Package{
+			"mypkg": {
+				Archive: "ubuntu",
+				Name:    "mypkg",
+				Path:    "slices/mydir/mypkg.yaml",
+				Slices: map[string]*setup.Slice{
+					"myslice": {
+						Package: "mypkg",
+						Name:    "myslice",
+						Contents: map[string]setup.PathInfo{
+							"/path/**": {Kind: "generate", Generate: "manifest"},
+						},
+					},
+				},
+			},
+			"mypkg2": {
+				Archive: "ubuntu",
+				Name:    "mypkg2",
+				Path:    "slices/mydir/mypkg2.yaml",
+				Slices: map[string]*setup.Slice{
+					"myslice": {
+						Package: "mypkg2",
+						Name:    "myslice",
+						Contents: map[string]setup.PathInfo{
+							"/path/**": {Kind: "generate", Generate: "manifest"},
+						},
+					},
+				},
+			},
+		},
+	},
+}, {
+	summary: "Generate paths cannot conflict with any other path",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/path/**: {generate: manifest}
+						/path/file:
+		`,
+	},
+	relerror: `slices mypkg_myslice and mypkg_myslice conflict on /path/file and /path/\*\*`,
+}, {
+	summary: "Generate paths cannot conflict with any other path across slices",
+	input: map[string]string{
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+			slices:
+				myslice:
+					contents:
+						/path/file:
+				myslice2:
+					contents:
+						/path/**: {generate: manifest}
+		`,
+	},
+	relerror: `slices mypkg_myslice and mypkg_myslice2 conflict on /path/file and /path/\*\*`,
+}, {
 	summary: `No other options in "generate" paths`,
 	input: map[string]string{
 		"slices/mydir/mypkg.yaml": `

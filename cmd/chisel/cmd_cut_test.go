@@ -348,62 +348,6 @@ var cutTests = []cutTest{{
 	},
 	slices: []string{"test-package_foo"},
 	err:    `slice test-package_foo not found`,
-}, {
-	summary: "DB path cannot conflict with other paths",
-	pkgs: map[string][]byte{
-		"test-package":  testutil.PackageData["test-package"],
-		"other-package": testutil.PackageData["other-package"],
-	},
-	release: map[string]string{
-		"slices/mydir/test-package.yaml": `
-			package: test-package
-			slices:
-				myslice:
-					contents:
-						/dir/file:
-		`,
-		"slices/mydir/other-package.yaml": `
-			package: other-package
-			slices:
-				manifest:
-					contents:
-						/dir/**: {generate: manifest}
-		`,
-	},
-	slices: []string{"test-package_myslice", "other-package_manifest"},
-	err:    "slices other-package_manifest and test-package_myslice conflict on /dir/\\*\\* and /dir/file",
-}, {
-	summary: "DB path can conflict with other paths in same package",
-	release: map[string]string{
-		"slices/mydir/test-package.yaml": `
-			package: test-package
-			slices:
-				myslice:
-					contents:
-						/dir/file:
-				manifest:
-					contents:
-						/dir/**: {generate: manifest}
-		`,
-	},
-	slices: []string{"test-package_myslice", "test-package_manifest"},
-	filesystem: map[string]string{
-		"/dir/":          "dir 0755",
-		"/dir/chisel.db": "file 0644 f07022a7",
-		"/dir/file":      "file 0644 cc55e2ec",
-	},
-	db: map[string]string{
-		"/dir/chisel.db": strings.TrimLeft(`
-{"jsonwall":"1.0","schema":"1.0","count":8}
-{"kind":"content","slice":"test-package_manifest","path":"/dir/chisel.db"}
-{"kind":"content","slice":"test-package_myslice","path":"/dir/file"}
-{"kind":"package","name":"test-package","version":"test-package_version","sha256":"test-package_hash","arch":"test-package_arch"}
-{"kind":"path","path":"/dir/chisel.db","mode":"0644","slices":["test-package_manifest"]}
-{"kind":"path","path":"/dir/file","mode":"0644","slices":["test-package_myslice"],"sha256":"cc55e2ecf36e40171ded57167c38e1025c99dc8f8bcdd6422368385a977ae1fe","size":14}
-{"kind":"slice","name":"test-package_manifest"}
-{"kind":"slice","name":"test-package_myslice"}
-`, "\n"),
-	},
 }}
 
 var defaultChiselYaml = `
