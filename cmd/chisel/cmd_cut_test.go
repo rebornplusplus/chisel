@@ -1,8 +1,6 @@
 package main_test
 
 import (
-	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -363,38 +361,6 @@ var defaultChiselYaml = `
 			armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
 `
 
-var archivePackages map[string][]byte
-
-type testArchive struct {
-	options archive.Options
-	pkgs    map[string][]byte
-}
-
-func (a *testArchive) Options() *archive.Options {
-	return &a.options
-}
-
-func (a *testArchive) Fetch(pkg string) (io.ReadCloser, error) {
-	if data, ok := a.pkgs[pkg]; ok {
-		return io.NopCloser(bytes.NewBuffer(data)), nil
-	}
-	return nil, fmt.Errorf("attempted to open %q package", pkg)
-}
-
-func (a *testArchive) Exists(pkg string) bool {
-	_, ok := a.pkgs[pkg]
-	return ok
-}
-
-func (a *testArchive) Info(pkg string) (*archive.PackageInfo, error) {
-	return &archive.PackageInfo{
-		Name:    pkg,
-		Version: pkg + "_version",
-		Hash:    pkg + "_hash",
-		Arch:    pkg + "_arch",
-	}, nil
-}
-
 func (s *ChiselSuite) TestCut(c *C) {
 	for _, test := range cutTests {
 		c.Logf("Summary: %s", test.summary)
@@ -469,10 +435,12 @@ func findManifestPaths(release map[string]string) []string {
 	return paths
 }
 
+var archivePackages map[string][]byte
+
 func openArchive(opts *archive.Options) (archive.Archive, error) {
-	return &testArchive{
-		options: *opts,
-		pkgs:    archivePackages,
+	return &testutil.TestArchive{
+		Opts: *opts,
+		Pkgs: archivePackages,
 	}, nil
 }
 
