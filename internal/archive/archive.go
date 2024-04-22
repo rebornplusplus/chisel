@@ -22,6 +22,7 @@ type Archive interface {
 	Exists(pkg string) bool
 	Info(pkg string) (*PackageInfo, error)
 }
+
 type PackageInfo struct {
 	Name    string
 	Version string
