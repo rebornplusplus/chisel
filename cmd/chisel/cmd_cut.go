@@ -82,7 +82,11 @@ func (cmd *cmdCut) Execute(args []string) error {
 		return err
 	}
 
-	pkgArchives, err := openPkgArchives(release, cmd.Arch)
+	archives, err := openArchives(release, cmd.Arch)
+	if err != nil {
+		return err
+	}
+	pkgArchives, err := selectPkgArchives(archives, selection)
 	if err != nil {
 		return err
 	}
@@ -117,10 +121,9 @@ func (cmd *cmdCut) Execute(args []string) error {
 	return nil
 }
 
-// openPkgArchives opens the archives listed in the release, and then for each
-// package in the release, selects the archive for that package. It returns a
-// map of archives indexed by package names.
-func openPkgArchives(release *setup.Release, arch string) (map[string]archive.Archive, error) {
+// openArchives opens the archives listed in the release for a particular
+// architecture. It returns a map of archives indexed by archive name.
+func openArchives(release *setup.Release, arch string) (map[string]archive.Archive, error) {
 	archives := make(map[string]archive.Archive)
 	for archiveName, archiveInfo := range release.Archives {
 		archive, err := OpenArchive(&archive.Options{
@@ -137,8 +140,15 @@ func openPkgArchives(release *setup.Release, arch string) (map[string]archive.Ar
 		}
 		archives[archiveName] = archive
 	}
+	return archives, nil
+}
+
+// selectePkgArchives selects the appropriate archive for each selected slice
+// package. It returns a map of archives indexed by package names.
+func selectPkgArchives(archives map[string]archive.Archive, selection *setup.Selection) (map[string]archive.Archive, error) {
 	pkgArchives := make(map[string]archive.Archive)
-	for _, pkg := range release.Packages {
+	for _, s := range selection.Slices {
+		pkg := selection.Release.Packages[s.Package]
 		if _, ok := pkgArchives[pkg.Name]; ok {
 			continue
 		}
