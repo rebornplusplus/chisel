@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -110,13 +111,21 @@ func (cmd *cmdCut) Execute(args []string) error {
 			}
 			pkgInfo = append(pkgInfo, info)
 		}
-		_, err = generateDB(&generateDBOptions{
-			RootDir:        cmd.RootDir,
+		writer, err := generateManifest(&generateManifestOptions{
 			ManifestSlices: manifestSlices,
 			PackageInfo:    pkgInfo,
 			Slices:         selection.Slices,
 			Report:         report,
 		})
+		if err != nil {
+			return err
+		}
+		manifestPaths := []string{}
+		for path := range manifestSlices {
+			manifestPath := filepath.Join(cmd.RootDir, getManifestPath(path))
+			manifestPaths = append(manifestPaths, manifestPath)
+		}
+		err = writeDB(writer, manifestPaths)
 		if err != nil {
 			return err
 		}

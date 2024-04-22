@@ -49,9 +49,7 @@ type dbContent struct {
 	Path  string `json:"path"`
 }
 
-type generateDBOptions struct {
-	// The root dir of the fs.
-	RootDir string
+type generateManifestOptions struct {
 	// Map of slices indexed by paths which generate manifest.
 	ManifestSlices map[string][]*setup.Slice
 	// List of package information to write to manifest.
@@ -62,13 +60,12 @@ type generateDBOptions struct {
 	Report *slicer.Report
 }
 
-// generateDB generates the Chisel manifest(s) at the specified paths. It
+// generateManifest generates the Chisel manifest(s) at the specified paths. It
 // returns the paths inside the rootfs where the manifest(s) are generated.
-func generateDB(opts *generateDBOptions) ([]string, error) {
+func generateManifest(opts *generateManifestOptions) (*jsonwall.DBWriter, error) {
 	dbw := jsonwall.NewDBWriter(&jsonwall.DBWriterOptions{
 		Schema: dbSchema,
 	})
-	genPaths := []string{}
 
 	// Add packages to the manifest.
 	for _, info := range opts.PackageInfo {
@@ -97,7 +94,6 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 	for _, entry := range opts.Report.Entries {
 		sliceNames := []string{}
 		for s := range entry.Slices {
-			// Add contents to the DB.
 			err := dbw.Add(&dbContent{
 				Kind:  "content",
 				Slice: s.String(),
@@ -124,7 +120,6 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 	// Add the manifest path and content entries.
 	for path, slices := range opts.ManifestSlices {
 		fPath := getManifestPath(path)
-		genPaths = append(genPaths, fPath)
 		sliceNames := []string{}
 		for _, s := range slices {
 			err := dbw.Add(&dbContent{
@@ -148,15 +143,7 @@ func generateDB(opts *generateDBOptions) ([]string, error) {
 		}
 	}
 
-	filePaths := []string{}
-	for _, path := range genPaths {
-		filePaths = append(filePaths, filepath.Join(opts.RootDir, path))
-	}
-	err := writeDB(dbw, filePaths)
-	if err != nil {
-		return nil, err
-	}
-	return genPaths, nil
+	return dbw, nil
 }
 
 // writeDB writes all added entries and generates the manifest file.

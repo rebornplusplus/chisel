@@ -26,7 +26,8 @@ type cutTest struct {
 	slices     []string
 	pkgs       map[string][]byte
 	filesystem map[string]string
-	db         map[string]string
+	db         string
+	dbPaths    []string
 	err        string
 }
 
@@ -61,8 +62,8 @@ var cutTests = []cutTest{{
 		"/other-dir/":     "dir 0755",
 		"/other-dir/file": "symlink ../dir/file",
 	},
-	db: map[string]string{
-		"/db/chisel.db": `
+	dbPaths: []string{"/db/chisel.db"},
+	db: `
 {"jsonwall":"1.0","schema":"1.0","count":16}
 {"kind":"content","slice":"test-package_manifest","path":"/db/chisel.db"}
 {"kind":"content","slice":"test-package_myslice","path":"/dir/file"}
@@ -80,7 +81,6 @@ var cutTests = []cutTest{{
 {"kind":"slice","name":"test-package_manifest"}
 {"kind":"slice","name":"test-package_myslice"}
 `,
-	},
 }, {
 	summary: "All types of paths",
 	release: map[string]string{
@@ -148,8 +148,8 @@ var cutTests = []cutTest{{
 		"/parent/permissions/":     "dir 0764",
 		"/parent/permissions/file": "file 0755 722c14b3",
 	},
-	db: map[string]string{
-		"/db/chisel.db": `
+	dbPaths: []string{"/db/chisel.db"},
+	db: `
 {"jsonwall":"1.0","schema":"1.0","count":40}
 {"kind":"content","slice":"test-package_manifest","path":"/db/chisel.db"}
 {"kind":"content","slice":"test-package_myslice","path":"/dir/all-text"}
@@ -191,7 +191,6 @@ var cutTests = []cutTest{{
 {"kind":"slice","name":"test-package_manifest"}
 {"kind":"slice","name":"test-package_myslice"}
 `,
-	},
 }, {
 	summary: "Multiple DBs",
 	release: map[string]string{
@@ -219,8 +218,8 @@ var cutTests = []cutTest{{
 		"/dir/":           "dir 0755",
 		"/dir/file":       "file 0644 cc55e2ec",
 	},
-	db: map[string]string{
-		"/db-1/chisel.db": `
+	dbPaths: []string{"/db-1/chisel.db", "/db-2/chisel.db"},
+	db: `
 {"jsonwall":"1.0","schema":"1.0","count":11}
 {"kind":"content","slice":"test-package_manifest","path":"/db-1/chisel.db"}
 {"kind":"content","slice":"test-package_manifest","path":"/db-2/chisel.db"}
@@ -233,20 +232,6 @@ var cutTests = []cutTest{{
 {"kind":"slice","name":"test-package_manifest"}
 {"kind":"slice","name":"test-package_myslice"}
 `,
-		"/db-2/chisel.db": `
-{"jsonwall":"1.0","schema":"1.0","count":11}
-{"kind":"content","slice":"test-package_manifest","path":"/db-1/chisel.db"}
-{"kind":"content","slice":"test-package_manifest","path":"/db-2/chisel.db"}
-{"kind":"content","slice":"test-package_myslice","path":"/db-1/chisel.db"}
-{"kind":"content","slice":"test-package_myslice","path":"/dir/file"}
-{"kind":"package","name":"test-package","version":"test-package_version","sha256":"test-package_hash","arch":"test-package_arch"}
-{"kind":"path","path":"/db-1/chisel.db","mode":"0644","slices":["test-package_manifest","test-package_myslice"]}
-{"kind":"path","path":"/db-2/chisel.db","mode":"0644","slices":["test-package_manifest"]}
-{"kind":"path","path":"/dir/file","mode":"0644","slices":["test-package_myslice"],"sha256":"cc55e2ecf36e40171ded57167c38e1025c99dc8f8bcdd6422368385a977ae1fe","size":14}
-{"kind":"slice","name":"test-package_manifest"}
-{"kind":"slice","name":"test-package_myslice"}
-`,
-	},
 }, {
 	summary: "Same file mutated across multiple packages",
 	release: map[string]string{
@@ -287,8 +272,8 @@ var cutTests = []cutTest{{
 		"/dir/file":     "file 0644 cc55e2ec",
 		"/foo":          "file 0644 a46c30a5",
 	},
-	db: map[string]string{
-		"/db/chisel.db": `
+	dbPaths: []string{"/db/chisel.db"},
+	db: `
 {"jsonwall":"1.0","schema":"1.0","count":12}
 {"kind":"content","slice":"other-package_otherslice","path":"/foo"}
 {"kind":"content","slice":"test-package_manifest","path":"/db/chisel.db"}
@@ -302,7 +287,6 @@ var cutTests = []cutTest{{
 {"kind":"slice","name":"test-package_manifest"}
 {"kind":"slice","name":"test-package_myslice"}
 `,
-	},
 }, {
 	summary: "No DB if corresponding slice(s) are not selected",
 	release: map[string]string{
@@ -390,35 +374,15 @@ func (s *ChiselSuite) TestCut(c *C) {
 			c.Assert(testutil.TreeDump(targetDir), DeepEquals, test.filesystem)
 		}
 
-		if test.db != nil {
-			for path := range test.db {
-				test.db[path] = strings.TrimLeft(test.db[path], "\n")
-			}
-			db := make(map[string]string)
-			dbPaths := findManifestPaths(test.release)
-			for _, path := range dbPaths {
-				actualPath := filepath.Clean(filepath.Join(targetDir, path))
-				contents, err := readZSTDFile(actualPath)
+		test.db = strings.TrimLeft(test.db, "\n")
+		if test.dbPaths != nil {
+			for _, path := range test.dbPaths {
+				db, err := readZSTDFile(filepath.Join(targetDir, path))
 				c.Assert(err, IsNil)
-				db[path] = contents
-				// fmt.Println(contents)
-			}
-			c.Assert(db, DeepEquals, test.db)
-		}
-	}
-}
-
-func findManifestPaths(release map[string]string) []string {
-	paths := []string{}
-	for _, sliceDef := range release {
-		for _, line := range strings.Split(sliceDef, "\n") {
-			match := dbPathExp.FindStringSubmatch(line)
-			if match != nil {
-				paths = append(paths, match[1]+"chisel.db")
+				c.Assert(db, DeepEquals, test.db)
 			}
 		}
 	}
-	return paths
 }
 
 var archivePackages map[string][]byte
