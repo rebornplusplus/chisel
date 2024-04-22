@@ -102,9 +102,13 @@ func (cmd *cmdCut) Execute(args []string) error {
 
 	manifestSlices := locateManifestSlices(selection.Slices)
 	if len(manifestSlices) > 0 {
-		pkgInfo, err := gatherPackageInfo(selection, pkgArchives)
-		if err != nil {
-			return err
+		pkgInfo := []*archive.PackageInfo{}
+		for pkg, archive := range pkgArchives {
+			info, err := archive.Info(pkg)
+			if err != nil {
+				return err
+			}
+			pkgInfo = append(pkgInfo, info)
 		}
 		_, err = generateDB(&generateDBOptions{
 			RootDir:        cmd.RootDir,

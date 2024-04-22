@@ -209,29 +209,3 @@ func locateManifestSlices(slices []*setup.Slice) map[string][]*setup.Slice {
 	}
 	return manifestSlices
 }
-
-// gatherPackageInfo returns a list of PackageInfo for packages who belong to
-// the selected slices.
-func gatherPackageInfo(selection *setup.Selection, archives map[string]archive.Archive) ([]*archive.PackageInfo, error) {
-	if selection == nil {
-		return nil, fmt.Errorf("cannot gather package info: selection is nil")
-	}
-	pkgInfo := []*archive.PackageInfo{}
-	done := make(map[string]bool)
-	for _, s := range selection.Slices {
-		if done[s.Package] {
-			continue
-		}
-		done[s.Package] = true
-		archive, ok := archives[s.Package]
-		if !ok {
-			return nil, fmt.Errorf("no archive found for package %q", s.Package)
-		}
-		info, err := archive.Info(s.Package)
-		if err != nil {
-			return nil, err
-		}
-		pkgInfo = append(pkgInfo, info)
-	}
-	return pkgInfo, nil
-}
