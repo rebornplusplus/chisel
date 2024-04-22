@@ -177,7 +177,8 @@ func writeDB(writer *jsonwall.DBWriter, paths []string) (err error) {
 }
 
 func getManifestPath(generatePath string) string {
-	return filepath.Join(strings.TrimRight(generatePath, "*"), dbFile)
+	dir := filepath.Clean(strings.TrimSuffix(generatePath, "**"))
+	return filepath.Join(dir, dbFile)
 }
 
 // locateManifestSlices finds the paths marked with "generate:manifest" and
