@@ -165,8 +165,7 @@ func writeDB(writer *jsonwall.DBWriter, paths []string) (err error) {
 
 	// Using a MultiWriter allows to compress the data only once and write the
 	// compressed data to each path.
-	multiWriter := io.MultiWriter(files...)
-	w, err := zstd.NewWriter(multiWriter)
+	w, err := zstd.NewWriter(io.MultiWriter(files...))
 	if err != nil {
 		return err
 	}
