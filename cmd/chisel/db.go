@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/canonical/chisel/internal/archive"
@@ -104,6 +105,7 @@ func generateManifest(opts *generateManifestOptions) (*jsonwall.DBWriter, error)
 			}
 			sliceNames = append(sliceNames, s.String())
 		}
+		sort.Strings(sliceNames)
 		err := dbw.Add(&dbPath{
 			Kind:   "path",
 			Path:   entry.Path,
@@ -132,6 +134,7 @@ func generateManifest(opts *generateManifestOptions) (*jsonwall.DBWriter, error)
 			}
 			sliceNames = append(sliceNames, s.String())
 		}
+		sort.Strings(sliceNames)
 		err := dbw.Add(&dbPath{
 			Kind:   "path",
 			Path:   fPath,

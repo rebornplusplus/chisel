@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	. "gopkg.in/check.v1"
@@ -969,6 +970,7 @@ func treeDumpReport(report *slicer.Report) map[string]string {
 		for slice := range entry.Slices {
 			slicesStr = append(slicesStr, slice.String())
 		}
+		sort.Strings(slicesStr)
 		result[entry.Path] = fmt.Sprintf("%s {%s}", fsDump, strings.Join(slicesStr, ","))
 	}
 	return result
