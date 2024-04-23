@@ -370,7 +370,12 @@ func (s *ChiselSuite) TestCut(c *C) {
 			c.Assert(err, IsNil)
 		}
 
-		restore := fakeOpenArchive(test.pkgs)
+		restore := chisel.FakeOpenArchive(func(opts *archive.Options) (archive.Archive, error) {
+			return &testutil.TestArchive{
+				Opts: *opts,
+				Pkgs: test.pkgs,
+			}, nil
+		})
 		defer restore()
 
 		targetDir := c.MkDir()
@@ -398,17 +403,6 @@ func (s *ChiselSuite) TestCut(c *C) {
 			}
 		}
 	}
-}
-
-func fakeOpenArchive(pkgs map[string][]byte) (restore func()) {
-	old := chisel.OpenArchive
-	chisel.OpenArchive = func(opts *archive.Options) (archive.Archive, error) {
-		return &testutil.TestArchive{
-			Opts: *opts,
-			Pkgs: pkgs,
-		}, nil
-	}
-	return func() { chisel.OpenArchive = old }
 }
 
 func readZSTDFile(path string) (string, error) {
