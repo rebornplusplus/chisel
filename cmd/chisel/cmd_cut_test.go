@@ -345,7 +345,6 @@ func (s *ChiselSuite) TestCut(c *C) {
 				"test-package": testutil.PackageData["test-package"],
 			}
 		}
-		archivePackages = test.pkgs
 
 		releaseDir := c.MkDir()
 		for path, data := range test.release {
@@ -356,7 +355,7 @@ func (s *ChiselSuite) TestCut(c *C) {
 			c.Assert(err, IsNil)
 		}
 
-		restore := fakeOpenArchive()
+		restore := fakeOpenArchive(test.pkgs)
 		defer restore()
 
 		targetDir := c.MkDir()
@@ -386,14 +385,12 @@ func (s *ChiselSuite) TestCut(c *C) {
 	}
 }
 
-var archivePackages map[string][]byte
-
-func fakeOpenArchive() (restore func()) {
+func fakeOpenArchive(pkgs map[string][]byte) (restore func()) {
 	old := chisel.OpenArchive
 	chisel.OpenArchive = func(opts *archive.Options) (archive.Archive, error) {
 		return &testutil.TestArchive{
 			Opts: *opts,
-			Pkgs: archivePackages,
+			Pkgs: pkgs,
 		}, nil
 	}
 	return func() { chisel.OpenArchive = old }
