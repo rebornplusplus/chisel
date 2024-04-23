@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/klauspost/compress/zstd"
@@ -16,8 +15,7 @@ import (
 )
 
 var (
-	testKey   = testutil.PGPKeys["key1"]
-	dbPathExp = regexp.MustCompile(`\s*(\/(?:.*\/)*)\*\*:.*\bgenerate\b:\s*\"?\bmanifest\b\"?`)
+	testKey = testutil.PGPKeys["key1"]
 )
 
 type cutTest struct {
@@ -316,6 +314,47 @@ var cutTests = []cutTest{{
 		"/dir/text-file":  "file 0644 5b41362b",
 		"/other-dir/":     "dir 0755",
 		"/other-dir/file": "symlink ../dir/file",
+	},
+}, {
+	summary: "Copyright is automatically extracted if exists",
+	pkgs: map[string][]byte{
+		"test-package": testutil.MustMakeDeb(
+			append(testutil.TestPackageEntries,
+				testutil.Dir(0755, "./usr/"),
+				testutil.Dir(0755, "./usr/share/"),
+				testutil.Dir(0755, "./usr/share/doc/"),
+				testutil.Dir(0755, "./usr/share/doc/test-package/"),
+				testutil.Reg(0644, "./usr/share/doc/test-package/copyright", "copyright"),
+			),
+		),
+		"other-package": testutil.PackageData["other-package"],
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/dir/file:
+		`,
+		"slices/mydir/other-package.yaml": `
+			package: other-package
+			slices:
+				otherslice:
+					contents:
+						/file:
+		`,
+	},
+	slices: []string{"test-package_myslice", "other-package_otherslice"},
+	filesystem: map[string]string{
+		"/dir/":                                 "dir 0755",
+		"/dir/file":                             "file 0644 cc55e2ec",
+		"/file":                                 "file 0644 fc02ca0e",
+		"/usr/":                                 "dir 0755",
+		"/usr/share/":                           "dir 0755",
+		"/usr/share/doc/":                       "dir 0755",
+		"/usr/share/doc/test-package/":          "dir 0755",
+		"/usr/share/doc/test-package/copyright": "file 0644 c2fca2aa",
 	},
 }}
 
