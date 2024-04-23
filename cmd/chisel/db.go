@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -13,7 +11,6 @@ import (
 	"github.com/canonical/chisel/internal/jsonwall"
 	"github.com/canonical/chisel/internal/setup"
 	"github.com/canonical/chisel/internal/slicer"
-	"github.com/klauspost/compress/zstd"
 )
 
 const dbFile = "chisel.db"
@@ -149,53 +146,9 @@ func generateManifest(opts *generateManifestOptions) (*jsonwall.DBWriter, error)
 	return dbw, nil
 }
 
-// writeDB writes all added entries and generates the manifest file.
-func writeDB(writer *jsonwall.DBWriter, paths []string) (err error) {
-	files := []io.Writer{}
-	for _, path := range paths {
-		if err = os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-			return err
-		}
-
-		logf("Generating manifest at %s...", path)
-		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, dbMode)
-		if err != nil {
-			return err
-		}
-		files = append(files, file)
-		defer file.Close()
-	}
-
-	// Using a MultiWriter allows to compress the data only once and write the
-	// compressed data to each path.
-	w, err := zstd.NewWriter(io.MultiWriter(files...))
-	if err != nil {
-		return err
-	}
-	defer w.Close()
-
-	_, err = writer.WriteTo(w)
-	return err
-}
-
+// getManifestPath parses the "generate" path and returns the absolute path of
+// the location to be generated.
 func getManifestPath(generatePath string) string {
 	dir := filepath.Clean(strings.TrimSuffix(generatePath, "**"))
 	return filepath.Join(dir, dbFile)
-}
-
-// locateManifestSlices finds the paths marked with "generate:manifest" and
-// returns a map from said path to all the slices that declare it.
-func locateManifestSlices(slices []*setup.Slice) map[string][]*setup.Slice {
-	manifestSlices := make(map[string][]*setup.Slice)
-	for _, s := range slices {
-		for path, info := range s.Contents {
-			if info.Generate == setup.GenerateManifest {
-				if manifestSlices[path] == nil {
-					manifestSlices[path] = []*setup.Slice{}
-				}
-				manifestSlices[path] = append(manifestSlices[path], s)
-			}
-		}
-	}
-	return manifestSlices
 }
