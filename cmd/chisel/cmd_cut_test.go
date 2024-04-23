@@ -113,6 +113,18 @@ var cutTests = []cutTest{{
 						/db/**: {generate: manifest}
 		`,
 	},
+	pkgs: map[string][]byte{
+		"test-package": testutil.MustMakeDeb(
+			append(testutil.TestPackageEntries,
+				// Copyright paths.
+				testutil.Dir(0755, "./usr/"),
+				testutil.Dir(0755, "./usr/share/"),
+				testutil.Dir(0755, "./usr/share/doc/"),
+				testutil.Dir(0755, "./usr/share/doc/test-package/"),
+				testutil.Reg(0644, "./usr/share/doc/test-package/copyright", "copyright"),
+			),
+		),
+	},
 	slices: []string{"test-package_myslice", "test-package_manifest"},
 	filesystem: map[string]string{
 		"/db/":          "dir 0755",
@@ -140,11 +152,16 @@ var cutTests = []cutTest{{
 		// is present in db below. This is because "until: mutate" paths have
 		// not been filtered yet.
 		// Will be fixed by https://github.com/canonical/chisel/pull/131.
-		"/dir/text/file-5":         "file 0755 empty",
-		"/dir/text/file-6":         "symlink ./file-3",
-		"/parent/":                 "dir 01777",
-		"/parent/permissions/":     "dir 0764",
-		"/parent/permissions/file": "file 0755 722c14b3",
+		"/dir/text/file-5":                      "file 0755 empty",
+		"/dir/text/file-6":                      "symlink ./file-3",
+		"/parent/":                              "dir 01777",
+		"/parent/permissions/":                  "dir 0764",
+		"/parent/permissions/file":              "file 0755 722c14b3",
+		"/usr/":                                 "dir 0755",
+		"/usr/share/":                           "dir 0755",
+		"/usr/share/doc/":                       "dir 0755",
+		"/usr/share/doc/test-package/":          "dir 0755",
+		"/usr/share/doc/test-package/copyright": "file 0644 c2fca2aa",
 	},
 	dbPaths: []string{"/db/chisel.db"},
 	db: `
@@ -314,47 +331,6 @@ var cutTests = []cutTest{{
 		"/dir/text-file":  "file 0644 5b41362b",
 		"/other-dir/":     "dir 0755",
 		"/other-dir/file": "symlink ../dir/file",
-	},
-}, {
-	summary: "Copyright is automatically extracted if exists",
-	pkgs: map[string][]byte{
-		"test-package": testutil.MustMakeDeb(
-			append(testutil.TestPackageEntries,
-				testutil.Dir(0755, "./usr/"),
-				testutil.Dir(0755, "./usr/share/"),
-				testutil.Dir(0755, "./usr/share/doc/"),
-				testutil.Dir(0755, "./usr/share/doc/test-package/"),
-				testutil.Reg(0644, "./usr/share/doc/test-package/copyright", "copyright"),
-			),
-		),
-		"other-package": testutil.PackageData["other-package"],
-	},
-	release: map[string]string{
-		"slices/mydir/test-package.yaml": `
-			package: test-package
-			slices:
-				myslice:
-					contents:
-						/dir/file:
-		`,
-		"slices/mydir/other-package.yaml": `
-			package: other-package
-			slices:
-				otherslice:
-					contents:
-						/file:
-		`,
-	},
-	slices: []string{"test-package_myslice", "other-package_otherslice"},
-	filesystem: map[string]string{
-		"/dir/":                                 "dir 0755",
-		"/dir/file":                             "file 0644 cc55e2ec",
-		"/file":                                 "file 0644 fc02ca0e",
-		"/usr/":                                 "dir 0755",
-		"/usr/share/":                           "dir 0755",
-		"/usr/share/doc/":                       "dir 0755",
-		"/usr/share/doc/test-package/":          "dir 0755",
-		"/usr/share/doc/test-package/copyright": "file 0644 c2fca2aa",
 	},
 }}
 
