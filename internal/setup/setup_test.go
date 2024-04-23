@@ -1278,7 +1278,7 @@ var setupTests = []setupTest{{
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
 			slices:
-				myslice:
+				myslice1:
 					contents:
 						/path/file:
 				myslice2:
@@ -1286,7 +1286,7 @@ var setupTests = []setupTest{{
 						/path/**: {generate: manifest}
 		`,
 	},
-	relerror: `slices mypkg_myslice and mypkg_myslice2 conflict on /path/file and /path/\*\*`,
+	relerror: `slices mypkg_myslice1 and mypkg_myslice2 conflict on /path/file and /path/\*\*`,
 }, {
 	summary: `No other options in "generate" paths`,
 	input: map[string]string{
