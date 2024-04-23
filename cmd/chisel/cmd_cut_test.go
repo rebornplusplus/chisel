@@ -267,22 +267,23 @@ var cutTests = []cutTest{{
 	},
 	filesystem: map[string]string{
 		"/db/":          "dir 0755",
-		"/db/chisel.db": "file 0644 3e752568",
+		"/db/chisel.db": "file 0644 95d489ff",
 		"/dir/":         "dir 0755",
 		"/dir/file":     "file 0644 cc55e2ec",
 		"/foo":          "file 0644 a46c30a5",
 	},
 	dbPaths: []string{"/db/chisel.db"},
 	db: `
-{"jsonwall":"1.0","schema":"1.0","count":12}
+{"jsonwall":"1.0","schema":"1.0","count":13}
 {"kind":"content","slice":"other-package_otherslice","path":"/foo"}
 {"kind":"content","slice":"test-package_manifest","path":"/db/chisel.db"}
 {"kind":"content","slice":"test-package_myslice","path":"/dir/file"}
+{"kind":"content","slice":"test-package_myslice","path":"/foo"}
 {"kind":"package","name":"other-package","version":"other-package_version","sha256":"other-package_hash","arch":"other-package_arch"}
 {"kind":"package","name":"test-package","version":"test-package_version","sha256":"test-package_hash","arch":"test-package_arch"}
 {"kind":"path","path":"/db/chisel.db","mode":"0644","slices":["test-package_manifest"]}
 {"kind":"path","path":"/dir/file","mode":"0644","slices":["test-package_myslice"],"sha256":"cc55e2ecf36e40171ded57167c38e1025c99dc8f8bcdd6422368385a977ae1fe","size":14}
-{"kind":"path","path":"/foo","mode":"0644","slices":["other-package_otherslice"],"sha256":"2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae","size":3}
+{"kind":"path","path":"/foo","mode":"0644","slices":["other-package_otherslice","test-package_myslice"],"sha256":"2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae","size":3}
 {"kind":"slice","name":"other-package_otherslice"}
 {"kind":"slice","name":"test-package_manifest"}
 {"kind":"slice","name":"test-package_myslice"}

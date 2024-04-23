@@ -206,8 +206,11 @@ func Run(options *RunOptions) (*Report, error) {
 			if len(pathInfo.Arch) > 0 && !contains(pathInfo.Arch, arch) {
 				continue
 			}
-			if done[targetPath] || pathInfo.Kind == setup.CopyPath || pathInfo.Kind == setup.GlobPath || pathInfo.Kind == setup.GeneratePath {
+			if pathInfo.Kind == setup.CopyPath || pathInfo.Kind == setup.GlobPath || pathInfo.Kind == setup.GeneratePath {
 				continue
+			}
+			if done[targetPath] {
+				report.Entries[targetPath].Slices[slice] = true
 			}
 			done[targetPath] = true
 			targetPath = filepath.Join(targetDir, targetPath)

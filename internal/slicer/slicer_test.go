@@ -401,7 +401,7 @@ var slicerTests = []slicerTest{{
 		// Note: This is the only case where two slices can declare the same
 		// file without conflicts.
 		// TODO which slice(s) should own the file.
-		"/textFile": "file 0644 c6c83d10 {other-package_myslice}",
+		"/textFile": "file 0644 c6c83d10 {other-package_myslice,test-package_myslice}",
 	},
 }, {
 	summary: "Script: write a file",
@@ -785,25 +785,28 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Multiple slices of same package",
 	slices: []setup.SliceKey{
-		{"test-package", "myslice"}, {"test-package", "manifest"}, {"test-package", "a-slice"},
+		{"test-package", "myslice1"},
+		{"test-package", "myslice2"},
+		{"test-package", "manifest"},
 	},
 	release: map[string]string{
 		"slices/mydir/test-package.yaml": `
 			package: test-package
 			slices:
-				myslice:
+				myslice1:
 					contents:
 						/dir/file:
 						/dir/file-copy:  {copy: /dir/file}
 						/other-dir/file: {symlink: ../dir/file}
 						/dir/text-file:  {text: data1}
 						/dir/foo/bar/:   {make: true, mode: 01777}
+				myslice2:
+					contents:
+						/dir/other-file:
+						/dir/text-file:  {text: data1}
 				manifest:
 					contents:
 						/db/**: {generate: manifest}
-				a-slice:
-					contents:
-						/dir/other-file:
 		`,
 	},
 	filesystem: map[string]string{
@@ -818,12 +821,12 @@ var slicerTests = []slicerTest{{
 		"/other-dir/file": "symlink ../dir/file",
 	},
 	report: map[string]string{
-		"/dir/file":       "file 0644 cc55e2ec {test-package_myslice}",
-		"/dir/file-copy":  "file 0644 cc55e2ec {test-package_myslice}",
-		"/dir/foo/bar/":   "dir 01777 {test-package_myslice}",
-		"/dir/other-file": "file 0644 63d5dd49 {test-package_a-slice}",
-		"/dir/text-file":  "file 0644 5b41362b {test-package_myslice}",
-		"/other-dir/file": "symlink ../dir/file {test-package_myslice}",
+		"/dir/file":       "file 0644 cc55e2ec {test-package_myslice1}",
+		"/dir/file-copy":  "file 0644 cc55e2ec {test-package_myslice1}",
+		"/dir/foo/bar/":   "dir 01777 {test-package_myslice1}",
+		"/dir/other-file": "file 0644 63d5dd49 {test-package_myslice2}",
+		"/dir/text-file":  "file 0644 5b41362b {test-package_myslice1,test-package_myslice2}",
+		"/other-dir/file": "symlink ../dir/file {test-package_myslice1}",
 	},
 }}
 
