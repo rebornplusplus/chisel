@@ -210,6 +210,8 @@ func Run(options *RunOptions) (*Report, error) {
 				continue
 			}
 			if done[targetPath] {
+				// The content created would have had the same properties. We
+				// are only adding the slice to the existing report entry.
 				report.Entries[targetPath].Slices[slice] = true
 			}
 			done[targetPath] = true

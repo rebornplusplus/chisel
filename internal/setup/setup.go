@@ -162,6 +162,7 @@ func ReadRelease(dir string) (*Release, error) {
 func (r *Release) validate() error {
 	keys := []SliceKey(nil)
 	paths := make(map[string]*Slice)
+	// globs contains paths with kind GlobPath and GeneratePath.
 	globs := make(map[string]*Slice)
 
 	// Check for info conflicts and prepare for following checks.
@@ -596,7 +597,7 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 						pkgName, sliceName, contPath)
 				}
 				if err := validateGeneratePath(contPath); err != nil {
-					return nil, fmt.Errorf("slice %s_%s %s", pkgName, sliceName, err)
+					return nil, fmt.Errorf("slice %s_%s has invalid generate path %s: %s", pkgName, sliceName, contPath, err)
 				}
 				kinds = append(kinds, GeneratePath)
 			} else if strings.ContainsAny(contPath, "*?") {
@@ -679,11 +680,11 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 
 func validateGeneratePath(path string) error {
 	if !strings.HasSuffix(path, "/**") {
-		return fmt.Errorf("has invalid path %s: does not end with /**", path)
+		return fmt.Errorf("does not end with /**")
 	}
 	dirPath := strings.TrimSuffix(path, "**")
 	if strings.ContainsAny(dirPath, "*?") {
-		return fmt.Errorf("has invalid path %s: contains wildcard characters in addition to trailing **", path)
+		return fmt.Errorf("contains wildcard characters in addition to trailing **")
 	}
 	return nil
 }
@@ -723,6 +724,8 @@ func Select(release *Release, slices []SliceKey) (*Selection, error) {
 			} else {
 				paths[newPath] = new
 			}
+			// An invalid "generate" value should only throw an error if that
+			// particular slice is selected. Hence, the check is here.
 			switch newInfo.Generate {
 			case GenerateNone, GenerateManifest:
 			default:

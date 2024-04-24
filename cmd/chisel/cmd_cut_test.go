@@ -116,7 +116,8 @@ var cutTests = []cutTest{{
 	pkgs: map[string][]byte{
 		"test-package": testutil.MustMakeDeb(
 			append(testutil.TestPackageEntries,
-				// Copyright paths.
+				// Copyright is extracted implicitly if exists, even if the path
+				// is not listed in any slice.
 				testutil.Dir(0755, "./usr/"),
 				testutil.Dir(0755, "./usr/share/"),
 				testutil.Dir(0755, "./usr/share/doc/"),

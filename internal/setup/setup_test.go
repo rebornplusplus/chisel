@@ -1166,7 +1166,7 @@ var setupTests = []setupTest{{
 						/path/: {generate: "manifest"}
 		`,
 	},
-	relerror: `slice mypkg_myslice has invalid path /path/: does not end with /\*\*`,
+	relerror: `slice mypkg_myslice has invalid generate path /path/: does not end with /\*\*`,
 }, {
 	summary: "Paths with generate: manifest must not have any other wildcard except the trailing **",
 	input: map[string]string{
@@ -1178,7 +1178,7 @@ var setupTests = []setupTest{{
 						/pat*h/to/dir/**: {generate: "manifest"}
 		`,
 	},
-	relerror: `slice mypkg_myslice has invalid path /pat\*h/to/dir/\*\*: contains wildcard characters in addition to trailing \*\*`,
+	relerror: `slice mypkg_myslice has invalid generate path /pat\*h/to/dir/\*\*: contains wildcard characters in addition to trailing \*\*`,
 }, {
 	summary: "Same paths conflict if one is generate and the other is not",
 	input: map[string]string{

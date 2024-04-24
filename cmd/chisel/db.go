@@ -48,14 +48,11 @@ type dbContent struct {
 }
 
 type generateManifestOptions struct {
-	// Map of slices indexed by paths which generate manifest.
+	// Map of slices indexed by paths which contain an entry tagged "generate: manifest".
 	ManifestSlices map[string][]*setup.Slice
-	// List of package information to write to manifest.
-	PackageInfo []*archive.PackageInfo
-	// List of slices to write to manifest.
-	Slices []*setup.Slice
-	// Path entries to write to manifest.
-	Report *slicer.Report
+	PackageInfo    []*archive.PackageInfo
+	Slices         []*setup.Slice
+	Report         *slicer.Report
 }
 
 // generateManifest generates the Chisel manifest(s) at the specified paths. It

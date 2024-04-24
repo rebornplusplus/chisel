@@ -114,7 +114,7 @@ func (cmd *cmdCut) Execute(args []string) error {
 			}
 			pkgInfo = append(pkgInfo, info)
 		}
-		writer, err := generateManifest(&generateManifestOptions{
+		manifestWriter, err := generateManifest(&generateManifestOptions{
 			ManifestSlices: manifestSlices,
 			PackageInfo:    pkgInfo,
 			Slices:         selection.Slices,
@@ -128,7 +128,7 @@ func (cmd *cmdCut) Execute(args []string) error {
 			manifestPath := filepath.Join(cmd.RootDir, getManifestPath(path))
 			manifestPaths = append(manifestPaths, manifestPath)
 		}
-		err = writeManifests(writer, manifestPaths)
+		err = writeManifests(manifestWriter, manifestPaths)
 		if err != nil {
 			return err
 		}
