@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/jessevdk/go-flags"
@@ -195,6 +197,104 @@ func locateManifestSlices(slices []*setup.Slice) map[string][]*setup.Slice {
 		}
 	}
 	return manifestSlices
+}
+
+const dbMode = 0644
+
+type generateManifestOptions struct {
+	// Map of slices indexed by paths which contain an entry tagged "generate: manifest".
+	ManifestSlices map[string][]*setup.Slice
+	PackageInfo    []*archive.PackageInfo
+	Slices         []*setup.Slice
+	Report         *slicer.Report
+}
+
+// generateManifest generates the Chisel manifest(s) at the specified paths. It
+// returns the paths inside the rootfs where the manifest(s) are generated.
+func generateManifest(opts *generateManifestOptions) (*jsonwall.DBWriter, error) {
+	dbw := jsonwall.NewDBWriter(&jsonwall.DBWriterOptions{
+		Schema: dbSchema,
+	})
+
+	// Add packages to the manifest.
+	for _, info := range opts.PackageInfo {
+		err := dbw.Add(&dbPackage{
+			Kind:    "package",
+			Name:    info.Name,
+			Version: info.Version,
+			Digest:  info.Hash,
+			Arch:    info.Arch,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Add slices to the manifest.
+	for _, s := range opts.Slices {
+		err := dbw.Add(&dbSlice{
+			Kind: "slice",
+			Name: s.String(),
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Add paths and contents to the manifest.
+	for _, entry := range opts.Report.Entries {
+		sliceNames := []string{}
+		for s := range entry.Slices {
+			err := dbw.Add(&dbContent{
+				Kind:  "content",
+				Slice: s.String(),
+				Path:  entry.Path,
+			})
+			if err != nil {
+				return nil, err
+			}
+			sliceNames = append(sliceNames, s.String())
+		}
+		sort.Strings(sliceNames)
+		err := dbw.Add(&dbPath{
+			Kind:   "path",
+			Path:   entry.Path,
+			Mode:   fmt.Sprintf("0%o", entry.Mode&fs.ModePerm),
+			Slices: sliceNames,
+			Hash:   entry.Hash,
+			Size:   uint64(entry.Size),
+			Link:   entry.Link,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Add the manifest path and content entries.
+	for path, slices := range opts.ManifestSlices {
+		fPath := getManifestPath(path)
+		sliceNames := []string{}
+		for _, s := range slices {
+			err := dbw.Add(&dbContent{
+				Kind:  "content",
+				Slice: s.String(),
+				Path:  fPath,
+			})
+			if err != nil {
+				return nil, err
+			}
+			sliceNames = append(sliceNames, s.String())
+		}
+		sort.Strings(sliceNames)
+		err := dbw.Add(&dbPath{
+			Kind:   "path",
+			Path:   fPath,
+			Mode:   fmt.Sprintf("0%o", dbMode&fs.ModePerm),
+			Slices: sliceNames,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return dbw, nil
 }
 
 // writeManifests writes all added entries and generates the manifest file(s).
