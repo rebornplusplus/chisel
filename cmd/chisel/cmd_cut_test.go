@@ -50,7 +50,7 @@ var cutTests = []cutTest{{
 	slices: []string{"test-package_myslice", "test-package_manifest"},
 	filesystem: map[string]string{
 		"/db/":            "dir 0755",
-		"/db/chisel.db":   "file 0644 1769a2ce",
+		"/db/chisel.db":   "file 0644 b30549a5",
 		"/dir/":           "dir 0755",
 		"/dir/file":       "file 0644 cc55e2ec",
 		"/dir/file-copy":  "file 0644 cc55e2ec",
@@ -73,7 +73,7 @@ var cutTests = []cutTest{{
 {"kind":"path","path":"/db/chisel.db","mode":"0644","slices":["test-package_manifest"]}
 {"kind":"path","path":"/dir/file","mode":"0644","slices":["test-package_myslice"],"sha256":"cc55e2ecf36e40171ded57167c38e1025c99dc8f8bcdd6422368385a977ae1fe","size":14}
 {"kind":"path","path":"/dir/file-copy","mode":"0644","slices":["test-package_myslice"],"sha256":"cc55e2ecf36e40171ded57167c38e1025c99dc8f8bcdd6422368385a977ae1fe","size":14}
-{"kind":"path","path":"/dir/foo/bar/","mode":"0777","slices":["test-package_myslice"]}
+{"kind":"path","path":"/dir/foo/bar/","mode":"01777","slices":["test-package_myslice"]}
 {"kind":"path","path":"/dir/text-file","mode":"0644","slices":["test-package_myslice"],"sha256":"5b41362bc82b7f3d56edc5a306db22105707d01ff4819e26faef9724a2d406c9","size":5}
 {"kind":"path","path":"/other-dir/file","mode":"0644","slices":["test-package_myslice"],"link":"../dir/file"}
 {"kind":"slice","name":"test-package_manifest"}
@@ -129,7 +129,7 @@ var cutTests = []cutTest{{
 	slices: []string{"test-package_myslice", "test-package_manifest"},
 	filesystem: map[string]string{
 		"/db/":          "dir 0755",
-		"/db/chisel.db": "file 0644 c59e0304",
+		"/db/chisel.db": "file 0644 ccd382e9",
 		"/dir/":         "dir 0755",
 		// TODO Note that /dir/all-text has a different hash in db below.
 		// This is because mutated info is not being added to db yet.
@@ -191,7 +191,7 @@ var cutTests = []cutTest{{
 {"kind":"path","path":"/dir/file","mode":"0644","slices":["test-package_myslice"],"sha256":"cc55e2ecf36e40171ded57167c38e1025c99dc8f8bcdd6422368385a977ae1fe","size":14}
 {"kind":"path","path":"/dir/file-copy","mode":"0644","slices":["test-package_myslice"],"sha256":"cc55e2ecf36e40171ded57167c38e1025c99dc8f8bcdd6422368385a977ae1fe","size":14}
 {"kind":"path","path":"/dir/file-copy-2","mode":"0644","slices":["test-package_myslice"],"sha256":"cc55e2ecf36e40171ded57167c38e1025c99dc8f8bcdd6422368385a977ae1fe","size":14}
-{"kind":"path","path":"/dir/foo/bar/","mode":"0777","slices":["test-package_myslice"]}
+{"kind":"path","path":"/dir/foo/bar/","mode":"01777","slices":["test-package_myslice"]}
 {"kind":"path","path":"/dir/link/file","mode":"0644","slices":["test-package_myslice"],"link":"/dir/file"}
 {"kind":"path","path":"/dir/link/file-2","mode":"0777","slices":["test-package_myslice"],"link":"../file"}
 {"kind":"path","path":"/dir/several/levels/","mode":"0755","slices":["test-package_myslice"]}
@@ -201,7 +201,7 @@ var cutTests = []cutTest{{
 {"kind":"path","path":"/dir/text/file-4","mode":"0644","slices":["test-package_myslice"],"sha256":"02c6edc2ad3e1f2f9a9c8fea18c0702c4d2d753440315037bc7f84ea4bba2542","size":5}
 {"kind":"path","path":"/dir/text/file-5","mode":"0755","slices":["test-package_myslice"],"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
 {"kind":"path","path":"/dir/text/file-6","mode":"0644","slices":["test-package_myslice"],"link":"./file-3"}
-{"kind":"path","path":"/parent/","mode":"0777","slices":["test-package_myslice"]}
+{"kind":"path","path":"/parent/","mode":"01777","slices":["test-package_myslice"]}
 {"kind":"path","path":"/parent/permissions/","mode":"0764","slices":["test-package_myslice"]}
 {"kind":"path","path":"/parent/permissions/file","mode":"0755","slices":["test-package_myslice"],"sha256":"722c14b3fe33f2a36e4e02c0034951d2a6820ad11e0bd633ffa90d09754640cc","size":5}
 {"kind":"slice","name":"test-package_manifest"}

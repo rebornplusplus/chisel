@@ -199,7 +199,7 @@ func locateManifestSlices(slices []*setup.Slice) map[string][]*setup.Slice {
 	return manifestSlices
 }
 
-const dbMode = 0644
+const dbMode fs.FileMode = 0644
 
 type generateManifestOptions struct {
 	// Map of slices indexed by paths which contain an entry tagged "generate: manifest".
@@ -257,7 +257,7 @@ func generateManifest(opts *generateManifestOptions) (*jsonwall.DBWriter, error)
 		err := dbw.Add(&dbPath{
 			Kind:   "path",
 			Path:   entry.Path,
-			Mode:   fmt.Sprintf("0%o", entry.Mode&fs.ModePerm),
+			Mode:   fmt.Sprintf("0%o", unixPerm(entry.Mode)),
 			Slices: sliceNames,
 			Hash:   entry.Hash,
 			Size:   uint64(entry.Size),
@@ -286,7 +286,7 @@ func generateManifest(opts *generateManifestOptions) (*jsonwall.DBWriter, error)
 		err := dbw.Add(&dbPath{
 			Kind:   "path",
 			Path:   fPath,
-			Mode:   fmt.Sprintf("0%o", dbMode&fs.ModePerm),
+			Mode:   fmt.Sprintf("0%o", unixPerm(dbMode)),
 			Slices: sliceNames,
 		})
 		if err != nil {
@@ -324,6 +324,14 @@ func writeManifests(writer *jsonwall.DBWriter, paths []string) (err error) {
 
 	_, err = writer.WriteTo(w)
 	return err
+}
+
+func unixPerm(mode fs.FileMode) (perm uint32) {
+	perm = uint32(mode.Perm())
+	if mode&fs.ModeSticky != 0 {
+		perm |= 01000
+	}
+	return perm
 }
 
 // TODO These need testing, and maybe moving into a common file.
