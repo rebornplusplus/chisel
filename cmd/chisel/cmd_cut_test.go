@@ -153,11 +153,13 @@ var cutTests = []cutTest{{
 		// is present in db below. This is because "until: mutate" paths have
 		// not been filtered yet.
 		// Will be fixed by https://github.com/canonical/chisel/pull/131.
-		"/dir/text/file-5":                      "file 0755 empty",
-		"/dir/text/file-6":                      "symlink ./file-3",
-		"/parent/":                              "dir 01777",
-		"/parent/permissions/":                  "dir 0764",
-		"/parent/permissions/file":              "file 0755 722c14b3",
+		"/dir/text/file-5":         "file 0755 empty",
+		"/dir/text/file-6":         "symlink ./file-3",
+		"/parent/":                 "dir 01777",
+		"/parent/permissions/":     "dir 0764",
+		"/parent/permissions/file": "file 0755 722c14b3",
+		// TODO Note that although the following paths are present in the fs,
+		// they are not present in the db below.
 		"/usr/":                                 "dir 0755",
 		"/usr/share/":                           "dir 0755",
 		"/usr/share/doc/":                       "dir 0755",
