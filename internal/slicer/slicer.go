@@ -109,9 +109,16 @@ func Run(options *RunOptions) (*Report, error) {
 					hasCopyright = true
 				}
 			} else if pathInfo.Kind == setup.GeneratePath {
-				// "GeneratePath" type implies generating new files. Thus, we do
-				// not want to extract anything from the package.
-				continue
+				// Extract "GeneratePath" (parent) directories if they exist.
+				targetDir := strings.TrimSuffix(targetPath, "**")
+				for targetDir != "" && targetDir != "/" {
+					targetDir = filepath.Clean(targetDir) + "/"
+					extractPackage[targetDir] = append(extractPackage[targetDir], deb.ExtractInfo{
+						Path:     targetDir,
+						Optional: true,
+					})
+					targetDir = filepath.Dir(strings.TrimRight(targetDir, "/"))
+				}
 			} else {
 				targetDir := filepath.Dir(strings.TrimRight(targetPath, "/")) + "/"
 				if targetDir == "" || targetDir == "/" {
