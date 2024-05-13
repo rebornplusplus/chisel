@@ -32,6 +32,7 @@ type Archive struct {
 	Version    string
 	Suites     []string
 	Components []string
+	Priority   int32
 	PubKeys    []*packet.PublicKey
 }
 
@@ -314,9 +315,6 @@ func readSlices(release *Release, baseDir, dirName string) error {
 		if err != nil {
 			return err
 		}
-		if pkg.Archive == "" {
-			pkg.Archive = release.DefaultArchive
-		}
 
 		release.Packages[pkg.Name] = pkg
 	}
@@ -336,6 +334,7 @@ type yamlArchive struct {
 	Suites     []string `yaml:"suites"`
 	Components []string `yaml:"components"`
 	Default    bool     `yaml:"default"`
+	Priority   int32    `yaml:"priority"`
 	PubKeys    []string `yaml:"public-keys"`
 	// V1PubKeys is used for compatibility with format "chisel-v1".
 	V1PubKeys []string `yaml:"v1-public-keys"`
@@ -496,6 +495,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			Version:    details.Version,
 			Suites:     details.Suites,
 			Components: details.Components,
+			Priority:   details.Priority,
 			PubKeys:    archiveKeys,
 		}
 	}
