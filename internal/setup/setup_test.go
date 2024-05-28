@@ -1287,6 +1287,126 @@ var setupTests = []setupTest{{
 		`,
 	},
 	relerror: `package "mypkg" has invalid essential slice reference: "mypkg-slice"`,
+}, {
+	summary: "Pro values in archives",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				ubuntu:
+					version: 20.04
+					components: [main]
+					suites: [focal]
+					priority: 10
+					v1-public-keys: [test-key]
+				fips:
+					version: 20.04
+					components: [main]
+					suites: [focal]
+					pro: fips
+					priority: 20
+					v1-public-keys: [test-key]
+				fips-updates:
+					version: 20.04
+					components: [main]
+					suites: [focal-updates]
+					pro: fips-updates
+					priority: 21
+					v1-public-keys: [test-key]
+				apps:
+					version: 20.04
+					components: [main]
+					suites: [focal-apps-security]
+					pro: apps
+					priority: 16
+					v1-public-keys: [test-key]
+				infra:
+					version: 20.04
+					components: [main]
+					suites: [focal-infra-security]
+					pro: infra
+					priority: 15
+					v1-public-keys: [test-key]
+				foo:
+					version: 20.04
+					components: [main]
+					suites: [foo]
+					pro: foo
+					priority: -10
+					v1-public-keys: [test-key]
+			v1-public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	release: &setup.Release{
+		Archives: map[string]*setup.Archive{
+			"ubuntu": {
+				Name:       "ubuntu",
+				Version:    "20.04",
+				Suites:     []string{"focal"},
+				Components: []string{"main"},
+				Priority:   10,
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+			"fips": {
+				Name:       "fips",
+				Version:    "20.04",
+				Suites:     []string{"focal"},
+				Components: []string{"main"},
+				Pro:        "fips",
+				Priority:   20,
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+			"fips-updates": {
+				Name:       "fips-updates",
+				Version:    "20.04",
+				Suites:     []string{"focal-updates"},
+				Components: []string{"main"},
+				Pro:        "fips-updates",
+				Priority:   21,
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+			"apps": {
+				Name:       "apps",
+				Version:    "20.04",
+				Suites:     []string{"focal-apps-security"},
+				Components: []string{"main"},
+				Pro:        "apps",
+				Priority:   16,
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+			"infra": {
+				Name:       "infra",
+				Version:    "20.04",
+				Suites:     []string{"focal-infra-security"},
+				Components: []string{"main"},
+				Pro:        "infra",
+				Priority:   15,
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+			"foo": {
+				Name:       "foo",
+				Version:    "20.04",
+				Suites:     []string{"foo"},
+				Components: []string{"main"},
+				// Pro value "foo" is ignored and set to "".
+				Priority: -10,
+				PubKeys:  []*packet.PublicKey{testKey.PubKey},
+			},
+		},
+		Packages: map[string]*setup.Package{
+			"mypkg": {
+				Name:   "mypkg",
+				Path:   "slices/mydir/mypkg.yaml",
+				Slices: map[string]*setup.Slice{},
+			},
+		},
+	},
 }}
 
 var defaultChiselYaml = `
