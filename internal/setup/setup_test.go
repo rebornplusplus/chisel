@@ -1389,15 +1389,6 @@ var setupTests = []setupTest{{
 				Priority:   15,
 				PubKeys:    []*packet.PublicKey{testKey.PubKey},
 			},
-			"foo": {
-				Name:       "foo",
-				Version:    "20.04",
-				Suites:     []string{"foo"},
-				Components: []string{"main"},
-				// Pro value "foo" is ignored and set to "".
-				Priority: -10,
-				PubKeys:  []*packet.PublicKey{testKey.PubKey},
-			},
 		},
 		Packages: map[string]*setup.Package{
 			"mypkg": {

@@ -490,8 +490,8 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		switch details.Pro {
 		case proNone, proApps, proFIPS, proFIPSUpdates, proInfra:
 		default:
-			logf("%s: ignored invalid pro value %q of archive %q", fileName, details.Pro, archiveName)
-			details.Pro = proNone
+			logf("%s: archive %q ignored due to invalid pro value: %s", fileName, archiveName, details.Pro)
+			continue
 		}
 		if len(details.PubKeys) == 0 {
 			if yamlVar.Format == "chisel-v1" {
