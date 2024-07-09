@@ -33,6 +33,7 @@ type Archive struct {
 	Version    string
 	Suites     []string
 	Components []string
+	Priority   int32
 	PubKeys    []*packet.PublicKey
 }
 
@@ -189,6 +190,18 @@ func (r *Release) validate() error {
 		paths[newPath] = new
 	}
 
+	// Check for archive priority conflicts.
+	for _, archive1 := range r.Archives {
+		for _, archive2 := range r.Archives {
+			if archive1 != archive2 && archive1.Priority == archive2.Priority {
+				if archive1.Name > archive2.Name {
+					archive1, archive2 = archive2, archive1
+				}
+				return fmt.Errorf("archives %q and %q have the same priority value of %v", archive1.Name, archive2.Name, archive1.Priority)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -315,9 +328,6 @@ func readSlices(release *Release, baseDir, dirName string) error {
 		if err != nil {
 			return err
 		}
-		if pkg.Archive == "" {
-			pkg.Archive = release.DefaultArchive
-		}
 
 		release.Packages[pkg.Name] = pkg
 	}
@@ -337,6 +347,7 @@ type yamlArchive struct {
 	Suites     []string `yaml:"suites"`
 	Components []string `yaml:"components"`
 	Default    bool     `yaml:"default"`
+	Priority   int32    `yaml:"priority"`
 	PubKeys    []string `yaml:"public-keys"`
 	// V1PubKeys is used for compatibility with format "chisel-v1".
 	V1PubKeys []string `yaml:"v1-public-keys"`
@@ -497,6 +508,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			Version:    details.Version,
 			Suites:     details.Suites,
 			Components: details.Components,
+			Priority:   details.Priority,
 			PubKeys:    archiveKeys,
 		}
 	}

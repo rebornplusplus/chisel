@@ -82,19 +82,13 @@ func Run(options *RunOptions) (*Report, error) {
 
 	// Build information to process the selection.
 	extract := make(map[string]map[string][]deb.ExtractInfo)
-	archives := make(map[string]archive.Archive)
+	archives, err := selectPkgArchives(options.Archives, options.Selection)
+	if err != nil {
+		return nil, err
+	}
 	for _, slice := range options.Selection.Slices {
 		extractPackage := extract[slice.Package]
 		if extractPackage == nil {
-			archiveName := options.Selection.Release.Packages[slice.Package].Archive
-			archive := options.Archives[archiveName]
-			if archive == nil {
-				return nil, fmt.Errorf("archive %q not defined", archiveName)
-			}
-			if !archive.Exists(slice.Package) {
-				return nil, fmt.Errorf("slice package %q missing from archive", slice.Package)
-			}
-			archives[slice.Package] = archive
 			extractPackage = make(map[string][]deb.ExtractInfo)
 			extract[slice.Package] = extractPackage
 		}
@@ -396,4 +390,59 @@ func createFile(targetPath string, pathInfo setup.PathInfo) (*fsutil.Entry, erro
 		Link:        linkTarget,
 		MakeParents: true,
 	})
+}
+
+// selectPkgArchives selects the appropriate archive for each selected slice
+// package. It returns a map of archives indexed by package names.
+func selectPkgArchives(archives map[string]archive.Archive, selection *setup.Selection) (map[string]archive.Archive, error) {
+	// Sort the archives by their priority value.
+	releaseArchives := make([]*setup.Archive, 0, len(selection.Release.Archives))
+	for _, archive := range selection.Release.Archives {
+		releaseArchives = append(releaseArchives, archive)
+	}
+	slices.SortFunc(releaseArchives, func(a, b *setup.Archive) int {
+		if a.Priority > b.Priority {
+			return -1
+		}
+		if a.Priority < b.Priority {
+			return 1
+		}
+		return 0
+	})
+
+	// Select the appropriate archive for each slice package.
+	pkgArchives := make(map[string]archive.Archive)
+	for _, s := range selection.Slices {
+		pkg := selection.Release.Packages[s.Package]
+		if _, ok := pkgArchives[pkg.Name]; ok {
+			continue
+		}
+		if pkg.Archive == "" {
+			// If the package has not pinned any archive, choose the highest
+			// priority archive in which the package exists.
+			var chosen archive.Archive
+			for _, releaseArchive := range releaseArchives {
+				archive := archives[releaseArchive.Name]
+				if archive != nil && archive.Exists(pkg.Name) {
+					chosen = archive
+					break
+				}
+			}
+			if chosen == nil {
+				return nil, fmt.Errorf("slice package %q missing from archive(s)", pkg.Name)
+			}
+			pkgArchives[pkg.Name] = chosen
+		} else {
+			// If the package has pinned a valid archive, select that one.
+			archive := archives[pkg.Archive]
+			if archive == nil {
+				return nil, fmt.Errorf("archive %q not defined", pkg.Archive)
+			}
+			if !archive.Exists(pkg.Name) {
+				return nil, fmt.Errorf("slice package %q missing from archive", pkg.Name)
+			}
+			pkgArchives[pkg.Name] = archive
+		}
+	}
+	return pkgArchives, nil
 }
