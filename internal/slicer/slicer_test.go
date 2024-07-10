@@ -993,6 +993,86 @@ var slicerTests = []slicerTest{{
 	},
 	error: "slice package \"test-package\" missing from archive\\(s\\)",
 }, {
+	summary: "Negative priority archives are ignored, unless asked by package",
+	slices:  []setup.SliceKey{{"test-package", "myslice"}},
+	archives: map[string]*testArchive{
+		"foo": {
+			pkgs: map[string][]byte{
+				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
+					testutil.Reg(0644, "./file", "from foo"),
+				}),
+			},
+		},
+	},
+	release: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				foo:
+					version: 22.04
+					components: [main, universe]
+					default: true
+					priority: -20
+					v1-public-keys: [test-key]
+			v1-public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/file:
+		`,
+	},
+	// Although test-package exists in archive "foo", the archive was ignored
+	// due to having a negative priority.
+	error: "slice package \"test-package\" missing from archive\\(s\\)",
+}, {
+	summary: "Negative priority archives are asked by package",
+	slices:  []setup.SliceKey{{"test-package", "myslice"}},
+	archives: map[string]*testArchive{
+		"foo": {
+			pkgs: map[string][]byte{
+				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
+					testutil.Reg(0644, "./file", "from foo"),
+				}),
+			},
+		},
+	},
+	release: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				foo:
+					version: 22.04
+					components: [main, universe]
+					default: true
+					priority: -20
+					v1-public-keys: [test-key]
+			v1-public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			archive: foo
+			slices:
+				myslice:
+					contents:
+						/file:
+		`,
+	},
+	filesystem: map[string]string{
+		"/file": "file 0644 7a3e00f5",
+	},
+	report: map[string]string{
+		"/file": "file 0644 7a3e00f5 {test-package_myslice}",
+	},
+}, {
 	summary: "Multiple slices of same package",
 	slices: []setup.SliceKey{
 		{"test-package", "myslice1"},

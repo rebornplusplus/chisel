@@ -398,6 +398,11 @@ func selectPkgArchives(archives map[string]archive.Archive, selection *setup.Sel
 	// Sort the archives by their priority value.
 	releaseArchives := make([]*setup.Archive, 0, len(selection.Release.Archives))
 	for _, archive := range selection.Release.Archives {
+		if archive.Priority < 0 {
+			// Ignore negative priority archives unless a package specifically
+			// asks for it with the "archive" field.
+			continue
+		}
 		releaseArchives = append(releaseArchives, archive)
 	}
 	slices.SortFunc(releaseArchives, func(a, b *setup.Archive) int {
