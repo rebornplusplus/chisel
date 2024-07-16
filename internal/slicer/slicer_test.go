@@ -836,13 +836,9 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 	filesystem: map[string]string{
-		// /file comes from the test-package in archive "foo" as archive "foo"
-		// has a higher priority, althought archive "bar" is the default
-		// archive. This demonstrates that in light of the new "priority" value,
-		// the notion of "default" archives is now obsolete.
+		// The notion of "default" is obsolete and highest priority is selected
 		"/file": "file 0644 7a3e00f5",
-		// /other-file comes from the other-package in archive "bar" as archive
-		// "bar" is the only one which has the package.
+		// Fetched from archive "bar" as no other archive has the package.
 		"/other-file": "file 0644 fa0c9cdb",
 	},
 	report: map[string]string{
@@ -898,8 +894,7 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 	filesystem: map[string]string{
-		// /file comes from the test-package in archive "bar" as the archive
-		// name is pinned in the slice definition file.
+		// test-package fetched from pinned archive "bar".
 		"/file": "file 0644 fa0c9cdb",
 	},
 	report: map[string]string{
@@ -991,9 +986,9 @@ var slicerTests = []slicerTest{{
 						/file:
 		`,
 	},
-	error: "slice package \"test-package\" missing from archive\\(s\\)",
+	error: `slice package "test-package" missing from archive\(s\)`,
 }, {
-	summary: "Negative priority archives are ignored, unless asked by package",
+	summary: "Negative priority archives are ignored when not explicitly pinned in package",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
 	archives: map[string]*testArchive{
 		"foo": {
@@ -1029,9 +1024,9 @@ var slicerTests = []slicerTest{{
 	},
 	// Although test-package exists in archive "foo", the archive was ignored
 	// due to having a negative priority.
-	error: "slice package \"test-package\" missing from archive\\(s\\)",
+	error: `slice package "test-package" missing from archive\(s\)`,
 }, {
-	summary: "Negative priority archives are asked by package",
+	summary: "Negative priority archive explicitly pinned in package",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
 	archives: map[string]*testArchive{
 		"foo": {

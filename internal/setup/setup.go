@@ -33,7 +33,7 @@ type Archive struct {
 	Version    string
 	Suites     []string
 	Components []string
-	Priority   int32
+	Priority   int
 	PubKeys    []*packet.PublicKey
 }
 
@@ -191,15 +191,17 @@ func (r *Release) validate() error {
 	}
 
 	// Check for archive priority conflicts.
-	for _, archive1 := range r.Archives {
-		for _, archive2 := range r.Archives {
-			if archive1 != archive2 && archive1.Priority == archive2.Priority {
-				if archive1.Name > archive2.Name {
-					archive1, archive2 = archive2, archive1
-				}
-				return fmt.Errorf("archives %q and %q have the same priority value of %v", archive1.Name, archive2.Name, archive1.Priority)
-			}
+	priorities := make(map[int]*Archive)
+	for _, archive := range r.Archives {
+		old, ok := priorities[archive.Priority]
+		if !ok {
+			priorities[archive.Priority] = archive
+			continue
 		}
+		if old.Name > archive.Name {
+			archive, old = old, archive
+		}
+		return fmt.Errorf("archives %q and %q have the same priority value of %v", old.Name, archive.Name, archive.Priority)
 	}
 
 	return nil
@@ -347,7 +349,7 @@ type yamlArchive struct {
 	Suites     []string `yaml:"suites"`
 	Components []string `yaml:"components"`
 	Default    bool     `yaml:"default"`
-	Priority   int32    `yaml:"priority"`
+	Priority   int      `yaml:"priority"`
 	PubKeys    []string `yaml:"public-keys"`
 	// V1PubKeys is used for compatibility with format "chisel-v1".
 	V1PubKeys []string `yaml:"v1-public-keys"`

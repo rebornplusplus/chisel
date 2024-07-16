@@ -912,7 +912,6 @@ var setupTests = []setupTest{{
 					components: [main, universe]
 					suites: [jammy]
 					v1-public-keys: [extra-key]
-					default: true
 					priority: 20
 				bar:
 					version: 22.04
@@ -933,8 +932,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "foo",
-
 		Archives: map[string]*setup.Archive{
 			"foo": {
 				Name:       "foo",
