@@ -946,7 +946,7 @@ var slicerTests = []slicerTest{{
 	},
 	// Although archive "foo" does have the package, since archive "bar" has
 	// been pinned in the slice definition, no other archives will be checked.
-	error: `slice package "test-package" missing from archive`,
+	error: `cannot find package "test-package" in archive`,
 }, {
 	summary: "No archives have the package",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
@@ -986,7 +986,7 @@ var slicerTests = []slicerTest{{
 						/file:
 		`,
 	},
-	error: `slice package "test-package" missing from archive\(s\)`,
+	error: `cannot find package "test-package" in archive`,
 }, {
 	summary: "Negative priority archives are ignored when not explicitly pinned in package",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
@@ -1024,7 +1024,7 @@ var slicerTests = []slicerTest{{
 	},
 	// Although test-package exists in archive "foo", the archive was ignored
 	// due to having a negative priority.
-	error: `slice package "test-package" missing from archive\(s\)`,
+	error: `cannot find package "test-package" in archive`,
 }, {
 	summary: "Negative priority archive explicitly pinned in package",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},

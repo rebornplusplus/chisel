@@ -344,6 +344,13 @@ type yamlRelease struct {
 	V1PubKeys map[string]yamlPubKey `yaml:"v1-public-keys"`
 }
 
+const (
+	// An archive's priority value cannot be larger than MaxArchivePriority.
+	MaxArchivePriority = 1000000
+	// An archive's priority value cannot be smaller than MinArchivePriority.
+	MinArchivePriority = -1000000
+)
+
 type yamlArchive struct {
 	Version    string   `yaml:"version"`
 	Suites     []string `yaml:"suites"`
@@ -504,6 +511,9 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 				return nil, fmt.Errorf("%s: archive %q refers to undefined public key %q", fileName, archiveName, keyName)
 			}
 			archiveKeys = append(archiveKeys, key)
+		}
+		if details.Priority > MaxArchivePriority || details.Priority < MinArchivePriority {
+			return nil, fmt.Errorf("%s: archive %q has invalid priority value %v", fileName, archiveName, details.Priority)
 		}
 		release.Archives[archiveName] = &Archive{
 			Name:       archiveName,
