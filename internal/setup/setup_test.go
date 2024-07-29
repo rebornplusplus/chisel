@@ -1319,6 +1319,12 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [main, universe]
 					suites: [jammy]
+					v1-public-keys: [test-key]
+					default: true
+			v1-public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
 		`,
 	},
 	relerror: `chisel.yaml: unknown format "chisel-v1"`,
