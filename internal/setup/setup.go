@@ -204,6 +204,16 @@ func (r *Release) validate() error {
 		return fmt.Errorf("archives %q and %q have the same priority value of %v", old.Name, archive.Name, archive.Priority)
 	}
 
+	// Check package pinned archive validity.
+	for _, pkg := range r.Packages {
+		if pkg.Archive == "" {
+			continue
+		}
+		if _, ok := r.Archives[pkg.Archive]; !ok {
+			return fmt.Errorf("%s: archive %q not defined", pkg.Path, pkg.Archive)
+		}
+	}
+
 	return nil
 }
 
@@ -345,10 +355,8 @@ type yamlRelease struct {
 }
 
 const (
-	// An archive's priority value cannot be larger than MaxArchivePriority.
-	MaxArchivePriority = 1000000
-	// An archive's priority value cannot be smaller than MinArchivePriority.
-	MinArchivePriority = -1000000
+	MaxArchivePriority = 1000
+	MinArchivePriority = -1000
 )
 
 type yamlArchive struct {
@@ -513,7 +521,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			archiveKeys = append(archiveKeys, key)
 		}
 		if details.Priority > MaxArchivePriority || details.Priority < MinArchivePriority {
-			return nil, fmt.Errorf("%s: archive %q has invalid priority value %v", fileName, archiveName, details.Priority)
+			return nil, fmt.Errorf("%s: archive %q has invalid priority value %d", fileName, archiveName, details.Priority)
 		}
 		release.Archives[archiveName] = &Archive{
 			Name:       archiveName,

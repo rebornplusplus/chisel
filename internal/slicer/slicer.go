@@ -424,9 +424,6 @@ func selectPkgArchives(archives map[string]archive.Archive, selection *setup.Sel
 		if pkg.Archive == "" {
 			candidates = sortedArchives
 		} else {
-			if archive, ok := archives[pkg.Archive]; !ok || archive == nil {
-				return nil, fmt.Errorf("archive %q not defined", pkg.Archive)
-			}
 			candidates = []*setup.Archive{selection.Release.Archives[pkg.Archive]}
 		}
 
@@ -439,7 +436,7 @@ func selectPkgArchives(archives map[string]archive.Archive, selection *setup.Sel
 			}
 		}
 		if chosen == nil {
-			return nil, fmt.Errorf("cannot find package %q in archive", pkg.Name)
+			return nil, fmt.Errorf("cannot find package %q in archive(s)", pkg.Name)
 		}
 		pkgArchives[pkg.Name] = chosen
 	}

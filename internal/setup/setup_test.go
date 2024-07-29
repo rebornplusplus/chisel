@@ -854,18 +854,15 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [main, universe]
 					suites: [jammy]
-					priority: 100000000
+					priority: 10000
 					v1-public-keys: [test-key]
 			v1-public-keys:
 				test-key:
 					id: ` + testKey.ID + `
 					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
 		`,
-		"slices/mydir/mypkg.yaml": `
-			package: mypkg
-		`,
 	},
-	relerror: `chisel.yaml: archive "foo" has invalid priority value 100000000`,
+	relerror: `chisel.yaml: archive "foo" has invalid priority value 10000`,
 }, {
 	summary: "Extra fields in YAML are ignored (necessary for forward compatibility)",
 	input: map[string]string{
@@ -1353,6 +1350,15 @@ var setupTests = []setupTest{{
 		`,
 	},
 	// TODO this should be an error because the content does not match.
+}, {
+	summary: "Pinned archive is not defined",
+	input: map[string]string{
+		"slices/test-package.yaml": `
+			package: test-package
+			archive: foo
+		`,
+	},
+	relerror: `slices/test-package.yaml: archive "foo" not defined`,
 }}
 
 var defaultChiselYaml = `
