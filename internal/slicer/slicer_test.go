@@ -1088,11 +1088,7 @@ func (a *testArchive) Exists(pkg string) bool {
 }
 
 func (s *S) TestRun(c *C) {
-	runSlicerTests(c, slicerTests)
-}
-
-func runSlicerTests(c *C, tests []slicerTest) {
-	for _, test := range tests {
+	for _, test := range slicerTests {
 		for _, slices := range testutil.Permutations(test.slices) {
 			c.Logf("Summary: %s", test.summary)
 
