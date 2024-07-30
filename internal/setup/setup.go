@@ -193,24 +193,22 @@ func (r *Release) validate() error {
 	// Check for archive priority conflicts.
 	priorities := make(map[int]*Archive)
 	for _, archive := range r.Archives {
-		old, ok := priorities[archive.Priority]
-		if !ok {
-			priorities[archive.Priority] = archive
-			continue
+		if old, ok := priorities[archive.Priority]; ok {
+			if old.Name > archive.Name {
+				archive, old = old, archive
+			}
+			return fmt.Errorf("chisel.yaml: archives %q and %q have the same priority value of %v", old.Name, archive.Name, archive.Priority)
 		}
-		if old.Name > archive.Name {
-			archive, old = old, archive
-		}
-		return fmt.Errorf("archives %q and %q have the same priority value of %v", old.Name, archive.Name, archive.Priority)
+		priorities[archive.Priority] = archive
 	}
 
-	// Check package pinned archive validity.
+	// Check that archives pinned in packages are defined.
 	for _, pkg := range r.Packages {
 		if pkg.Archive == "" {
 			continue
 		}
 		if _, ok := r.Archives[pkg.Archive]; !ok {
-			return fmt.Errorf("%s: archive %q not defined", pkg.Path, pkg.Archive)
+			return fmt.Errorf("%s: package refers to undefined archive %q", pkg.Path, pkg.Archive)
 		}
 	}
 

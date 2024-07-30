@@ -843,7 +843,7 @@ var setupTests = []setupTest{{
 			package: mypkg
 		`,
 	},
-	relerror: `archives "bar" and "foo" have the same priority value of 20`,
+	relerror: `chisel.yaml: archives "bar" and "foo" have the same priority value of 20`,
 }, {
 	summary: "Invalid archive priority",
 	input: map[string]string{
@@ -1355,10 +1355,10 @@ var setupTests = []setupTest{{
 	input: map[string]string{
 		"slices/test-package.yaml": `
 			package: test-package
-			archive: foo
+			archive: non-existing
 		`,
 	},
-	relerror: `slices/test-package.yaml: archive "foo" not defined`,
+	relerror: `slices/test-package.yaml: package refers to undefined archive "non-existing"`,
 }}
 
 var defaultChiselYaml = `

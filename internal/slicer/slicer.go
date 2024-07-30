@@ -410,7 +410,6 @@ func selectPkgArchives(archives map[string]archive.Archive, selection *setup.Sel
 		return b.Priority - a.Priority
 	})
 
-	// Select the appropriate archive for each slice package.
 	pkgArchives := make(map[string]archive.Archive)
 	for _, s := range selection.Slices {
 		if _, ok := pkgArchives[s.Package]; ok {
@@ -418,8 +417,6 @@ func selectPkgArchives(archives map[string]archive.Archive, selection *setup.Sel
 		}
 		pkg := selection.Release.Packages[s.Package]
 
-		// If the package has not pinned any archive, choose the highest
-		// priority archive in which the package exists.
 		var candidates []*setup.Archive
 		if pkg.Archive == "" {
 			candidates = sortedArchives
@@ -427,6 +424,8 @@ func selectPkgArchives(archives map[string]archive.Archive, selection *setup.Sel
 			candidates = []*setup.Archive{selection.Release.Archives[pkg.Archive]}
 		}
 
+		// If the package has not pinned any archive, choose the highest
+		// priority archive in which the package exists.
 		var chosen archive.Archive
 		for _, archiveInfo := range candidates {
 			archive := archives[archiveInfo.Name]
