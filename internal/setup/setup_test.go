@@ -758,7 +758,7 @@ var setupTests = []setupTest{{
 		},
 	},
 }, {
-	summary: "Multiple archives",
+	summary: "Multiple archives with priorities",
 	input: map[string]string{
 		"chisel.yaml": `
 			format: chisel-v1
@@ -774,7 +774,7 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [universe]
 					suites: [jammy-updates]
-					priority: 10
+					priority: -10
 					v1-public-keys: [test-key]
 			v1-public-keys:
 				test-key:
@@ -803,7 +803,7 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy-updates"},
 				Components: []string{"universe"},
-				Priority:   10,
+				Priority:   -10,
 				PubKeys:    []*packet.PublicKey{testKey.PubKey},
 			},
 		},
@@ -816,6 +816,53 @@ var setupTests = []setupTest{{
 			},
 		},
 	},
+}, {
+	summary: "Two archives cannot have same priority",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				foo:
+					version: 22.04
+					components: [main, universe]
+					suites: [jammy]
+					priority: 20
+					v1-public-keys: [test-key]
+				bar:
+					version: 22.04
+					components: [universe]
+					suites: [jammy-updates]
+					priority: 20
+					v1-public-keys: [test-key]
+			v1-public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	relerror: `chisel.yaml: archives "bar" and "foo" have the same priority value of 20`,
+}, {
+	summary: "Invalid archive priority",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				foo:
+					version: 22.04
+					components: [main, universe]
+					suites: [jammy]
+					priority: 10000
+					v1-public-keys: [test-key]
+			v1-public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+	},
+	relerror: `chisel.yaml: archive "foo" has invalid priority value 10000`,
 }, {
 	summary: "Extra fields in YAML are ignored (necessary for forward compatibility)",
 	input: map[string]string{
@@ -884,12 +931,13 @@ var setupTests = []setupTest{{
 					components: [main, universe]
 					suites: [jammy]
 					v1-public-keys: [extra-key]
-					default: true
+					priority: 20
 				bar:
 					version: 22.04
 					components: [universe]
 					suites: [jammy-updates]
 					v1-public-keys: [test-key, extra-key]
+					priority: 10
 			v1-public-keys:
 				extra-key:
 					id: ` + extraTestKey.ID + `
@@ -903,14 +951,13 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "foo",
-
 		Archives: map[string]*setup.Archive{
 			"foo": {
 				Name:       "foo",
 				Version:    "22.04",
 				Suites:     []string{"jammy"},
 				Components: []string{"main", "universe"},
+				Priority:   20,
 				PubKeys:    []*packet.PublicKey{extraTestKey.PubKey},
 			},
 			"bar": {
@@ -918,6 +965,7 @@ var setupTests = []setupTest{{
 				Version:    "22.04",
 				Suites:     []string{"jammy-updates"},
 				Components: []string{"universe"},
+				Priority:   10,
 				PubKeys:    []*packet.PublicKey{testKey.PubKey, extraTestKey.PubKey},
 			},
 		},
@@ -1287,6 +1335,30 @@ var setupTests = []setupTest{{
 		`,
 	},
 	relerror: `package "mypkg" has invalid essential slice reference: "mypkg-slice"`,
+}, {
+	summary: "Glob clashes within same package",
+	input: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice1:
+					contents:
+						/dir/**:
+				myslice2:
+					contents:
+						/dir/file: {text: "foo"}
+		`,
+	},
+	// TODO this should be an error because the content does not match.
+}, {
+	summary: "Pinned archive is not defined",
+	input: map[string]string{
+		"slices/test-package.yaml": `
+			package: test-package
+			archive: non-existing
+		`,
+	},
+	relerror: `slices/test-package.yaml: package refers to undefined archive "non-existing"`,
 }, {
 	summary: "Pro values in archives",
 	input: map[string]string{
