@@ -1399,6 +1399,269 @@ var slicerTests = []slicerTest{{
 	report: map[string]string{
 		"/dir/nested/file": "file 0644 84237a05 {test-package_myslice}",
 	},
+}, {
+	summary: "Multiple slices of same package",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice1"},
+		{"test-package", "myslice2"},
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice1:
+					contents:
+						/dir/file:
+						/dir/file-copy:  {copy: /dir/file}
+						/other-dir/file: {symlink: ../dir/file}
+						/dir/foo/bar/:   {make: true, mode: 01777}
+				myslice2:
+					contents:
+						/dir/other-file:
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":           "dir 0755",
+		"/dir/file":       "file 0644 cc55e2ec",
+		"/dir/file-copy":  "file 0644 cc55e2ec",
+		"/dir/foo/":       "dir 0755",
+		"/dir/foo/bar/":   "dir 01777",
+		"/dir/other-file": "file 0644 63d5dd49",
+		"/other-dir/":     "dir 0755",
+		"/other-dir/file": "symlink ../dir/file",
+	},
+	report: map[string]string{
+		"/dir/file":       "file 0644 cc55e2ec {test-package_myslice1}",
+		"/dir/file-copy":  "file 0644 cc55e2ec {test-package_myslice1}",
+		"/dir/foo/bar/":   "dir 01777 {test-package_myslice1}",
+		"/dir/other-file": "file 0644 63d5dd49 {test-package_myslice2}",
+		"/other-dir/file": "symlink ../dir/file {test-package_myslice1}",
+	},
+}, {
+	summary: "Same glob in several entries with until:mutate and reading from script",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice1"},
+		{"test-package", "myslice2"},
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice1:
+					contents:
+						/dir/**: {until: mutate}
+					mutate: |
+						content.read("/dir/file")
+				myslice2:
+					contents:
+						/dir/**:
+					mutate: |
+						content.read("/dir/file")
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/nested/other-file":        "file 0644 6b86b273",
+		"/dir/several/":                 "dir 0755",
+		"/dir/several/levels/":          "dir 0755",
+		"/dir/several/levels/deep/file": "file 0644 6bc26dff",
+		"/dir/":                         "dir 0755",
+		"/dir/file":                     "file 0644 cc55e2ec",
+		"/dir/nested/":                  "dir 0755",
+		"/dir/nested/file":              "file 0644 84237a05",
+		"/dir/other-file":               "file 0644 63d5dd49",
+		"/dir/several/levels/deep/":     "dir 0755",
+	},
+	report: map[string]string{
+		"/dir/":                         "dir 0755 {test-package_myslice2}",
+		"/dir/file":                     "file 0644 cc55e2ec {test-package_myslice2}",
+		"/dir/nested/":                  "dir 0755 {test-package_myslice2}",
+		"/dir/nested/file":              "file 0644 84237a05 {test-package_myslice2}",
+		"/dir/nested/other-file":        "file 0644 6b86b273 {test-package_myslice2}",
+		"/dir/other-file":               "file 0644 63d5dd49 {test-package_myslice2}",
+		"/dir/several/":                 "dir 0755 {test-package_myslice2}",
+		"/dir/several/levels/":          "dir 0755 {test-package_myslice2}",
+		"/dir/several/levels/deep/":     "dir 0755 {test-package_myslice2}",
+		"/dir/several/levels/deep/file": "file 0644 6bc26dff {test-package_myslice2}",
+	},
+}, {
+	summary: "Overlapping globs, until:mutate and reading from script",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice2"},
+		{"test-package", "myslice1"},
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice1:
+					contents:
+						/dir/**:
+					mutate: |
+						content.read("/dir/file")
+				myslice2:
+					contents:
+						/dir/nested/**: {until: mutate}
+					mutate: |
+						content.read("/dir/file")
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":                         "dir 0755",
+		"/dir/file":                     "file 0644 cc55e2ec",
+		"/dir/nested/":                  "dir 0755",
+		"/dir/nested/file":              "file 0644 84237a05",
+		"/dir/nested/other-file":        "file 0644 6b86b273",
+		"/dir/other-file":               "file 0644 63d5dd49",
+		"/dir/several/":                 "dir 0755",
+		"/dir/several/levels/":          "dir 0755",
+		"/dir/several/levels/deep/":     "dir 0755",
+		"/dir/several/levels/deep/file": "file 0644 6bc26dff",
+	},
+	report: map[string]string{
+		"/dir/":                         "dir 0755 {test-package_myslice1}",
+		"/dir/file":                     "file 0644 cc55e2ec {test-package_myslice1}",
+		"/dir/nested/":                  "dir 0755 {test-package_myslice1}",
+		"/dir/nested/file":              "file 0644 84237a05 {test-package_myslice1}",
+		"/dir/nested/other-file":        "file 0644 6b86b273 {test-package_myslice1}",
+		"/dir/other-file":               "file 0644 63d5dd49 {test-package_myslice1}",
+		"/dir/several/":                 "dir 0755 {test-package_myslice1}",
+		"/dir/several/levels/":          "dir 0755 {test-package_myslice1}",
+		"/dir/several/levels/deep/":     "dir 0755 {test-package_myslice1}",
+		"/dir/several/levels/deep/file": "file 0644 6bc26dff {test-package_myslice1}",
+	},
+}, {
+	summary: "Overlapping glob and single entry, until:mutate on entry and reading from script",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice1"},
+		{"test-package", "myslice2"},
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice1:
+					contents:
+						/dir/**:
+					mutate: |
+						content.read("/dir/file")
+				myslice2:
+					contents:
+						/dir/file: {until: mutate}
+					mutate: |
+						content.read("/dir/file")
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":                         "dir 0755",
+		"/dir/file":                     "file 0644 cc55e2ec",
+		"/dir/nested/":                  "dir 0755",
+		"/dir/nested/file":              "file 0644 84237a05",
+		"/dir/nested/other-file":        "file 0644 6b86b273",
+		"/dir/other-file":               "file 0644 63d5dd49",
+		"/dir/several/":                 "dir 0755",
+		"/dir/several/levels/":          "dir 0755",
+		"/dir/several/levels/deep/":     "dir 0755",
+		"/dir/several/levels/deep/file": "file 0644 6bc26dff",
+	},
+	report: map[string]string{
+		"/dir/":                         "dir 0755 {test-package_myslice1}",
+		"/dir/file":                     "file 0644 cc55e2ec {test-package_myslice1}",
+		"/dir/nested/":                  "dir 0755 {test-package_myslice1}",
+		"/dir/nested/file":              "file 0644 84237a05 {test-package_myslice1}",
+		"/dir/nested/other-file":        "file 0644 6b86b273 {test-package_myslice1}",
+		"/dir/other-file":               "file 0644 63d5dd49 {test-package_myslice1}",
+		"/dir/several/":                 "dir 0755 {test-package_myslice1}",
+		"/dir/several/levels/":          "dir 0755 {test-package_myslice1}",
+		"/dir/several/levels/deep/":     "dir 0755 {test-package_myslice1}",
+		"/dir/several/levels/deep/file": "file 0644 6bc26dff {test-package_myslice1}",
+	},
+}, {
+	summary: "Overlapping glob and single entry, until:mutate on glob and reading from script",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice1"},
+		{"test-package", "myslice2"},
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice1:
+					contents:
+						/dir/**: {until: mutate}
+					mutate: |
+						content.read("/dir/file")
+				myslice2:
+					contents:
+						/dir/file:
+					mutate: |
+						content.read("/dir/file")
+		`,
+	},
+	filesystem: map[string]string{
+		"/dir/":     "dir 0755",
+		"/dir/file": "file 0644 cc55e2ec",
+	},
+	report: map[string]string{
+		"/dir/file": "file 0644 cc55e2ec {test-package_myslice2}",
+	},
+}, {
+	summary: "Overlapping glob and single entry, until:mutate on both and reading from script",
+	slices: []setup.SliceKey{
+		{"test-package", "myslice1"},
+		{"test-package", "myslice2"},
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice1:
+					contents:
+						/dir/**: {until: mutate}
+					mutate: |
+						content.read("/dir/file")
+				myslice2:
+					contents:
+						/dir/file: {until: mutate}
+					mutate: |
+						content.read("/dir/file")
+		`,
+	},
+	filesystem: map[string]string{},
+	report:     map[string]string{},
+}, {
+	summary: "Relative paths are properly trimmed during extraction",
+	slices:  []setup.SliceKey{{"test-package", "myslice"}},
+	archives: map[string]*testArchive{
+		"ubuntu": {
+			pkgs: map[string][]byte{
+				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
+					// This particular path starting with "/foo" is chosen to test for
+					// a particular bug; which appeared due to the usage of
+					// strings.TrimLeft() instead strings.TrimPrefix() to determine a
+					// relative path. Since TrimLeft takes in a cutset instead of a
+					// prefix, the desired relative path was not produced.
+					// See https://github.com/canonical/chisel/pull/145.
+					testutil.Dir(0755, "./foo-bar/"),
+				}),
+			},
+		},
+	},
+	hackopt: func(c *C, opts *slicer.RunOptions) {
+		opts.TargetDir = filepath.Join(filepath.Clean(opts.TargetDir), "foo")
+		err := os.Mkdir(opts.TargetDir, 0755)
+		c.Assert(err, IsNil)
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+						/foo-bar/:
+					mutate: |
+						content.list("/foo-bar/")
+		`,
+	},
 }}
 
 var defaultChiselYaml = `
