@@ -1360,7 +1360,7 @@ var setupTests = []setupTest{{
 	},
 	relerror: `slices/test-package.yaml: package refers to undefined archive "non-existing"`,
 }, {
-	summary: "Pro values in archives",
+	summary: "Valid Pro values in archives",
 	input: map[string]string{
 		"chisel.yaml": `
 			format: chisel-v1
@@ -1398,13 +1398,6 @@ var setupTests = []setupTest{{
 					suites: [focal-infra-security]
 					pro: infra
 					priority: 15
-					v1-public-keys: [test-key]
-				foo:
-					version: 20.04
-					components: [main]
-					suites: [foo]
-					pro: foo
-					priority: -10
 					v1-public-keys: [test-key]
 			v1-public-keys:
 				test-key:
@@ -1470,6 +1463,26 @@ var setupTests = []setupTest{{
 			},
 		},
 	},
+}, {
+	summary: "Invalid Pro value in archive",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				foo:
+					version: 20.04
+					components: [main]
+					suites: [foo]
+					pro: unknown-value
+					priority: 10
+					v1-public-keys: [test-key]
+			v1-public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+	},
+	relerror: `chisel.yaml: archive "foo" has invalid pro value: unknown-value`,
 }}
 
 var defaultChiselYaml = `

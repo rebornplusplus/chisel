@@ -353,14 +353,14 @@ type yamlRelease struct {
 	V1PubKeys map[string]yamlPubKey `yaml:"v1-public-keys"`
 }
 
-type proValue string
+type ProValue string
 
 const (
-	proNone        proValue = ""
-	proFIPS        proValue = "fips"
-	proFIPSUpdates proValue = "fips-updates"
-	proApps        proValue = "apps"
-	proInfra       proValue = "infra"
+	ProNone        ProValue = ""
+	ProFIPS        ProValue = "fips"
+	ProFIPSUpdates ProValue = "fips-updates"
+	ProApps        ProValue = "apps"
+	ProInfra       ProValue = "infra"
 )
 
 const (
@@ -374,7 +374,7 @@ type yamlArchive struct {
 	Components []string `yaml:"components"`
 	Default    bool     `yaml:"default"`
 	Priority   int      `yaml:"priority"`
-	Pro        proValue `yaml:"pro"`
+	Pro        ProValue `yaml:"pro"`
 	PubKeys    []string `yaml:"public-keys"`
 	// V1PubKeys is used for compatibility with format "chisel-v1".
 	V1PubKeys []string `yaml:"v1-public-keys"`
@@ -516,10 +516,9 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			release.DefaultArchive = archiveName
 		}
 		switch details.Pro {
-		case proNone, proApps, proFIPS, proFIPSUpdates, proInfra:
+		case ProNone, ProApps, ProFIPS, ProFIPSUpdates, ProInfra:
 		default:
-			logf("%s: archive %q ignored due to invalid pro value: %s", fileName, archiveName, details.Pro)
-			continue
+			return nil, fmt.Errorf("%s: archive %q has invalid pro value: %s", fileName, archiveName, details.Pro)
 		}
 		if len(details.PubKeys) == 0 {
 			if yamlVar.Format == "chisel-v1" {
