@@ -14,6 +14,7 @@ import (
 	"github.com/canonical/chisel/internal/control"
 	"github.com/canonical/chisel/internal/deb"
 	"github.com/canonical/chisel/internal/pgputil"
+	"github.com/canonical/chisel/internal/setup"
 )
 
 type Archive interface {
@@ -42,12 +43,6 @@ func Open(options *Options) (Archive, error) {
 	}
 	if err != nil {
 		return nil, err
-	}
-	if options.Pro != "" {
-		err = validatePro(options.Pro)
-		if err != nil {
-			return nil, err
-		}
 	}
 	return openUbuntu(options)
 }
@@ -139,26 +134,28 @@ const ubuntuURL = "http://archive.ubuntu.com/ubuntu/"
 const ubuntuPortsURL = "http://ports.ubuntu.com/ubuntu-ports/"
 
 var proArchiveInfo = map[string]struct {
-	baseURL, label string
+	BaseURL, Label string
 }{
-	"fips": {
-		baseURL: "https://esm.ubuntu.com/fips/ubuntu/",
-		label:   "UbuntuFIPS",
+	setup.ProFIPS: {
+		BaseURL: "https://esm.ubuntu.com/fips/ubuntu/",
+		Label:   "UbuntuFIPS",
 	},
-	"fips-updates": {
-		baseURL: "https://esm.ubuntu.com/fips-updates/ubuntu/",
-		label:   "UbuntuFIPSUpdates",
+	setup.ProFIPSUpdates: {
+		BaseURL: "https://esm.ubuntu.com/fips-updates/ubuntu/",
+		Label:   "UbuntuFIPSUpdates",
 	},
-	"apps": {
-		baseURL: "https://esm.ubuntu.com/apps/ubuntu/",
-		label:   "UbuntuESMApps",
+	setup.ProApps: {
+		BaseURL: "https://esm.ubuntu.com/apps/ubuntu/",
+		Label:   "UbuntuESMApps",
 	},
-	"infra": {
-		baseURL: "https://esm.ubuntu.com/infra/ubuntu/",
-		label:   "UbuntuESM",
+	setup.ProInfra: {
+		BaseURL: "https://esm.ubuntu.com/infra/ubuntu/",
+		Label:   "UbuntuESM",
 	},
 }
 
+// archiveURL returns the archive base URL depending on the "pro" value and
+// selected architecture "arch".
 func archiveURL(pro, arch string) string {
 	if pro == "" {
 		if arch == "amd64" || arch == "i386" {
@@ -166,14 +163,7 @@ func archiveURL(pro, arch string) string {
 		}
 		return ubuntuPortsURL
 	}
-	return proArchiveInfo[pro].baseURL
-}
-
-func validatePro(pro string) error {
-	if _, ok := proArchiveInfo[pro]; !ok {
-		return fmt.Errorf("unknown pro value: %s", pro)
-	}
-	return nil
+	return proArchiveInfo[pro].BaseURL
 }
 
 func openUbuntu(options *Options) (Archive, error) {
@@ -193,13 +183,10 @@ func openUbuntu(options *Options) (Archive, error) {
 			Dir: options.CacheDir,
 		},
 		pubKeys: options.PubKeys,
+		baseURL: archiveURL(options.Pro, options.Arch),
 	}
 
-	if archive.baseURL == "" {
-		archive.baseURL = archiveURL(options.Pro, options.Arch)
-	}
-
-	if options.Pro != "" && archive.creds == nil {
+	if options.Pro != "" {
 		creds, err := findCredentials(archive.baseURL)
 		if err != nil {
 			return nil, err
@@ -279,7 +266,7 @@ func (index *ubuntuIndex) fetchRelease() error {
 	// Parse the appropriate section for the type of archive.
 	label := "Ubuntu"
 	if index.archive.options.Pro != "" {
-		label = proArchiveInfo[index.archive.options.Pro].label
+		label = proArchiveInfo[index.archive.options.Pro].Label
 	}
 	section := ctrl.Section(label)
 	if section == nil {

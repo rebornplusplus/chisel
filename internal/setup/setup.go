@@ -27,6 +27,14 @@ type Release struct {
 	DefaultArchive string
 }
 
+const (
+	ProNone        = ""
+	ProFIPS        = "fips"
+	ProFIPSUpdates = "fips-updates"
+	ProApps        = "apps"
+	ProInfra       = "infra"
+)
+
 // Archive is the location from which binary packages are obtained.
 type Archive struct {
 	Name       string
@@ -353,16 +361,6 @@ type yamlRelease struct {
 	V1PubKeys map[string]yamlPubKey `yaml:"v1-public-keys"`
 }
 
-type ProValue string
-
-const (
-	ProNone        ProValue = ""
-	ProFIPS        ProValue = "fips"
-	ProFIPSUpdates ProValue = "fips-updates"
-	ProApps        ProValue = "apps"
-	ProInfra       ProValue = "infra"
-)
-
 const (
 	MaxArchivePriority = 1000
 	MinArchivePriority = -1000
@@ -374,7 +372,7 @@ type yamlArchive struct {
 	Components []string `yaml:"components"`
 	Default    bool     `yaml:"default"`
 	Priority   int      `yaml:"priority"`
-	Pro        ProValue `yaml:"pro"`
+	Pro        string   `yaml:"pro"`
 	PubKeys    []string `yaml:"public-keys"`
 	// V1PubKeys is used for compatibility with format "chisel-v1".
 	V1PubKeys []string `yaml:"v1-public-keys"`
@@ -543,7 +541,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			Version:    details.Version,
 			Suites:     details.Suites,
 			Components: details.Components,
-			Pro:        string(details.Pro),
+			Pro:        details.Pro,
 			Priority:   details.Priority,
 			PubKeys:    archiveKeys,
 		}
