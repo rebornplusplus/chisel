@@ -229,7 +229,7 @@ func openUbuntu(options *Options) (Archive, error) {
 }
 
 func (index *ubuntuIndex) fetchRelease() error {
-	logf("Fetching %s %s %s suite details...", index.label, index.version, index.suite)
+	logf("Fetching %s %s %s suite details...", index.proSuffixedLabel(), index.version, index.suite)
 	reader, err := index.fetch("InRelease", "", fetchDefault)
 	if err != nil {
 		return err
@@ -286,7 +286,7 @@ func (index *ubuntuIndex) fetchIndex() error {
 		return fmt.Errorf("%s is missing from %s %s component digests", packagesPath, index.suite, index.component)
 	}
 
-	logf("Fetching index for %s %s %s %s component...", index.label, index.version, index.suite, index.component)
+	logf("Fetching index for %s %s %s %s component...", index.proSuffixedLabel(), index.version, index.suite, index.component)
 	reader, err := index.fetch(packagesPath+".gz", digest, fetchBulk)
 	if err != nil {
 		return err
@@ -383,4 +383,14 @@ func (index *ubuntuIndex) fetch(suffix, digest string, flags fetchFlags) (io.Rea
 	}
 
 	return index.archive.cache.Open(writer.Digest())
+}
+
+// proSuffixedLabel adds "<pro value> (pro)" suffix to the label and returns it
+// if the archive is specified with pro value. Otherwise, it returns the
+// original label.
+func (index *ubuntuIndex) proSuffixedLabel() string {
+	if index.archive.options.Pro == "" {
+		return index.label
+	}
+	return index.label + " " + index.archive.options.Pro + " (pro)"
 }
