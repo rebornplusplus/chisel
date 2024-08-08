@@ -157,13 +157,13 @@ var proArchiveInfo = map[string]struct {
 // archiveURL returns the archive base URL depending on the "pro" value and
 // selected architecture "arch". The "pro" value should be validated.
 func archiveURL(pro, arch string) string {
-	if pro == "" {
-		if arch == "amd64" || arch == "i386" {
-			return ubuntuURL
-		}
-		return ubuntuPortsURL
+	if pro != "" {
+		return proArchiveInfo[pro].BaseURL
 	}
-	return proArchiveInfo[pro].BaseURL
+	if arch == "amd64" || arch == "i386" {
+		return ubuntuURL
+	}
+	return ubuntuPortsURL
 }
 
 func openUbuntu(options *Options) (Archive, error) {
