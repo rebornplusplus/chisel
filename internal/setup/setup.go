@@ -28,7 +28,6 @@ type Release struct {
 }
 
 const (
-	ProNone        = ""
 	ProFIPS        = "fips"
 	ProFIPSUpdates = "fips-updates"
 	ProApps        = "apps"
@@ -514,9 +513,9 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			release.DefaultArchive = archiveName
 		}
 		switch details.Pro {
-		case ProNone, ProApps, ProFIPS, ProFIPSUpdates, ProInfra:
+		case "", ProApps, ProFIPS, ProFIPSUpdates, ProInfra:
 		default:
-			logf("warning: %s: archive %q ignored due to invalid pro value: %s", fileName, archiveName, details.Pro)
+			logf("Ignoring archive %q (invalid pro value: %s)...", archiveName, details.Pro)
 			continue
 		}
 		if len(details.PubKeys) == 0 {
