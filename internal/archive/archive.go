@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -212,6 +213,11 @@ func openUbuntu(options *Options) (Archive, error) {
 					return nil, err
 				}
 				release = index.release
+				if !index.supportsArch(options.Arch) {
+					// Release does not support the specified architecture. Do
+					// not add indexes of this release.
+					break
+				}
 				err = index.checkComponents(options.Components)
 				if err != nil {
 					return nil, err
@@ -298,6 +304,11 @@ func (index *ubuntuIndex) fetchIndex() error {
 
 	index.packages = ctrl
 	return nil
+}
+
+func (index *ubuntuIndex) supportsArch(arch string) bool {
+	supportedArches := strings.Fields(index.release.Get("Architectures"))
+	return slices.Contains(supportedArches, arch)
 }
 
 func (index *ubuntuIndex) checkComponents(components []string) error {
