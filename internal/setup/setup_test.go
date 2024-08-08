@@ -1399,6 +1399,13 @@ var setupTests = []setupTest{{
 					pro: infra
 					priority: 15
 					v1-public-keys: [test-key]
+				foo:
+					version: 20.04
+					components: [main]
+					suites: [foo]
+					pro: unknown-value
+					priority: 10
+					v1-public-keys: [test-key]
 			v1-public-keys:
 				test-key:
 					id: ` + testKey.ID + `
@@ -1464,25 +1471,21 @@ var setupTests = []setupTest{{
 		},
 	},
 }, {
-	summary: "Invalid Pro value in archive",
+	summary: "No valid archives defined",
 	input: map[string]string{
 		"chisel.yaml": `
 			format: chisel-v1
 			archives:
-				foo:
+				invalid:
 					version: 20.04
 					components: [main]
-					suites: [foo]
-					pro: unknown-value
+					suites: [focal]
 					priority: 10
 					v1-public-keys: [test-key]
-			v1-public-keys:
-				test-key:
-					id: ` + testKey.ID + `
-					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+					pro: unknown-value
 		`,
 	},
-	relerror: `chisel.yaml: archive "foo" has invalid pro value: unknown-value`,
+	relerror: `chisel.yaml: no valid archives defined`,
 }}
 
 var defaultChiselYaml = `

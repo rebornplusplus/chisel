@@ -516,7 +516,8 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		switch details.Pro {
 		case ProNone, ProApps, ProFIPS, ProFIPSUpdates, ProInfra:
 		default:
-			return nil, fmt.Errorf("%s: archive %q has invalid pro value: %s", fileName, archiveName, details.Pro)
+			logf("warning: %s: archive %q ignored due to invalid pro value: %s", fileName, archiveName, details.Pro)
+			continue
 		}
 		if len(details.PubKeys) == 0 {
 			if yamlVar.Format == "chisel-v1" {
@@ -545,6 +546,9 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			Priority:   details.Priority,
 			PubKeys:    archiveKeys,
 		}
+	}
+	if len(release.Archives) == 0 {
+		return nil, fmt.Errorf("%s: no valid archives defined", fileName)
 	}
 
 	return release, err
