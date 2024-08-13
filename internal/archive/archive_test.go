@@ -40,9 +40,12 @@ type httpSuite struct {
 var _ = Suite(&httpSuite{})
 
 var (
-	key1          = testutil.PGPKeys["key1"]
-	key2          = testutil.PGPKeys["key2"]
-	keyUbuntu2018 = testutil.PGPKeys["key-ubuntu-2018"]
+	key1            = testutil.PGPKeys["key1"]
+	key2            = testutil.PGPKeys["key2"]
+	keyUbuntu2018   = testutil.PGPKeys["key-ubuntu-2018"]
+	keyUbuntuFIPSv1 = testutil.PGPKeys["key-ubuntu-fips-v1"]
+	keyUbuntuApps   = testutil.PGPKeys["key-ubuntu-apps"]
+	keyUbuntuESMv2  = testutil.PGPKeys["key-ubuntu-esm-v2"]
 )
 
 func (s *httpSuite) SetUpTest(c *C) {
@@ -433,15 +436,33 @@ func read(r io.Reader) string {
 
 // ----------------------------------------------------------------------------------------
 // Real archive tests, only enabled via --real-archive.
+//
+// Additionally, run tests against Ubuntu Pro archives by passing --pro-archive.
+// The host machine must be Pro enabled and relevant Pro services must be
+// enabled. The following commands might help:
+// 		sudo pro attach <pro-token>
+//		sudo pro enable fips fips-updates esm-apps esm-infra
 
 var realArchiveFlag = flag.Bool("real-archive", false, "Perform tests against real archive")
+var proArchiveFlag = flag.Bool("pro-archive", false, "Perform tests against real Ubuntu Pro archive")
 
 func (s *S) TestRealArchive(c *C) {
 	if !*realArchiveFlag {
 		c.Skip("--real-archive not provided")
 	}
+	allArch := make([]string, 0, len(elfToDebArch))
+	for _, arch := range elfToDebArch {
+		allArch = append(allArch, arch)
+	}
 	for _, test := range realArchiveTests {
-		for _, arch := range elfToDebArch {
+		if test.pro != "" && !*proArchiveFlag {
+			// --pro-archive is not provided. Ignore test.
+			continue
+		}
+		if len(test.architectures) == 0 {
+			test.architectures = allArch
+		}
+		for _, arch := range test.architectures {
 			s.testOpenArchiveArch(c, test, arch)
 		}
 	}
@@ -452,45 +473,85 @@ type realArchiveTest struct {
 	version        string
 	suites         []string
 	components     []string
+	pro            string
 	archivePubKeys []*packet.PublicKey
+	architectures  []string
 	pkg            string
 	binPath        string
 	copyrightText  string
 }
 
 var realArchiveTests = []realArchiveTest{{
-	name:       "focal",
-	version:    "20.04",
-	suites:     []string{"focal"},
-	components: []string{"main", "universe"},
-	archivePubKeys: []*packet.PublicKey{
-		keyUbuntu2018.PubKey,
-	},
-	pkg:           "hostname",
-	binPath:       "/bin/hostname",
-	copyrightText: "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
+	name:           "focal",
+	version:        "20.04",
+	suites:         []string{"focal"},
+	components:     []string{"main", "universe"},
+	archivePubKeys: []*packet.PublicKey{keyUbuntu2018.PubKey},
+	pkg:            "hostname",
+	binPath:        "/bin/hostname",
+	copyrightText:  "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }, {
-	name:       "jammy",
-	version:    "22.04",
-	suites:     []string{"jammy"},
-	components: []string{"main", "universe"},
-	archivePubKeys: []*packet.PublicKey{
-		keyUbuntu2018.PubKey,
-	},
-	pkg:           "hostname",
-	binPath:       "/bin/hostname",
-	copyrightText: "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
+	name:           "jammy",
+	version:        "22.04",
+	suites:         []string{"jammy"},
+	components:     []string{"main", "universe"},
+	archivePubKeys: []*packet.PublicKey{keyUbuntu2018.PubKey},
+	pkg:            "hostname",
+	binPath:        "/bin/hostname",
+	copyrightText:  "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }, {
-	name:       "noble",
-	version:    "24.04",
-	suites:     []string{"noble"},
-	components: []string{"main", "universe"},
-	archivePubKeys: []*packet.PublicKey{
-		keyUbuntu2018.PubKey,
-	},
-	pkg:           "hostname",
-	binPath:       "/usr/bin/hostname",
-	copyrightText: "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
+	name:           "noble",
+	version:        "24.04",
+	suites:         []string{"noble"},
+	components:     []string{"main", "universe"},
+	archivePubKeys: []*packet.PublicKey{keyUbuntu2018.PubKey},
+	pkg:            "hostname",
+	binPath:        "/usr/bin/hostname",
+	copyrightText:  "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
+}, {
+	name:           "fips",
+	version:        "20.04",
+	suites:         []string{"focal"},
+	components:     []string{"main"},
+	pro:            "fips",
+	archivePubKeys: []*packet.PublicKey{keyUbuntuFIPSv1.PubKey},
+	architectures:  []string{"amd64"},
+	pkg:            "openssh-client",
+	binPath:        "/usr/bin/ssh",
+	copyrightText:  "1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland",
+}, {
+	name:           "fips-updates",
+	version:        "20.04",
+	suites:         []string{"focal-updates"},
+	components:     []string{"main"},
+	pro:            "fips-updates",
+	archivePubKeys: []*packet.PublicKey{keyUbuntuFIPSv1.PubKey},
+	architectures:  []string{"amd64"},
+	pkg:            "openssh-client",
+	binPath:        "/usr/bin/ssh",
+	copyrightText:  "1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland",
+}, {
+	name:           "esm-apps",
+	version:        "20.04",
+	suites:         []string{"focal-apps-security", "focal-apps-updates"},
+	components:     []string{"main"},
+	pro:            "apps",
+	archivePubKeys: []*packet.PublicKey{keyUbuntuApps.PubKey},
+	architectures:  []string{"amd64"},
+	pkg:            "hello",
+	binPath:        "/usr/bin/hello",
+	copyrightText:  "This package was first put together by Ian Jackson",
+}, {
+	name:           "esm-infra",
+	version:        "20.04",
+	suites:         []string{"focal-infra-security", "focal-infra-updates"},
+	components:     []string{"main"},
+	pro:            "infra",
+	archivePubKeys: []*packet.PublicKey{keyUbuntuESMv2.PubKey},
+	architectures:  []string{"amd64"},
+	pkg:            "hello",
+	binPath:        "/usr/bin/hello",
+	copyrightText:  "This package was first put together by Ian Jackson",
 }}
 
 var elfToDebArch = map[elf.Machine]string{
