@@ -583,6 +583,7 @@ func (s *S) testOpenArchiveArch(c *C, test realArchiveTest, arch string) {
 		Suites:     test.suites,
 		Components: test.components,
 		CacheDir:   c.MkDir(),
+		Pro:        test.pro,
 		PubKeys:    test.archivePubKeys,
 	}
 
