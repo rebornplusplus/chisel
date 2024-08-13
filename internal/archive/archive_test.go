@@ -440,37 +440,57 @@ func (s *S) TestRealArchive(c *C) {
 	if !*realArchiveFlag {
 		c.Skip("--real-archive not provided")
 	}
-	for _, release := range ubuntuReleases {
+	for _, test := range realArchiveTests {
 		for _, arch := range elfToDebArch {
-			s.testOpenArchiveArch(c, release, arch)
+			s.testOpenArchiveArch(c, test, arch)
 		}
 	}
 }
 
-type ubuntuRelease struct {
+type realArchiveTest struct {
 	name           string
 	version        string
+	suites         []string
+	components     []string
 	archivePubKeys []*packet.PublicKey
+	pkg            string
+	binPath        string
+	copyrightText  string
 }
 
-var ubuntuReleases = []ubuntuRelease{{
-	name:    "focal",
-	version: "20.04",
+var realArchiveTests = []realArchiveTest{{
+	name:       "focal",
+	version:    "20.04",
+	suites:     []string{"focal"},
+	components: []string{"main", "universe"},
 	archivePubKeys: []*packet.PublicKey{
 		keyUbuntu2018.PubKey,
 	},
+	pkg:           "hostname",
+	binPath:       "/bin/hostname",
+	copyrightText: "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }, {
-	name:    "jammy",
-	version: "22.04",
+	name:       "jammy",
+	version:    "22.04",
+	suites:     []string{"jammy"},
+	components: []string{"main", "universe"},
 	archivePubKeys: []*packet.PublicKey{
 		keyUbuntu2018.PubKey,
 	},
+	pkg:           "hostname",
+	binPath:       "/bin/hostname",
+	copyrightText: "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }, {
-	name:    "noble",
-	version: "24.04",
+	name:       "noble",
+	version:    "24.04",
+	suites:     []string{"noble"},
+	components: []string{"main", "universe"},
 	archivePubKeys: []*packet.PublicKey{
 		keyUbuntu2018.PubKey,
 	},
+	pkg:           "hostname",
+	binPath:       "/usr/bin/hostname",
+	copyrightText: "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }}
 
 var elfToDebArch = map[elf.Machine]string{
@@ -492,17 +512,17 @@ func (s *S) checkArchitecture(c *C, arch string, binaryPath string) {
 	c.Assert(binaryArch, Equals, arch)
 }
 
-func (s *S) testOpenArchiveArch(c *C, release ubuntuRelease, arch string) {
-	c.Logf("Checking ubuntu archive %s %s...", release.name, arch)
+func (s *S) testOpenArchiveArch(c *C, test realArchiveTest, arch string) {
+	c.Logf("Checking ubuntu archive %s %s...", test.name, arch)
 
 	options := archive.Options{
 		Label:      "ubuntu",
-		Version:    release.version,
+		Version:    test.version,
 		Arch:       arch,
-		Suites:     []string{release.name},
-		Components: []string{"main", "universe"},
+		Suites:     test.suites,
+		Components: test.components,
 		CacheDir:   c.MkDir(),
-		PubKeys:    release.archivePubKeys,
+		PubKeys:    test.archivePubKeys,
 	}
 
 	archive, err := archive.Open(&options)
@@ -510,18 +530,18 @@ func (s *S) testOpenArchiveArch(c *C, release ubuntuRelease, arch string) {
 
 	extractDir := c.MkDir()
 
-	pkg, err := archive.Fetch("hostname")
+	pkg, err := archive.Fetch(test.pkg)
 	c.Assert(err, IsNil)
 
 	err = deb.Extract(pkg, &deb.ExtractOptions{
-		Package:   "hostname",
+		Package:   test.pkg,
 		TargetDir: extractDir,
 		Extract: map[string][]deb.ExtractInfo{
-			"/usr/share/doc/hostname/copyright": {
+			fmt.Sprintf("/usr/share/doc/%s/copyright", test.pkg): {
 				{Path: "/copyright"},
 			},
-			"/bin/hostname": {
-				{Path: "/hostname"},
+			test.binPath: {
+				{Path: "/binary"},
 			},
 		},
 	})
@@ -529,9 +549,7 @@ func (s *S) testOpenArchiveArch(c *C, release ubuntuRelease, arch string) {
 
 	data, err := os.ReadFile(filepath.Join(extractDir, "copyright"))
 	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(string(data), test.copyrightText), Equals, true)
 
-	copyrightTop := "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>"
-	c.Assert(strings.Contains(string(data), copyrightTop), Equals, true)
-
-	s.checkArchitecture(c, arch, filepath.Join(extractDir, "hostname"))
+	s.checkArchitecture(c, arch, filepath.Join(extractDir, "binary"))
 }
