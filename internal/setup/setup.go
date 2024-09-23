@@ -218,7 +218,7 @@ func (r *Release) validate() error {
 	}
 
 	// Check for cycles.
-	_, err := order(r.Packages, keys)
+	_, err := Order(r.Packages, keys)
 	if err != nil {
 		return err
 	}
@@ -226,7 +226,7 @@ func (r *Release) validate() error {
 	return nil
 }
 
-func order(pkgs map[string]*Package, keys []SliceKey) ([]SliceKey, error) {
+func Order(pkgs map[string]*Package, keys []SliceKey) ([]SliceKey, error) {
 
 	// Preprocess the list to improve error messages.
 	for _, key := range keys {
@@ -736,7 +736,7 @@ func Select(release *Release, slices []SliceKey) (*Selection, error) {
 		Release: release,
 	}
 
-	sorted, err := order(release.Packages, slices)
+	sorted, err := Order(release.Packages, slices)
 	if err != nil {
 		return nil, err
 	}

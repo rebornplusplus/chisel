@@ -83,40 +83,47 @@ func Extract(pkgReader io.Reader, options *ExtractOptions) (err error) {
 		return err
 	}
 
+	dataReader, err := getDataReader(pkgReader)
+	if err != nil {
+		return err
+	}
+	defer dataReader.Close()
+	return extractData(dataReader, validOpts)
+}
+
+func getDataReader(pkgReader io.Reader) (io.ReadCloser, error) {
 	arReader := ar.NewReader(pkgReader)
-	var dataReader io.Reader
+	var dataReader io.ReadCloser
 	for dataReader == nil {
 		arHeader, err := arReader.Next()
 		if err == io.EOF {
-			return fmt.Errorf("no data payload")
+			return nil, fmt.Errorf("no data payload")
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 		switch arHeader.Name {
 		case "data.tar.gz":
 			gzipReader, err := gzip.NewReader(arReader)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			defer gzipReader.Close()
 			dataReader = gzipReader
 		case "data.tar.xz":
 			xzReader, err := xz.NewReader(arReader)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			dataReader = xzReader
+			dataReader = io.NopCloser(xzReader)
 		case "data.tar.zst":
 			zstdReader, err := zstd.NewReader(arReader)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			defer zstdReader.Close()
-			dataReader = zstdReader
+			dataReader = zstdReader.IOReadCloser()
 		}
 	}
-	return extractData(dataReader, validOpts)
+	return dataReader, nil
 }
 
 func extractData(dataReader io.Reader, options *ExtractOptions) error {
