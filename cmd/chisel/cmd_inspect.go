@@ -139,6 +139,15 @@ func (cmd *cmdInspect) showCoverage(opts *inspect.CoverageOptions) error {
 		}
 		w.Flush()
 	}
+	if len(coverage.Added) > 0 {
+		fmt.Fprintf(w, "-- ADDED --\tPackage\tSlices\tEntries\n")
+		paths := sortPaths(coverage.Added)
+		for _, path := range paths {
+			attr := coverage.Added[path]
+			fmt.Fprintf(w, "%s\t%s\t%v\t%v\n", path, attr.Package, attr.Slices, attr.SlicePaths)
+		}
+		w.Flush()
+	}
 	if len(coverage.Omitted) > 0 {
 		fmt.Fprintf(w, "-- OMITTED --\tPackage\n")
 		paths := sortPaths(coverage.Omitted)
@@ -148,15 +157,6 @@ func (cmd *cmdInspect) showCoverage(opts *inspect.CoverageOptions) error {
 			}
 			attr := coverage.Omitted[path]
 			fmt.Fprintf(w, "%s\t%s\n", path, attr.Package)
-		}
-		w.Flush()
-	}
-	if len(coverage.Added) > 0 {
-		fmt.Fprintf(w, "-- ADDED --\tPackage\tSlices\tEntries\n")
-		paths := sortPaths(coverage.Added)
-		for _, path := range paths {
-			attr := coverage.Added[path]
-			fmt.Fprintf(w, "%s\t%s\t%v\t%v\n", path, attr.Package, attr.Slices, attr.SlicePaths)
 		}
 		w.Flush()
 	}
