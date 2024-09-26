@@ -36,3 +36,16 @@ func (a *TestArchive) Exists(pkg string) bool {
 	_, ok := a.Packages[pkg]
 	return ok
 }
+
+func (a *TestArchive) Info(pkgName string) (*archive.PackageInfo, error) {
+	pkg, ok := a.Packages[pkgName]
+	if !ok {
+		return nil, fmt.Errorf("cannot find package %q in archive", pkgName)
+	}
+	return &archive.PackageInfo{
+		Name:    pkg.Name,
+		Version: pkg.Version,
+		Hash:    pkg.Hash,
+		Arch:    pkg.Arch,
+	}, nil
+}

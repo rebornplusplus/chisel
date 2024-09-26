@@ -9,7 +9,7 @@ import (
 	"github.com/canonical/chisel/internal/setup"
 )
 
-const schema = "1.0"
+const Schema = "1.0"
 
 type Package struct {
 	Kind    string `json:"kind"`
@@ -59,7 +59,7 @@ func Read(reader io.Reader) (manifest *Manifest, err error) {
 		return nil, err
 	}
 	mfestSchema := db.Schema()
-	if mfestSchema != schema {
+	if mfestSchema != Schema {
 		return nil, fmt.Errorf("unknown schema version %q", mfestSchema)
 	}
 
