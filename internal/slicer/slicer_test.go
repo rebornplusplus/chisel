@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -27,7 +28,7 @@ type slicerTest struct {
 	summary       string
 	arch          string
 	release       map[string]string
-	pkgs          map[string]testutil.TestPackage
+	pkgs          []*testutil.TestPackage
 	slices        []setup.SliceKey
 	hackopt       func(c *C, opts *slicer.RunOptions)
 	filesystem    map[string]string
@@ -246,12 +247,11 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Copyright is installed",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
-	pkgs: map[string]testutil.TestPackage{
-		"test-package": {
-			// Add the copyright entries to the package.
-			Data: testutil.MustMakeDeb(append(testutil.TestPackageEntries, testPackageCopyrightEntries...)),
-		},
-	},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		// Add the copyright entries to the package.
+		Data: testutil.MustMakeDeb(append(testutil.TestPackageEntries, testPackageCopyrightEntries...)),
+	}},
 	release: map[string]string{
 		"slices/mydir/test-package.yaml": `
 			package: test-package
@@ -279,14 +279,13 @@ var slicerTests = []slicerTest{{
 	slices: []setup.SliceKey{
 		{"test-package", "myslice"},
 		{"other-package", "myslice"}},
-	pkgs: map[string]testutil.TestPackage{
-		"test-package": {
-			Data: testutil.PackageData["test-package"],
-		},
-		"other-package": {
-			Data: testutil.PackageData["other-package"],
-		},
-	},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		Data: testutil.PackageData["test-package"],
+	}, {
+		Name: "other-package",
+		Data: testutil.PackageData["other-package"],
+	}},
 	release: map[string]string{
 		"slices/mydir/test-package.yaml": `
 			package: test-package
@@ -323,19 +322,18 @@ var slicerTests = []slicerTest{{
 	slices: []setup.SliceKey{
 		{"implicit-parent", "myslice"},
 		{"explicit-dir", "myslice"}},
-	pkgs: map[string]testutil.TestPackage{
-		"implicit-parent": {
-			Data: testutil.MustMakeDeb([]testutil.TarEntry{
-				testutil.Dir(0755, "./dir/"),
-				testutil.Reg(0644, "./dir/file", "random"),
-			}),
-		},
-		"explicit-dir": {
-			Data: testutil.MustMakeDeb([]testutil.TarEntry{
-				testutil.Dir(01777, "./dir/"),
-			}),
-		},
-	},
+	pkgs: []*testutil.TestPackage{{
+		Name: "implicit-parent",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(0755, "./dir/"),
+			testutil.Reg(0644, "./dir/file", "random"),
+		}),
+	}, {
+		Name: "explicit-dir",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			testutil.Dir(01777, "./dir/"),
+		}),
+	}},
 	release: map[string]string{
 		"slices/mydir/implicit-parent.yaml": `
 			package: implicit-parent
@@ -365,14 +363,13 @@ var slicerTests = []slicerTest{{
 	slices: []setup.SliceKey{
 		{"test-package", "myslice"},
 		{"other-package", "myslice"}},
-	pkgs: map[string]testutil.TestPackage{
-		"test-package": {
-			Data: testutil.PackageData["test-package"],
-		},
-		"other-package": {
-			Data: testutil.PackageData["other-package"],
-		},
-	},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		Data: testutil.PackageData["test-package"],
+	}, {
+		Name: "other-package",
+		Data: testutil.PackageData["other-package"],
+	}},
 	release: map[string]string{
 		"slices/mydir/test-package.yaml": `
 			package: test-package
@@ -703,14 +700,13 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Duplicate copyright symlink is ignored",
 	slices:  []setup.SliceKey{{"copyright-symlink-openssl", "bins"}},
-	pkgs: map[string]testutil.TestPackage{
-		"copyright-symlink-openssl": {
-			Data: testutil.MustMakeDeb(packageEntries["copyright-symlink-openssl"]),
-		},
-		"copyright-symlink-libssl3": {
-			Data: testutil.MustMakeDeb(packageEntries["copyright-symlink-libssl3"]),
-		},
-	},
+	pkgs: []*testutil.TestPackage{{
+		Name: "copyright-symlink-openssl",
+		Data: testutil.MustMakeDeb(packageEntries["copyright-symlink-openssl"]),
+	}, {
+		Name: "copyright-symlink-libssl3",
+		Data: testutil.MustMakeDeb(packageEntries["copyright-symlink-libssl3"]),
+	}},
 	release: map[string]string{
 		"slices/mydir/copyright-symlink-libssl3.yaml": `
 			package: copyright-symlink-libssl3
@@ -1067,22 +1063,19 @@ var slicerTests = []slicerTest{{
 		{"test-package", "myslice"},
 		{"other-package", "myslice"},
 	},
-	pkgs: map[string]testutil.TestPackage{
-		"test-package": {
-			Name:    "test-package",
-			Hash:    "h1",
-			Version: "v1",
-			Arch:    "a1",
-			Data:    testutil.PackageData["test-package"],
-		},
-		"other-package": {
-			Name:    "other-package",
-			Hash:    "h2",
-			Version: "v2",
-			Arch:    "a2",
-			Data:    testutil.PackageData["other-package"],
-		},
-	},
+	pkgs: []*testutil.TestPackage{{
+		Name:    "test-package",
+		Hash:    "h1",
+		Version: "v1",
+		Arch:    "a1",
+		Data:    testutil.PackageData["test-package"],
+	}, {
+		Name:    "other-package",
+		Hash:    "h2",
+		Version: "v2",
+		Arch:    "a2",
+		Data:    testutil.PackageData["other-package"],
+	}},
 	release: map[string]string{
 		"slices/mydir/test-package.yaml": `
 			package: test-package
@@ -1106,22 +1099,19 @@ var slicerTests = []slicerTest{{
 	slices: []setup.SliceKey{
 		{"test-package", "myslice"},
 	},
-	pkgs: map[string]testutil.TestPackage{
-		"test-package": {
-			Name:    "test-package",
-			Hash:    "h1",
-			Version: "v1",
-			Arch:    "a1",
-			Data:    testutil.PackageData["test-package"],
-		},
-		"other-package": {
-			Name:    "other-package",
-			Hash:    "h2",
-			Version: "v2",
-			Arch:    "a2",
-			Data:    testutil.PackageData["other-package"],
-		},
-	},
+	pkgs: []*testutil.TestPackage{{
+		Name:    "test-package",
+		Hash:    "h1",
+		Version: "v1",
+		Arch:    "a1",
+		Data:    testutil.PackageData["test-package"],
+	}, {
+		Name:    "other-package",
+		Hash:    "h2",
+		Version: "v2",
+		Arch:    "a2",
+		Data:    testutil.PackageData["other-package"],
+	}},
 	release: map[string]string{
 		"slices/mydir/test-package.yaml": `
 			package: test-package
@@ -1142,19 +1132,18 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Relative paths are properly trimmed during extraction",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
-	pkgs: map[string]testutil.TestPackage{
-		"test-package": {
-			Data: testutil.MustMakeDeb([]testutil.TarEntry{
-				// This particular path starting with "/foo" is chosen to test for
-				// a particular bug; which appeared due to the usage of
-				// strings.TrimLeft() instead strings.TrimPrefix() to determine a
-				// relative path. Since TrimLeft takes in a cutset instead of a
-				// prefix, the desired relative path was not produced.
-				// See https://github.com/canonical/chisel/pull/145.
-				testutil.Dir(0755, "./foo-bar/"),
-			}),
-		},
-	},
+	pkgs: []*testutil.TestPackage{{
+		Name: "test-package",
+		Data: testutil.MustMakeDeb([]testutil.TarEntry{
+			// This particular path starting with "/foo" is chosen to test for
+			// a particular bug; which appeared due to the usage of
+			// strings.TrimLeft() instead strings.TrimPrefix() to determine a
+			// relative path. Since TrimLeft takes in a cutset instead of a
+			// prefix, the desired relative path was not produced.
+			// See https://github.com/canonical/chisel/pull/145.
+			testutil.Dir(0755, "./foo-bar/"),
+		}),
+	}},
 	hackopt: func(c *C, opts *slicer.RunOptions) {
 		opts.TargetDir = filepath.Join(filepath.Clean(opts.TargetDir), "foo")
 		err := os.Mkdir(opts.TargetDir, 0755)
@@ -1209,25 +1198,17 @@ func (s *S) TestRun(c *C) {
 
 func runSlicerTests(c *C, tests []slicerTest) {
 	for _, test := range tests {
-		for _, slices := range testutil.Permutations(test.slices) {
+		for _, testSlices := range testutil.Permutations(test.slices) {
 			c.Logf("Summary: %s", test.summary)
 
 			if _, ok := test.release["chisel.yaml"]; !ok {
 				test.release["chisel.yaml"] = defaultChiselYaml
 			}
 			if test.pkgs == nil {
-				test.pkgs = map[string]testutil.TestPackage{
-					"test-package": {
-						Data: testutil.PackageData["test-package"],
-					},
-				}
-			}
-			for pkgName, pkg := range test.pkgs {
-				if pkg.Name == "" {
-					// We need to add the name for the manifest validation.
-					pkg.Name = pkgName
-					test.pkgs[pkgName] = pkg
-				}
+				test.pkgs = []*testutil.TestPackage{{
+					Name: "test-package",
+					Data: testutil.PackageData["test-package"],
+				}}
 			}
 
 			releaseDir := c.MkDir()
@@ -1257,16 +1238,22 @@ func runSlicerTests(c *C, tests []slicerTest) {
 				},
 				Scripts: setup.SliceScripts{},
 			}
-			slices = append(slices, setup.SliceKey{
+			testSlices = append(testSlices, setup.SliceKey{
 				Package: manifestPackage,
 				Slice:   "manifest",
 			})
 
-			selection, err := setup.Select(release, slices)
+			selection, err := setup.Select(release, testSlices)
 			c.Assert(err, IsNil)
 
 			archives := map[string]archive.Archive{}
 			for name, setupArchive := range release.Archives {
+				pkgs := make(map[string]testutil.TestPackage)
+				for _, pkg := range test.pkgs {
+					if len(pkg.Archives) == 0 || slices.Contains(pkg.Archives, name) {
+						pkgs[pkg.Name] = *pkg
+					}
+				}
 				archive := &testutil.TestArchive{
 					Opts: archive.Options{
 						Label:      setupArchive.Name,
@@ -1275,7 +1262,7 @@ func runSlicerTests(c *C, tests []slicerTest) {
 						Components: setupArchive.Components,
 						Arch:       test.arch,
 					},
-					Packages: test.pkgs,
+					Packages: pkgs,
 				}
 				archives[name] = archive
 			}

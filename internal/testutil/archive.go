@@ -14,11 +14,12 @@ type TestArchive struct {
 }
 
 type TestPackage struct {
-	Name    string
-	Version string
-	Hash    string
-	Arch    string
-	Data    []byte
+	Name     string
+	Version  string
+	Hash     string
+	Arch     string
+	Data     []byte
+	Archives []string
 }
 
 func (a *TestArchive) Options() *archive.Options {
