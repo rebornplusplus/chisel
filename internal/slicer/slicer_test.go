@@ -2,9 +2,7 @@ package slicer_test
 
 import (
 	"archive/tar"
-	"bytes"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -27,7 +25,7 @@ type slicerTest struct {
 	summary    string
 	arch       string
 	release    map[string]string
-	archives   map[string]*testArchive
+	archives   map[string]*testutil.TestArchive
 	slices     []setup.SliceKey
 	hackopt    func(c *C, opts *slicer.RunOptions)
 	filesystem map[string]string
@@ -190,10 +188,12 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Create new file using glob and preserve parent directory permissions",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"ubuntu": {
-			pkgs: map[string][]byte{
-				"test-package": testutil.PackageData["test-package"],
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.PackageData["test-package"],
+				},
 			},
 		},
 	},
@@ -252,11 +252,13 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Copyright is installed",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"ubuntu": {
-			pkgs: map[string][]byte{
-				// Add the copyright entries to the package.
-				"test-package": testutil.MustMakeDeb(append(testutil.TestPackageEntries, testPackageCopyrightEntries...)),
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					// Add the copyright entries to the package.
+					Data: testutil.MustMakeDeb(append(testutil.TestPackageEntries, testPackageCopyrightEntries...)),
+				},
 			},
 		},
 	},
@@ -287,11 +289,15 @@ var slicerTests = []slicerTest{{
 	slices: []setup.SliceKey{
 		{"test-package", "myslice"},
 		{"other-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"ubuntu": {
-			pkgs: map[string][]byte{
-				"test-package":  testutil.PackageData["test-package"],
-				"other-package": testutil.PackageData["other-package"],
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.PackageData["test-package"],
+				},
+				"other-package": {
+					Data: testutil.PackageData["other-package"],
+				},
 			},
 		},
 	},
@@ -331,16 +337,20 @@ var slicerTests = []slicerTest{{
 	slices: []setup.SliceKey{
 		{"implicit-parent", "myslice"},
 		{"explicit-dir", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"ubuntu": {
-			pkgs: map[string][]byte{
-				"implicit-parent": testutil.MustMakeDeb([]testutil.TarEntry{
-					testutil.Dir(0755, "./dir/"),
-					testutil.Reg(0644, "./dir/file", "random"),
-				}),
-				"explicit-dir": testutil.MustMakeDeb([]testutil.TarEntry{
-					testutil.Dir(01777, "./dir/"),
-				}),
+			Packages: map[string]testutil.TestPackage{
+				"implicit-parent": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						testutil.Dir(0755, "./dir/"),
+						testutil.Reg(0644, "./dir/file", "random"),
+					}),
+				},
+				"explicit-dir": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						testutil.Dir(01777, "./dir/"),
+					}),
+				},
 			},
 		},
 	},
@@ -373,11 +383,15 @@ var slicerTests = []slicerTest{{
 	slices: []setup.SliceKey{
 		{"test-package", "myslice"},
 		{"other-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"ubuntu": {
-			pkgs: map[string][]byte{
-				"test-package":  testutil.PackageData["test-package"],
-				"other-package": testutil.PackageData["other-package"],
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.PackageData["test-package"],
+				},
+				"other-package": {
+					Data: testutil.PackageData["other-package"],
+				},
 			},
 		},
 	},
@@ -714,11 +728,15 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Duplicate copyright symlink is ignored",
 	slices:  []setup.SliceKey{{"copyright-symlink-openssl", "bins"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"ubuntu": {
-			pkgs: map[string][]byte{
-				"copyright-symlink-openssl": testutil.MustMakeDeb(packageEntries["copyright-symlink-openssl"]),
-				"copyright-symlink-libssl3": testutil.MustMakeDeb(packageEntries["copyright-symlink-libssl3"]),
+			Packages: map[string]testutil.TestPackage{
+				"copyright-symlink-openssl": {
+					Data: testutil.MustMakeDeb(packageEntries["copyright-symlink-openssl"]),
+				},
+				"copyright-symlink-libssl3": {
+					Data: testutil.MustMakeDeb(packageEntries["copyright-symlink-libssl3"]),
+				},
 			},
 		},
 	},
@@ -781,22 +799,28 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Multiple archives with priority",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}, {"other-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"foo": {
-			pkgs: map[string][]byte{
-				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
-					testutil.Reg(0644, "./file", "from foo"),
-				}),
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						testutil.Reg(0644, "./file", "from foo"),
+					}),
+				},
 			},
 		},
 		"bar": {
-			pkgs: map[string][]byte{
-				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
-					testutil.Reg(0644, "./file", "from bar"),
-				}),
-				"other-package": testutil.MustMakeDeb([]testutil.TarEntry{
-					testutil.Reg(0644, "./other-file", "from bar"),
-				}),
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						testutil.Reg(0644, "./file", "from bar"),
+					}),
+				},
+				"other-package": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						testutil.Reg(0644, "./other-file", "from bar"),
+					}),
+				},
 			},
 		},
 	},
@@ -836,7 +860,7 @@ var slicerTests = []slicerTest{{
 		`,
 	},
 	filesystem: map[string]string{
-		// The notion of "default" is obsolete and highest priority is selected
+		// The notion of "default" is obsolete and highest priority is selected.
 		"/file": "file 0644 7a3e00f5",
 		// Fetched from archive "bar" as no other archive has the package.
 		"/other-file": "file 0644 fa0c9cdb",
@@ -848,19 +872,23 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Pinned non-default archive",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"foo": {
-			pkgs: map[string][]byte{
-				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
-					testutil.Reg(0644, "./file", "from foo"),
-				}),
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						testutil.Reg(0644, "./file", "from foo"),
+					}),
+				},
 			},
 		},
 		"bar": {
-			pkgs: map[string][]byte{
-				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
-					testutil.Reg(0644, "./file", "from bar"),
-				}),
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						testutil.Reg(0644, "./file", "from bar"),
+					}),
+				},
 			},
 		},
 	},
@@ -903,16 +931,18 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Pinned archive does not have the package",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"foo": {
-			pkgs: map[string][]byte{
-				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
-					testutil.Reg(0644, "./file", "from foo"),
-				}),
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						testutil.Reg(0644, "./file", "from foo"),
+					}),
+				},
 			},
 		},
 		"bar": {
-			pkgs: map[string][]byte{},
+			Packages: map[string]testutil.TestPackage{},
 		},
 	},
 	release: map[string]string{
@@ -950,12 +980,12 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "No archives have the package",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"foo": {
-			pkgs: map[string][]byte{},
+			Packages: map[string]testutil.TestPackage{},
 		},
 		"bar": {
-			pkgs: map[string][]byte{},
+			Packages: map[string]testutil.TestPackage{},
 		},
 	},
 	release: map[string]string{
@@ -990,12 +1020,14 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Negative priority archives are ignored when not explicitly pinned in package",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"foo": {
-			pkgs: map[string][]byte{
-				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
-					testutil.Reg(0644, "./file", "from foo"),
-				}),
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						testutil.Reg(0644, "./file", "from foo"),
+					}),
+				},
 			},
 		},
 	},
@@ -1028,12 +1060,14 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Negative priority archive explicitly pinned in package",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"foo": {
-			pkgs: map[string][]byte{
-				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
-					testutil.Reg(0644, "./file", "from foo"),
-				}),
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						testutil.Reg(0644, "./file", "from foo"),
+					}),
+				},
 			},
 		},
 	},
@@ -1299,18 +1333,20 @@ var slicerTests = []slicerTest{{
 }, {
 	summary: "Relative paths are properly trimmed during extraction",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
-	archives: map[string]*testArchive{
+	archives: map[string]*testutil.TestArchive{
 		"ubuntu": {
-			pkgs: map[string][]byte{
-				"test-package": testutil.MustMakeDeb([]testutil.TarEntry{
-					// This particular path starting with "/foo" is chosen to test for
-					// a particular bug; which appeared due to the usage of
-					// strings.TrimLeft() instead strings.TrimPrefix() to determine a
-					// relative path. Since TrimLeft takes in a cutset instead of a
-					// prefix, the desired relative path was not produced.
-					// See https://github.com/canonical/chisel/pull/145.
-					testutil.Dir(0755, "./foo-bar/"),
-				}),
+			Packages: map[string]testutil.TestPackage{
+				"test-package": {
+					Data: testutil.MustMakeDeb([]testutil.TarEntry{
+						// This particular path starting with "/foo" is chosen to test for
+						// a particular bug; which appeared due to the usage of
+						// strings.TrimLeft() instead strings.TrimPrefix() to determine a
+						// relative path. Since TrimLeft takes in a cutset instead of a
+						// prefix, the desired relative path was not produced.
+						// See https://github.com/canonical/chisel/pull/145.
+						testutil.Dir(0755, "./foo-bar/"),
+					}),
+				},
 			},
 		},
 	},
@@ -1345,27 +1381,6 @@ var defaultChiselYaml = `
 			armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
 `
 
-type testArchive struct {
-	options *archive.Options
-	pkgs    map[string][]byte
-}
-
-func (a *testArchive) Options() *archive.Options {
-	return a.options
-}
-
-func (a *testArchive) Fetch(pkg string) (io.ReadCloser, error) {
-	if data, ok := a.pkgs[pkg]; ok {
-		return io.NopCloser(bytes.NewBuffer(data)), nil
-	}
-	return nil, fmt.Errorf("attempted to open %q package", pkg)
-}
-
-func (a *testArchive) Exists(pkg string) bool {
-	_, ok := a.pkgs[pkg]
-	return ok
-}
-
 func (s *S) TestRun(c *C) {
 	// Run tests for format chisel-v1.
 	runSlicerTests(c, slicerTests)
@@ -1397,19 +1412,14 @@ func runSlicerTests(c *C, tests []slicerTest) {
 			}
 
 			if test.archives == nil {
-				test.archives = map[string]*testArchive{
+				test.archives = map[string]*testutil.TestArchive{
 					"ubuntu": {
-						pkgs: map[string][]byte{
-							"test-package": testutil.PackageData["test-package"],
+						Packages: map[string]testutil.TestPackage{
+							"test-package": {
+								Data: testutil.PackageData["test-package"],
+							},
 						},
 					},
-				}
-			}
-			for _, archive := range test.archives {
-				if archive.pkgs == nil {
-					archive.pkgs = map[string][]byte{
-						"test-package": testutil.PackageData["test-package"],
-					}
 				}
 			}
 
@@ -1432,14 +1442,12 @@ func runSlicerTests(c *C, tests []slicerTest) {
 			for name, setupArchive := range release.Archives {
 				testArchive, ok := test.archives[name]
 				c.Assert(ok, Equals, true)
-				if testArchive.options == nil {
-					testArchive.options = &archive.Options{
-						Label:      setupArchive.Name,
-						Version:    setupArchive.Version,
-						Suites:     setupArchive.Suites,
-						Components: setupArchive.Components,
-						Arch:       test.arch,
-					}
+				testArchive.Opts = archive.Options{
+					Label:      setupArchive.Name,
+					Version:    setupArchive.Version,
+					Suites:     setupArchive.Suites,
+					Components: setupArchive.Components,
+					Arch:       test.arch,
 				}
 				archives[name] = testArchive
 			}
