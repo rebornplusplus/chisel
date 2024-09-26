@@ -10,7 +10,7 @@ import (
 
 type TestArchive struct {
 	Opts     archive.Options
-	Packages map[string]TestPackage
+	Packages map[string]*TestPackage
 }
 
 type TestPackage struct {

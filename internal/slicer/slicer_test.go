@@ -1477,10 +1477,10 @@ func runSlicerTests(c *C, tests []slicerTest) {
 
 			archives := map[string]archive.Archive{}
 			for name, setupArchive := range release.Archives {
-				pkgs := make(map[string]testutil.TestPackage)
+				pkgs := make(map[string]*testutil.TestPackage)
 				for _, pkg := range test.pkgs {
 					if len(pkg.Archives) == 0 || slices.Contains(pkg.Archives, name) {
-						pkgs[pkg.Name] = *pkg
+						pkgs[pkg.Name] = pkg
 					}
 				}
 				archive := &testutil.TestArchive{
