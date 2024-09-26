@@ -1384,9 +1384,8 @@ var setupTests = []setupTest{{
 		},
 		Packages: map[string]*setup.Package{
 			"mypkg": {
-				Archive: "ubuntu",
-				Name:    "mypkg",
-				Path:    "slices/mydir/mypkg.yaml",
+				Name: "mypkg",
+				Path: "slices/mydir/mypkg.yaml",
 				Slices: map[string]*setup.Slice{
 					"myslice": {
 						Package: "mypkg",
@@ -1434,9 +1433,8 @@ var setupTests = []setupTest{{
 		},
 		Packages: map[string]*setup.Package{
 			"mypkg": {
-				Archive: "ubuntu",
-				Name:    "mypkg",
-				Path:    "slices/mydir/mypkg.yaml",
+				Name: "mypkg",
+				Path: "slices/mydir/mypkg.yaml",
 				Slices: map[string]*setup.Slice{
 					"myslice": {
 						Package: "mypkg",
@@ -1526,9 +1524,8 @@ var setupTests = []setupTest{{
 		},
 		Packages: map[string]*setup.Package{
 			"mypkg": {
-				Archive: "ubuntu",
-				Name:    "mypkg",
-				Path:    "slices/mydir/mypkg.yaml",
+				Name: "mypkg",
+				Path: "slices/mydir/mypkg.yaml",
 				Slices: map[string]*setup.Slice{
 					"myslice": {
 						Package: "mypkg",
@@ -1540,9 +1537,8 @@ var setupTests = []setupTest{{
 				},
 			},
 			"mypkg2": {
-				Archive: "ubuntu",
-				Name:    "mypkg2",
-				Path:    "slices/mydir/mypkg2.yaml",
+				Name: "mypkg2",
+				Path: "slices/mydir/mypkg2.yaml",
 				Slices: map[string]*setup.Slice{
 					"myslice": {
 						Package: "mypkg2",

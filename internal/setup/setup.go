@@ -224,6 +224,28 @@ func (r *Release) validate() error {
 		return err
 	}
 
+	// Check for archive priority conflicts.
+	priorities := make(map[int]*Archive)
+	for _, archive := range r.Archives {
+		if old, ok := priorities[archive.Priority]; ok {
+			if old.Name > archive.Name {
+				archive, old = old, archive
+			}
+			return fmt.Errorf("chisel.yaml: archives %q and %q have the same priority value of %v", old.Name, archive.Name, archive.Priority)
+		}
+		priorities[archive.Priority] = archive
+	}
+
+	// Check that archives pinned in packages are defined.
+	for _, pkg := range r.Packages {
+		if pkg.Archive == "" {
+			continue
+		}
+		if _, ok := r.Archives[pkg.Archive]; !ok {
+			return fmt.Errorf("%s: package refers to undefined archive %q", pkg.Path, pkg.Archive)
+		}
+	}
+
 	return nil
 }
 
