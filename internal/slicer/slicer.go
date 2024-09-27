@@ -24,8 +24,8 @@ import (
 	"github.com/canonical/chisel/internal/setup"
 )
 
-const ManifestFileName = "manifest.wall"
-const ManifestMode fs.FileMode = 0644
+const manifestFileName = "manifest.wall"
+const manifestMode fs.FileMode = 0644
 
 type RunOptions struct {
 	Selection *setup.Selection
@@ -148,16 +148,18 @@ func Run(options *RunOptions) error {
 
 	// Fetch all packages, using the selection order.
 	packages := make(map[string]io.ReadCloser)
+	var pkgInfos []*archive.PackageInfo
 	for _, slice := range options.Selection.Slices {
 		if packages[slice.Package] != nil {
 			continue
 		}
-		reader, err := archives[slice.Package].Fetch(slice.Package)
+		reader, info, err := archives[slice.Package].Fetch(slice.Package)
 		if err != nil {
 			return err
 		}
 		defer reader.Close()
 		packages[slice.Package] = reader
+		pkgInfos = append(pkgInfos, info)
 	}
 
 	// When creating content, record if a path is known and whether they are
@@ -241,7 +243,9 @@ func Run(options *RunOptions) error {
 		}
 	}
 
-	// Create new content not coming from packages excluding GeneratePath(s).
+	// Create new content not extracted from packages, e.g. TextPath or DirPath
+	// with {make: true}. The only exception is the manifest which will be created
+	// later.
 	// First group them by their relative path. Then create them and attribute
 	// them to the appropriate slices.
 	relPaths := map[string][]*setup.Slice{}
@@ -266,6 +270,10 @@ func Run(options *RunOptions) error {
 				break
 			}
 		}
+		// It is okay to take the first pathInfo because the release has been
+		// validated when read and there are no conflicts. The only field that
+		// was not checked was until because it is not used for conflict
+		// validation.
 		pathInfo := slices[0].Contents[relPath]
 		pathInfo.Until = until
 		data := pathData{
@@ -318,14 +326,6 @@ func Run(options *RunOptions) error {
 		return err
 	}
 
-	pkgInfos := []*archive.PackageInfo{}
-	for pkg, _ := range packages {
-		pkgInfo, err := archives[pkg].Info(pkg)
-		if err != nil {
-			return err
-		}
-		pkgInfos = append(pkgInfos, pkgInfo)
-	}
 	err = generateManifests(&generateManifestsOptions{
 		packageInfo: pkgInfos,
 		selection:   options.Selection.Slices,
@@ -487,10 +487,7 @@ type generateManifestsOptions struct {
 }
 
 func generateManifests(options *generateManifestsOptions) error {
-	manifestSlices, err := locateManifestSlices(options.selection)
-	if err != nil {
-		return err
-	}
+	manifestSlices := manifest.LocateManifestSlices(options.selection, manifestFileName)
 	if len(manifestSlices) == 0 {
 		// Nothing to do.
 		return nil
@@ -499,31 +496,80 @@ func generateManifests(options *generateManifestsOptions) error {
 		Schema: manifest.Schema,
 	})
 
-	// Add packages to the manifest.
-	for _, info := range options.packageInfo {
+	err := manifestAddPackages(dbw, options.packageInfo)
+	if err != nil {
+		return err
+	}
+
+	err = manifestAddSlices(dbw, options.selection)
+	if err != nil {
+		return err
+	}
+
+	err = manifestAddReport(dbw, options.report.Entries)
+	if err != nil {
+		return err
+	}
+
+	err = manifestAddManifestPaths(dbw, manifestSlices)
+	if err != nil {
+		return err
+	}
+
+	files := []io.Writer{}
+	for relPath := range manifestSlices {
+		logf("Generating manifest at %s...", relPath)
+		absPath := filepath.Join(options.targetDir, relPath)
+		if err := os.MkdirAll(filepath.Dir(absPath), 0755); err != nil {
+			return err
+		}
+		file, err := os.OpenFile(absPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, manifestMode)
+		if err != nil {
+			return err
+		}
+		files = append(files, file)
+		defer file.Close()
+	}
+	w, err := zstd.NewWriter(io.MultiWriter(files...))
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+	_, err = dbw.WriteTo(w)
+	return err
+}
+
+func manifestAddPackages(dbw *jsonwall.DBWriter, infos []*archive.PackageInfo) error {
+	for _, info := range infos {
 		err := dbw.Add(&manifest.Package{
 			Kind:    "package",
 			Name:    info.Name,
 			Version: info.Version,
-			Digest:  info.Hash,
+			Digest:  info.SHA256,
 			Arch:    info.Arch,
 		})
 		if err != nil {
 			return err
 		}
 	}
-	// Add slices to the manifest.
-	for _, s := range options.selection {
+	return nil
+}
+
+func manifestAddSlices(dbw *jsonwall.DBWriter, slices []*setup.Slice) error {
+	for _, slice := range slices {
 		err := dbw.Add(&manifest.Slice{
 			Kind: "slice",
-			Name: s.String(),
+			Name: slice.String(),
 		})
 		if err != nil {
 			return err
 		}
 	}
-	// Add paths and contents to the manifest.
-	for _, entry := range options.report.Entries {
+	return nil
+}
+
+func manifestAddReport(dbw *jsonwall.DBWriter, entries map[string]ReportEntry) error {
+	for _, entry := range entries {
 		sliceNames := []string{}
 		for slice := range entry.Slices {
 			err := dbw.Add(&manifest.Content{
@@ -551,7 +597,10 @@ func generateManifests(options *generateManifestsOptions) error {
 			return err
 		}
 	}
-	// Add the manifest path and content entries to the manifest.
+	return nil
+}
+
+func manifestAddManifestPaths(dbw *jsonwall.DBWriter, manifestSlices map[string][]*setup.Slice) error {
 	for path, slices := range manifestSlices {
 		sliceNames := []string{}
 		for _, slice := range slices {
@@ -569,35 +618,14 @@ func generateManifests(options *generateManifestsOptions) error {
 		err := dbw.Add(&manifest.Path{
 			Kind:   "path",
 			Path:   path,
-			Mode:   fmt.Sprintf("0%o", unixPerm(ManifestMode)),
+			Mode:   fmt.Sprintf("0%o", unixPerm(manifestMode)),
 			Slices: sliceNames,
 		})
 		if err != nil {
 			return err
 		}
 	}
-
-	files := []io.Writer{}
-	for relPath := range manifestSlices {
-		logf("Generating manifest at %s...", relPath)
-		absPath := filepath.Join(options.targetDir, relPath)
-		if err := os.MkdirAll(filepath.Dir(absPath), 0755); err != nil {
-			return err
-		}
-		file, err := os.OpenFile(absPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, ManifestMode)
-		if err != nil {
-			return err
-		}
-		files = append(files, file)
-		defer file.Close()
-	}
-	w, err := zstd.NewWriter(io.MultiWriter(files...))
-	if err != nil {
-		return err
-	}
-	defer w.Close()
-	_, err = dbw.WriteTo(w)
-	return err
+	return nil
 }
 
 func unixPerm(mode fs.FileMode) (perm uint32) {
@@ -606,20 +634,4 @@ func unixPerm(mode fs.FileMode) (perm uint32) {
 		perm |= 01000
 	}
 	return perm
-}
-
-// locateManifestSlices finds the paths marked with "generate:manifest" and
-// returns a map from the manifest path to all the slices that declare it.
-func locateManifestSlices(slices []*setup.Slice) (map[string][]*setup.Slice, error) {
-	manifestSlices := make(map[string][]*setup.Slice)
-	for _, slice := range slices {
-		for path, info := range slice.Contents {
-			if info.Generate == setup.GenerateManifest {
-				dir := strings.TrimSuffix(path, "**")
-				path = filepath.Join(dir, ManifestFileName)
-				manifestSlices[path] = append(manifestSlices[path], slice)
-			}
-		}
-	}
-	return manifestSlices, nil
 }

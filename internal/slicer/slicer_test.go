@@ -3,6 +3,7 @@ package slicer_test
 import (
 	"archive/tar"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -875,6 +876,9 @@ var slicerTests = []slicerTest{{
 						/file:
 		`,
 	},
+	hackopt: func(c *C, opts *slicer.RunOptions) {
+		delete(opts.Archives, "foo")
+	},
 	filesystem: map[string]string{
 		// test-package fetched from pinned archive "bar".
 		"/file": "file 0644 fa0c9cdb",
@@ -1389,6 +1393,28 @@ var slicerTests = []slicerTest{{
 						content.list("/foo-bar/")
 		`,
 	},
+}, {
+	summary: "Producing a manifest is not mandatory",
+	slices:  []setup.SliceKey{{"test-package", "myslice"}},
+	hackopt: func(c *C, opts *slicer.RunOptions) {
+		// Remove the manifest slice that the tests add automatically.
+		var index int
+		for i, slice := range opts.Selection.Slices {
+			if slice.Name == "manifest" {
+				index = i
+				break
+			}
+		}
+		opts.Selection.Slices = append(opts.Selection.Slices[:index], opts.Selection.Slices[index+1:]...)
+	},
+	release: map[string]string{
+		"slices/mydir/test-package.yaml": `
+			package: test-package
+			slices:
+				myslice:
+					contents:
+		`,
+	},
 }}
 
 var defaultChiselYaml = `
@@ -1511,6 +1537,9 @@ func runSlicerTests(c *C, tests []slicerTest) {
 			}
 			c.Assert(err, IsNil)
 
+			if test.filesystem == nil && test.manifestPaths == nil && test.manifestPkgs == nil {
+				continue
+			}
 			mfest := readManifest(c, options.TargetDir, manifestPath)
 
 			// Assert state of final filesystem.
@@ -1604,9 +1633,9 @@ func readManifest(c *C, targetDir, manifestPath string) *manifest.Manifest {
 	// in the manifest itself.
 	s, err := os.Stat(path.Join(targetDir, manifestPath))
 	c.Assert(err, IsNil)
-	c.Assert(s.Mode(), Equals, slicer.ManifestMode)
+	c.Assert(s.Mode(), Equals, fs.FileMode(0644))
 	err = mfest.IteratePaths(manifestPath, func(p *manifest.Path) error {
-		c.Assert(p.Mode, Equals, fmt.Sprintf("%#o", slicer.ManifestMode))
+		c.Assert(p.Mode, Equals, fmt.Sprintf("%#o", fs.FileMode(0644)))
 		return nil
 	})
 	c.Assert(err, IsNil)
