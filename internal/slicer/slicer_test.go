@@ -768,19 +768,28 @@ var slicerTests = []slicerTest{{
 	summary: "Multiple archives with priority",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}, {"other-package", "myslice"}},
 	pkgs: []*testutil.TestPackage{{
-		Name: "test-package",
+		Name:    "test-package",
+		Hash:    "h1",
+		Version: "v1",
+		Arch:    "a1",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Reg(0644, "./file", "from foo"),
 		}),
 		Archives: []string{"foo"},
 	}, {
-		Name: "test-package",
+		Name:    "test-package",
+		Hash:    "h2",
+		Version: "v2",
+		Arch:    "a2",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Reg(0644, "./file", "from bar"),
 		}),
 		Archives: []string{"bar"},
 	}, {
-		Name: "other-package",
+		Name:    "other-package",
+		Hash:    "h3",
+		Version: "v3",
+		Arch:    "a3",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Reg(0644, "./other-file", "from bar"),
 		}),
@@ -831,17 +840,27 @@ var slicerTests = []slicerTest{{
 		"/file":       "file 0644 7a3e00f5 {test-package_myslice}",
 		"/other-file": "file 0644 fa0c9cdb {other-package_myslice}",
 	},
+	manifestPkgs: map[string]string{
+		"test-package":  "test-package v1 a1 h1",
+		"other-package": "other-package v3 a3 h3",
+	},
 }, {
 	summary: "Pinned non-default archive",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
 	pkgs: []*testutil.TestPackage{{
-		Name: "test-package",
+		Name:    "test-package",
+		Hash:    "h1",
+		Version: "v1",
+		Arch:    "a1",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Reg(0644, "./file", "from foo"),
 		}),
 		Archives: []string{"foo"},
 	}, {
-		Name: "test-package",
+		Name:    "test-package",
+		Hash:    "h2",
+		Version: "v2",
+		Arch:    "a2",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Reg(0644, "./file", "from bar"),
 		}),
@@ -885,6 +904,9 @@ var slicerTests = []slicerTest{{
 	},
 	manifestPaths: map[string]string{
 		"/file": "file 0644 fa0c9cdb {test-package_myslice}",
+	},
+	manifestPkgs: map[string]string{
+		"test-package": "test-package v2 a2 h2",
 	},
 }, {
 	summary: "Pinned archive does not have the package",
@@ -1001,7 +1023,10 @@ var slicerTests = []slicerTest{{
 	summary: "Negative priority archive explicitly pinned in package",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
 	pkgs: []*testutil.TestPackage{{
-		Name: "test-package",
+		Name:    "test-package",
+		Hash:    "h1",
+		Version: "v1",
+		Arch:    "a1",
 		Data: testutil.MustMakeDeb([]testutil.TarEntry{
 			testutil.Reg(0644, "./file", "from foo"),
 		}),
@@ -1036,6 +1061,9 @@ var slicerTests = []slicerTest{{
 	},
 	manifestPaths: map[string]string{
 		"/file": "file 0644 7a3e00f5 {test-package_myslice}",
+	},
+	manifestPkgs: map[string]string{
+		"test-package": "test-package v1 a1 h1",
 	},
 }, {
 	summary: "Multiple slices of same package",
