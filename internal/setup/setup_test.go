@@ -784,7 +784,6 @@ var setupTests = []setupTest{{
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
-			archive: foo
 		`,
 	},
 	release: &setup.Release{
@@ -810,10 +809,9 @@ var setupTests = []setupTest{{
 		},
 		Packages: map[string]*setup.Package{
 			"mypkg": {
-				Archive: "foo",
-				Name:    "mypkg",
-				Path:    "slices/mydir/mypkg.yaml",
-				Slices:  map[string]*setup.Slice{},
+				Name:   "mypkg",
+				Path:   "slices/mydir/mypkg.yaml",
+				Slices: map[string]*setup.Slice{},
 			},
 		},
 	},

@@ -1016,8 +1016,6 @@ var slicerTests = []slicerTest{{
 						/file:
 		`,
 	},
-	// Although test-package exists in archive "foo", the archive was ignored
-	// due to having a negative priority.
 	error: `cannot find package "test-package" in archive\(s\)`,
 }, {
 	summary: "Negative priority archive explicitly pinned in package",

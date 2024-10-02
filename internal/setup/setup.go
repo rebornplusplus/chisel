@@ -597,7 +597,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			archiveKeys = append(archiveKeys, key)
 		}
 		if details.Priority > MaxArchivePriority || details.Priority < MinArchivePriority {
-			return nil, fmt.Errorf("%s: archive %q has invalid priority value %d", fileName, archiveName, details.Priority)
+			return nil, fmt.Errorf("%s: archive %q has invalid priority value of %d", fileName, archiveName, details.Priority)
 		}
 		release.Archives[archiveName] = &Archive{
 			Name:       archiveName,

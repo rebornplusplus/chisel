@@ -465,9 +465,9 @@ func createFile(targetPath string, pathInfo setup.PathInfo) (*fsutil.Entry, erro
 	})
 }
 
-// selectPkgArchives selects the highest priority archive containing the
-// package, unless a particular archive is pinned within the slice definition
-// file. It returns a map of archives indexed by package names.
+// selectPkgArchives selects the highest priority archive containing the package
+// unless a particular archive is pinned within the slice definition file. It
+// returns a map of archives indexed by package names.
 func selectPkgArchives(archives map[string]archive.Archive, selection *setup.Selection) (map[string]archive.Archive, error) {
 	sortedArchives := make([]*setup.Archive, 0, len(selection.Release.Archives))
 	for _, archive := range selection.Release.Archives {
