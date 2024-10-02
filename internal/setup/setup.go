@@ -21,10 +21,9 @@ import (
 // Release is a collection of package slices targeting a particular
 // distribution version.
 type Release struct {
-	Path           string
-	Packages       map[string]*Package
-	Archives       map[string]*Archive
-	DefaultArchive string
+	Path     string
+	Packages map[string]*Package
+	Archives map[string]*Archive
 }
 
 // Archive is the location from which binary packages are obtained.
@@ -401,7 +400,6 @@ type yamlArchive struct {
 	Version    string   `yaml:"version"`
 	Suites     []string `yaml:"suites"`
 	Components []string `yaml:"components"`
-	Default    bool     `yaml:"default"`
 	Priority   int      `yaml:"priority"`
 	PubKeys    []string `yaml:"public-keys"`
 	// V1PubKeys is used for compatibility with format "chisel-v1".
@@ -572,14 +570,6 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		}
 		if len(details.Components) == 0 {
 			return nil, fmt.Errorf("%s: archive %q missing components field", fileName, archiveName)
-		}
-		if len(yamlVar.Archives) == 1 {
-			details.Default = true
-		} else if details.Default && release.DefaultArchive != "" {
-			return nil, fmt.Errorf("%s: more than one default archive: %s, %s", fileName, release.DefaultArchive, archiveName)
-		}
-		if details.Default {
-			release.DefaultArchive = archiveName
 		}
 		if len(details.PubKeys) == 0 {
 			if yamlVar.Format == "chisel-v1" {

@@ -73,8 +73,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -116,8 +114,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -177,8 +173,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -437,8 +431,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -651,8 +643,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -690,8 +680,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -730,8 +718,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -768,7 +754,6 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [main, universe]
 					suites: [jammy]
-					default: true
 					priority: 20
 					v1-public-keys: [test-key]
 				bar:
@@ -787,8 +772,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "foo",
-
 		Archives: map[string]*setup.Archive{
 			"foo": {
 				Name:       "foo",
@@ -861,7 +844,7 @@ var setupTests = []setupTest{{
 					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
 		`,
 	},
-	relerror: `chisel.yaml: archive "foo" has invalid priority value 10000`,
+	relerror: `chisel.yaml: archive "foo" has invalid priority value of 10000`,
 }, {
 	summary: "Extra fields in YAML are ignored (necessary for forward compatibility)",
 	input: map[string]string{
@@ -892,8 +875,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -986,7 +967,6 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [main, universe]
 					suites: [jammy]
-					default: true
 		`,
 	},
 	relerror: `chisel.yaml: archive "foo" missing v1-public-keys field`,
@@ -1001,7 +981,6 @@ var setupTests = []setupTest{{
 					components: [main, universe]
 					suites: [jammy]
 					v1-public-keys: [extra-key]
-					default: true
 		`,
 		"slices/mydir/mypkg.yaml": `
 			package: mypkg
@@ -1019,7 +998,6 @@ var setupTests = []setupTest{{
 					components: [main, universe]
 					suites: [jammy]
 					v1-public-keys: [extra-key]
-					default: true
 			v1-public-keys:
 				extra-key:
 					id: foo
@@ -1047,7 +1025,6 @@ var setupTests = []setupTest{{
 					components: [main, universe]
 					suites: [jammy]
 					v1-public-keys: [extra-key]
-					default: true
 			v1-public-keys:
 				extra-key:
 					id: ` + extraTestKey.ID + `
@@ -1070,8 +1047,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -1123,7 +1098,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -1191,8 +1165,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -1370,8 +1342,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -1419,8 +1389,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -1510,8 +1478,6 @@ var setupTests = []setupTest{{
 		`,
 	},
 	release: &setup.Release{
-		DefaultArchive: "ubuntu",
-
 		Archives: map[string]*setup.Archive{
 			"ubuntu": {
 				Name:       "ubuntu",
@@ -1605,6 +1571,45 @@ var setupTests = []setupTest{{
 		`,
 	},
 	relerror: `slice mypkg_myslice path /path/\*\* has invalid generate options`,
+}, {
+	summary: "Default archive is deprecated and ignored",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: chisel-v1
+			archives:
+				ubuntu:
+					default: true
+					version: 22.04
+					components: [main]
+					suites: [jammy]
+					v1-public-keys: [test-key]
+			v1-public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	release: &setup.Release{
+		Archives: map[string]*setup.Archive{
+			"ubuntu": {
+				Name:       "ubuntu",
+				Version:    "22.04",
+				Suites:     []string{"jammy"},
+				Components: []string{"main"},
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+		},
+		Packages: map[string]*setup.Package{
+			"mypkg": {
+				Name:   "mypkg",
+				Path:   "slices/mydir/mypkg.yaml",
+				Slices: map[string]*setup.Slice{},
+			},
+		},
+	},
 }}
 
 var defaultChiselYaml = `
