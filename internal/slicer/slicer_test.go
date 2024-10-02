@@ -845,7 +845,7 @@ var slicerTests = []slicerTest{{
 		"other-package": "other-package v3 a3 h3",
 	},
 }, {
-	summary: "Pinned non-default archive",
+	summary: "Pinned archive bypasses higher priority",
 	slices:  []setup.SliceKey{{"test-package", "myslice"}},
 	pkgs: []*testutil.TestPackage{{
 		Name:    "test-package",

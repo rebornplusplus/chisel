@@ -237,7 +237,7 @@ func (r *Release) validate() error {
 			if old.Name > archive.Name {
 				archive, old = old, archive
 			}
-			return fmt.Errorf("chisel.yaml: archives %q and %q have the same priority value of %v", old.Name, archive.Name, archive.Priority)
+			return fmt.Errorf("chisel.yaml: archives %q and %q have the same priority value of %d", old.Name, archive.Name, archive.Priority)
 		}
 		priorities[archive.Priority] = archive
 	}

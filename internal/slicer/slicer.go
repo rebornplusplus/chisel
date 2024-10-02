@@ -491,13 +491,13 @@ func selectPkgArchives(archives map[string]archive.Archive, selection *setup.Sel
 
 		var candidates []*setup.Archive
 		if pkg.Archive == "" {
+			// If the package has not pinned any archive, choose the highest
+			// priority archive in which the package exists.
 			candidates = sortedArchives
 		} else {
 			candidates = []*setup.Archive{selection.Release.Archives[pkg.Archive]}
 		}
 
-		// If the package has not pinned any archive, choose the highest
-		// priority archive in which the package exists.
 		var chosen archive.Archive
 		for _, archiveInfo := range candidates {
 			archive := archives[archiveInfo.Name]
