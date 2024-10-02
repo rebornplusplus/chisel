@@ -1,6 +1,8 @@
 package manifest_test
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"path"
 	"slices"
@@ -8,6 +10,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
+	"github.com/canonical/chisel/internal/archive"
 	"github.com/canonical/chisel/internal/manifest"
 	"github.com/canonical/chisel/internal/setup"
 )
@@ -19,7 +22,7 @@ type manifestContents struct {
 	Contents []*manifest.Content
 }
 
-var manifestTests = []struct {
+var readManifestTests = []struct {
 	summary   string
 	input     string
 	mfest     *manifestContents
@@ -46,10 +49,10 @@ var manifestTests = []struct {
 	`,
 	mfest: &manifestContents{
 		Paths: []*manifest.Path{
-			{Kind: "path", Path: "/dir/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, Hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", FinalHash: "8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6", Size: 0x15, Link: ""},
-			{Kind: "path", Path: "/dir/foo/bar/", Mode: "01777", Slices: []string{"pkg2_myotherslice", "pkg1_myslice"}, Hash: "", FinalHash: "", Size: 0x0, Link: ""},
-			{Kind: "path", Path: "/dir/link/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, Hash: "", FinalHash: "", Size: 0x0, Link: "/dir/file"},
-			{Kind: "path", Path: "/manifest/manifest.wall", Mode: "0644", Slices: []string{"pkg1_manifest"}, Hash: "", FinalHash: "", Size: 0x0, Link: ""},
+			{Kind: "path", Path: "/dir/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", FinalSHA256: "8067926c032c090867013d14fb0eb21ae858344f62ad07086fd32375845c91a6", Size: 0x15, Link: ""},
+			{Kind: "path", Path: "/dir/foo/bar/", Mode: "01777", Slices: []string{"pkg2_myotherslice", "pkg1_myslice"}, SHA256: "", FinalSHA256: "", Size: 0x0, Link: ""},
+			{Kind: "path", Path: "/dir/link/file", Mode: "0644", Slices: []string{"pkg1_myslice"}, SHA256: "", FinalSHA256: "", Size: 0x0, Link: "/dir/file"},
+			{Kind: "path", Path: "/manifest/manifest.wall", Mode: "0644", Slices: []string{"pkg1_manifest"}, SHA256: "", FinalSHA256: "", Size: 0x0, Link: ""},
 		},
 		Packages: []*manifest.Package{
 			{Kind: "package", Name: "pkg1", Version: "v1", Digest: "hash1", Arch: "arch1"},
@@ -125,7 +128,7 @@ var manifestTests = []struct {
 }}
 
 func (s *S) TestManifestReadValidate(c *C) {
-	for _, test := range manifestTests {
+	for _, test := range readManifestTests {
 		c.Logf("Summary: %s", test.summary)
 
 		// Reindent the jsonwall to remove leading tabs in each line.
@@ -170,10 +173,9 @@ func (s *S) TestManifestReadValidate(c *C) {
 	}
 }
 
-var locateManifestSlicesTests = []struct {
+var findPathsTests = []struct {
 	summary  string
 	slices   []*setup.Slice
-	filename string
 	expected map[string][]string
 }{{
 	summary: "Single slice",
@@ -186,7 +188,6 @@ var locateManifestSlicesTests = []struct {
 			},
 		},
 	}},
-	filename: "manifest.wall",
 	expected: map[string][]string{
 		"/folder/manifest.wall": []string{"slice1"},
 	},
@@ -196,7 +197,6 @@ var locateManifestSlicesTests = []struct {
 		Name:     "slice1",
 		Contents: map[string]setup.PathInfo{},
 	}},
-	filename: "manifest.wall",
 	expected: map[string][]string{},
 }, {
 	summary: "Several matches with several groups",
@@ -236,18 +236,17 @@ var locateManifestSlicesTests = []struct {
 			},
 		},
 	}},
-	filename: "mfest.wall",
 	expected: map[string][]string{
-		"/folder/mfest.wall":       {"slice1", "slice2"},
-		"/other-folder/mfest.wall": {"slice4", "slice5"},
+		"/folder/manifest.wall":       {"slice1", "slice2"},
+		"/other-folder/manifest.wall": {"slice4", "slice5"},
 	},
 }}
 
-func (s *S) TestLocateManifestSlices(c *C) {
-	for _, test := range locateManifestSlicesTests {
+func (s *S) TestFindPaths(c *C) {
+	for _, test := range findPathsTests {
 		c.Logf("Summary: %s", test.summary)
 
-		manifestSlices := manifest.LocateManifestSlices(test.slices, test.filename)
+		manifestSlices := manifest.FindPaths(test.slices)
 
 		slicesByName := map[string]*setup.Slice{}
 		for _, slice := range test.slices {
@@ -264,6 +263,130 @@ func (s *S) TestLocateManifestSlices(c *C) {
 			}
 		}
 	}
+}
+
+func (s *S) TestGenerateManifests(c *C) {
+	slice1 := &setup.Slice{
+		Package: "package1",
+		Name:    "slice1",
+	}
+	slice2 := &setup.Slice{
+		Package: "package2",
+		Name:    "slice2",
+	}
+	report := &manifest.Report{
+		Root: "/",
+		Entries: map[string]manifest.ReportEntry{
+			"/file": {
+				Path:        "/file",
+				Mode:        0456,
+				SHA256:      "hash",
+				Size:        1234,
+				Slices:      map[*setup.Slice]bool{slice1: true},
+				FinalSHA256: "final-hash",
+			},
+			"/link": {
+				Path:   "/link",
+				Mode:   0567,
+				Link:   "/target",
+				Slices: map[*setup.Slice]bool{slice1: true, slice2: true},
+			},
+		},
+	}
+	packageInfo := []*archive.PackageInfo{{
+		Name:    "package1",
+		Version: "v1",
+		Arch:    "a1",
+		SHA256:  "s1",
+	}, {
+		Name:    "package2",
+		Version: "v2",
+		Arch:    "a2",
+		SHA256:  "s2",
+	}}
+
+	expected := &manifestContents{
+		Paths: []*manifest.Path{{
+			Kind:        "path",
+			Path:        "/file",
+			Mode:        "0456",
+			Slices:      []string{"package1_slice1"},
+			Size:        1234,
+			SHA256:      "hash",
+			FinalSHA256: "final-hash",
+		}, {
+			Kind:   "path",
+			Path:   "/link",
+			Link:   "/target",
+			Mode:   "0567",
+			Slices: []string{"package1_slice1", "package2_slice2"},
+		}},
+		Packages: []*manifest.Package{{
+			Kind:    "package",
+			Name:    "package1",
+			Version: "v1",
+			Digest:  "s1",
+			Arch:    "a1",
+		}, {
+			Kind:    "package",
+			Name:    "package2",
+			Version: "v2",
+			Digest:  "s2",
+			Arch:    "a2",
+		}},
+		Slices: []*manifest.Slice{{
+			Kind: "slice",
+			Name: "package1_slice1",
+		}, {
+			Kind: "slice",
+			Name: "package2_slice2",
+		}},
+		Contents: []*manifest.Content{{
+			Kind:  "content",
+			Slice: "package1_slice1",
+			Path:  "/file",
+		}, {
+			Kind:  "content",
+			Slice: "package1_slice1",
+			Path:  "/link",
+		}, {
+			Kind:  "content",
+			Slice: "package2_slice2",
+			Path:  "/link",
+		}},
+	}
+
+	options := &manifest.WriteOptions{
+		PackageInfo: packageInfo,
+		Selection:   []*setup.Slice{slice1, slice2},
+		Report:      report,
+	}
+	var buffer bytes.Buffer
+	err := manifest.Write(options, &buffer)
+	c.Assert(err, IsNil)
+	mfest, err := manifest.Read(&buffer)
+	c.Assert(err, IsNil)
+	err = manifest.Validate(mfest)
+	c.Assert(err, IsNil)
+	contents := dumpManifestContents(c, mfest)
+	c.Assert(contents, DeepEquals, expected)
+}
+
+func (s *S) TestGenerateNoManifests(c *C) {
+	report, err := manifest.NewReport("/")
+	c.Assert(err, IsNil)
+	options := &manifest.WriteOptions{
+		Report: report,
+	}
+	var buffer bytes.Buffer
+	err = manifest.Write(options, &buffer)
+	c.Assert(err, IsNil)
+
+	var reader io.Reader = &buffer
+	var bs []byte
+	n, err := reader.Read(bs)
+	c.Assert(err, IsNil)
+	c.Assert(n, Equals, 0)
 }
 
 func dumpManifestContents(c *C, mfest *manifest.Manifest) *manifestContents {
