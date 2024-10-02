@@ -1056,9 +1056,6 @@ var slicerTests = []slicerTest{{
 						/file:
 		`,
 	},
-	hackopt: func(c *C, opts *slicer.RunOptions) {
-		delete(opts.Archives, "foo")
-	},
 	filesystem: map[string]string{
 		"/file": "file 0644 7a3e00f5",
 	},
