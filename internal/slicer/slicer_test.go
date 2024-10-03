@@ -807,7 +807,6 @@ var slicerTests = []slicerTest{{
 				bar:
 					version: 22.04
 					components: [main]
-					default: true
 					priority: 10
 					v1-public-keys: [test-key]
 			v1-public-keys:
@@ -873,7 +872,6 @@ var slicerTests = []slicerTest{{
 				foo:
 					version: 22.04
 					components: [main, universe]
-					default: true
 					priority: 20
 					v1-public-keys: [test-key]
 				bar:
@@ -925,7 +923,6 @@ var slicerTests = []slicerTest{{
 				foo:
 					version: 22.04
 					components: [main, universe]
-					default: true
 					priority: 20
 					v1-public-keys: [test-key]
 				bar:
@@ -961,7 +958,6 @@ var slicerTests = []slicerTest{{
 				foo:
 					version: 22.04
 					components: [main, universe]
-					default: true
 					priority: 20
 					v1-public-keys: [test-key]
 				bar:
@@ -1000,7 +996,6 @@ var slicerTests = []slicerTest{{
 				foo:
 					version: 22.04
 					components: [main, universe]
-					default: true
 					priority: -20
 					v1-public-keys: [test-key]
 			v1-public-keys:
@@ -1037,7 +1032,6 @@ var slicerTests = []slicerTest{{
 				foo:
 					version: 22.04
 					components: [main, universe]
-					default: true
 					priority: -20
 					v1-public-keys: [test-key]
 			v1-public-keys:
