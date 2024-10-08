@@ -20,8 +20,16 @@ import (
 
 type Archive interface {
 	Options() *Options
-	Fetch(pkg string) (io.ReadCloser, error)
+	Fetch(pkg string) (io.ReadCloser, *PackageInfo, error)
 	Exists(pkg string) bool
+	Info(pkg string) (*PackageInfo, error)
+}
+
+type PackageInfo struct {
+	Name    string
+	Version string
+	Arch    string
+	SHA256  string
 }
 
 type Options struct {
@@ -117,18 +125,28 @@ func (a *ubuntuArchive) selectPackage(pkg string) (control.Section, *ubuntuIndex
 	return selectedSection, selectedIndex, nil
 }
 
-func (a *ubuntuArchive) Fetch(pkg string) (io.ReadCloser, error) {
+func (a *ubuntuArchive) Fetch(pkg string) (io.ReadCloser, *PackageInfo, error) {
 	section, index, err := a.selectPackage(pkg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	suffix := section.Get("Filename")
 	logf("Fetching %s...", suffix)
 	reader, err := index.fetch("../../"+suffix, section.Get("SHA256"), fetchBulk)
 	if err != nil {
+		return nil, nil, err
+	}
+	info := sectionPackageInfo(section)
+	return reader, info, nil
+}
+
+func (a *ubuntuArchive) Info(pkg string) (*PackageInfo, error) {
+	section, _, err := a.selectPackage(pkg)
+	if err != nil {
 		return nil, err
 	}
-	return reader, nil
+	info := sectionPackageInfo(section)
+	return info, nil
 }
 
 const ubuntuURL = "http://archive.ubuntu.com/ubuntu/"
@@ -395,6 +413,15 @@ func (index *ubuntuIndex) fetch(suffix, digest string, flags fetchFlags) (io.Rea
 	}
 
 	return index.archive.cache.Open(writer.Digest())
+}
+
+func sectionPackageInfo(section control.Section) *PackageInfo {
+	return &PackageInfo{
+		Name:    section.Get("Package"),
+		Version: section.Get("Version"),
+		Arch:    section.Get("Architecture"),
+		SHA256:  section.Get("SHA256"),
+	}
 }
 
 // proSuffixedLabel adds "<pro value> (pro)" suffix to the label and returns it
