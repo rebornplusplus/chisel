@@ -597,9 +597,6 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			PubKeys:    archiveKeys,
 		}
 	}
-	if len(release.Archives) == 0 {
-		return nil, fmt.Errorf("%s: no valid archives defined", fileName)
-	}
 
 	return release, err
 }

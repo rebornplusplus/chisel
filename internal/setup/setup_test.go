@@ -1739,22 +1739,6 @@ var setupTests = []setupTest{{
 			},
 		},
 	},
-}, {
-	summary: "No valid archives defined",
-	input: map[string]string{
-		"chisel.yaml": `
-			format: v1
-			archives:
-				invalid:
-					version: 20.04
-					components: [main]
-					suites: [focal]
-					priority: 10
-					public-keys: [test-key]
-					pro: unknown-value
-		`,
-	},
-	relerror: `chisel.yaml: no valid archives defined`,
 }}
 
 var defaultChiselYaml = `
