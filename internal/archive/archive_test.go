@@ -712,9 +712,9 @@ func (s *S) testOpenArchiveArch(c *C, test realArchiveTest, arch string) {
 
 	extractDir := c.MkDir()
 
-	pkg, info, err := testArchive.Fetch("hostname")
+	pkg, info, err := testArchive.Fetch(test.pkg)
 	c.Assert(err, IsNil)
-	c.Assert(info.Name, DeepEquals, "hostname")
+	c.Assert(info.Name, DeepEquals, test.pkg)
 	c.Assert(info.Arch, DeepEquals, arch)
 
 	err = deb.Extract(pkg, &deb.ExtractOptions{
