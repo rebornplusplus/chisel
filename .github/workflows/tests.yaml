@@ -63,12 +63,16 @@ jobs:
 
           detach() {
             sudo pro detach --assume-yes || true
+            sudo rm -f /etc/apt/auth.conf.d/90ubuntu-advantage
           }
           trap detach EXIT
 
           # Attach pro token and enable services
           sudo pro attach ${PRO_TOKEN} --no-auto-enable
           sudo pro enable fips-updates esm-apps esm-infra --assume-yes
+
+          # Make apt credentials accessible to USER.
+          sudo setfacl -m u:$USER:r /etc/apt/auth.conf.d/90ubuntu-advantage
 
           # Run tests on Pro and non-Pro real archives.
           go test ./internal/archive/ -v --real-archive --real-pro-archive
