@@ -396,6 +396,15 @@ func (s *httpSuite) TestProArchives(c *C) {
 	err := os.WriteFile(confFile, []byte(contents), 0600)
 	c.Assert(err, IsNil)
 
+	do := func(req *http.Request) (*http.Response, error) {
+		auth, ok := req.Header["Authorization"]
+		c.Assert(ok, Equals, true)
+		c.Assert(auth, DeepEquals, []string{"Basic Zm9vOmJhcg=="})
+		return s.Do(req)
+	}
+	restoreDo := archive.FakeDo(do)
+	defer restoreDo()
+
 	for pro, info := range archive.ProArchiveInfo {
 		s.base = info.BaseURL
 		s.prepareArchiveAdjustRelease("jammy", "22.04", "amd64", []string{"main", "universe"}, setLabel(info.Label))
@@ -414,6 +423,32 @@ func (s *httpSuite) TestProArchives(c *C) {
 		_, err = archive.Open(&options)
 		c.Assert(err, IsNil)
 	}
+}
+
+func (s *httpSuite) TestNonProArchive(c *C) {
+	do := func(req *http.Request) (*http.Response, error) {
+		if _, ok := req.Header["Authorization"]; ok {
+			c.Fatalf("Non-pro archives should not have any authorization header")
+		}
+		return s.Do(req)
+	}
+	restoreDo := archive.FakeDo(do)
+	defer restoreDo()
+
+	s.prepareArchive("jammy", "22.04", "amd64", []string{"main", "universe"})
+
+	options := archive.Options{
+		Label:      "ubuntu",
+		Version:    "22.04",
+		Arch:       "amd64",
+		Suites:     []string{"jammy"},
+		Components: []string{"main", "universe"},
+		CacheDir:   c.MkDir(),
+		PubKeys:    []*packet.PublicKey{s.pubKey},
+	}
+
+	_, err := archive.Open(&options)
+	c.Assert(err, IsNil)
 }
 
 type verifyArchiveReleaseTest struct {
@@ -518,30 +553,39 @@ func read(r io.Reader) string {
 }
 
 // ----------------------------------------------------------------------------------------
-// Real archive tests, only enabled via --real-archive.
+// Real archive tests, only enabled via:
+// 	1. --real-archive 		for non-Pro archives (e.g. standard jammy archive)
+//	2. --real-pro-archive	for Ubuntu Pro archives (e.g. FIPS archives).
 //
-// Additionally, run tests against Ubuntu Pro archives by passing --pro-archive.
-// The host machine must be Pro enabled and relevant Pro services must be
-// enabled. The following commands might help:
+// To run the tests for Ubuntu Pro archives, the host machine must be Pro
+// enabled and relevant Pro services must be enabled. The following commands
+// might help:
 // 		sudo pro attach <pro-token> --no-auto-enable
-//		sudo pro enable fips fips-updates esm-apps esm-infra --assume-yes
+//		sudo pro enable fips-updates esm-apps esm-infra --assume-yes
 
 var realArchiveFlag = flag.Bool("real-archive", false, "Perform tests against real archive")
-var proArchiveFlag = flag.Bool("pro-archive", false, "Perform tests against real Ubuntu Pro archive")
+var proArchiveFlag = flag.Bool("real-pro-archive", false, "Perform tests against real Ubuntu Pro archive")
 
 func (s *S) TestRealArchive(c *C) {
 	if !*realArchiveFlag {
 		c.Skip("--real-archive not provided")
 	}
+	s.runRealArchiveTests(c, realArchiveTests)
+}
+
+func (s *S) TestProArchives(c *C) {
+	if !*proArchiveFlag {
+		c.Skip("--real-pro-archive not provided")
+	}
+	s.runRealArchiveTests(c, proArchiveTests)
+}
+
+func (s *S) runRealArchiveTests(c *C, tests []realArchiveTest) {
 	allArch := make([]string, 0, len(elfToDebArch))
 	for _, arch := range elfToDebArch {
 		allArch = append(allArch, arch)
 	}
-	for _, test := range realArchiveTests {
-		if test.pro != "" && !*proArchiveFlag {
-			// --pro-archive is not provided. Ignore test.
-			continue
-		}
+	for _, test := range tests {
 		if len(test.architectures) == 0 {
 			test.architectures = allArch
 		}
@@ -591,18 +635,11 @@ var realArchiveTests = []realArchiveTest{{
 	pkg:            "hostname",
 	binPath:        "/usr/bin/hostname",
 	copyrightText:  "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
-}, {
-	name:           "fips",
-	version:        "20.04",
-	suites:         []string{"focal"},
-	components:     []string{"main"},
-	pro:            "fips",
-	archivePubKeys: []*packet.PublicKey{keyUbuntuFIPSv1.PubKey},
-	architectures:  []string{"amd64"},
-	pkg:            "openssh-client",
-	binPath:        "/usr/bin/ssh",
-	copyrightText:  "1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland",
-}, {
+}}
+
+var proArchiveTests = []realArchiveTest{{
+	// We cannot test both fips and fips-updates since both services cannot be
+	// enabled at the same time.
 	name:           "fips-updates",
 	version:        "20.04",
 	suites:         []string{"focal-updates"},

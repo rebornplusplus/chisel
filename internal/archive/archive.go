@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 
@@ -174,7 +173,7 @@ var proArchiveInfo = map[string]struct {
 }
 
 // archiveURL returns the archive base URL depending on the "pro" value and
-// selected architecture "arch". The "pro" value should be validated.
+// selected architecture "arch". The "pro" value must be pre-validated.
 func archiveURL(pro, arch string) string {
 	if pro != "" {
 		return proArchiveInfo[pro].BaseURL
@@ -234,7 +233,8 @@ func openUbuntu(options *Options) (Archive, error) {
 				if !index.supportsArch(options.Arch) {
 					// Release does not support the specified architecture. Do
 					// not add indexes of this release.
-					logf("Warning: ignoring %s %s %s suite (unsupported arch %s)...", index.proSuffixedLabel(), index.version, index.suite, options.Arch)
+					logf("Warning: ignoring %s %s %s suite (unsupported arch %s)...",
+						index.proSuffixedLabel(), index.version, index.suite, options.Arch)
 					break
 				}
 				err = index.checkComponents(options.Components)
@@ -325,9 +325,12 @@ func (index *ubuntuIndex) fetchIndex() error {
 	return nil
 }
 
+// supportsArch returns true if the Architectures field in the index release
+// contains "arch". Per the Debian wiki [1], index release files should list the
+// supported architectures in the "Architectures" field.
+// Reference: [1] https://wiki.debian.org/DebianRepository/Format#Architectures
 func (index *ubuntuIndex) supportsArch(arch string) bool {
-	supportedArches := strings.Fields(index.release.Get("Architectures"))
-	return slices.Contains(supportedArches, arch)
+	return strings.Contains(index.release.Get("Architectures"), arch)
 }
 
 func (index *ubuntuIndex) checkComponents(components []string) error {
