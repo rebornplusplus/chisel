@@ -1629,7 +1629,7 @@ var setupTests = []setupTest{{
 		},
 	},
 }, {
-	summary: "Valid Pro values in archives",
+	summary: "Pro values in archives",
 	input: map[string]string{
 		"chisel.yaml": `
 			format: v1
