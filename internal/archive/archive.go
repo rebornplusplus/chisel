@@ -328,6 +328,9 @@ func (index *ubuntuIndex) fetchIndex() error {
 // supportsArch returns true if the Architectures field in the index release
 // contains "arch". Per the Debian wiki [1], index release files should list the
 // supported architectures in the "Architectures" field.
+// The "ubuntuURL" archive only supports the amd64 and i386 architectures
+// whereas the "ubuntuPortsURL" one supports the rest. But each of them
+// (faultly) specifies all those architectures in their InRelease files.
 // Reference: [1] https://wiki.debian.org/DebianRepository/Format#Architectures
 func (index *ubuntuIndex) supportsArch(arch string) bool {
 	return strings.Contains(index.release.Get("Architectures"), arch)
