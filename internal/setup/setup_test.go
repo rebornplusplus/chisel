@@ -1668,7 +1668,7 @@ var setupTests = []setupTest{{
 					pro: infra
 					priority: 15
 					public-keys: [test-key]
-				foo:
+				ignored:
 					version: 20.04
 					components: [main]
 					suites: [foo]
