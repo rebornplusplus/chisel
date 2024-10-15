@@ -331,50 +331,47 @@ func (s *httpSuite) TestArchiveLabels(c *C) {
 		}
 	}
 
-	s.prepareArchive("jammy", "22.04", "amd64", []string{"main", "universe"})
+	tests := []struct {
+		summary string
+		label   string
+		err     string
+	}{{
+		summary: "No labels",
+	}, {
+		summary: "Ubuntu label",
+		label:   "Ubuntu",
+	}, {
+		summary: "Unknown label",
+		label:   "Unknown",
+		err:     "corrupted archive InRelease file: no Ubuntu section",
+	}}
 
-	options := archive.Options{
-		Label:      "ubuntu",
-		Version:    "22.04",
-		Arch:       "amd64",
-		Suites:     []string{"jammy"},
-		Components: []string{"main", "universe"},
-		CacheDir:   c.MkDir(),
-		PubKeys:    []*packet.PublicKey{s.pubKey},
+	for _, test := range tests {
+		c.Logf("Summary: %s", test.summary)
+
+		var adjust func(*testarchive.Release)
+		if test.label != "" {
+			adjust = setLabel(test.label)
+		}
+		s.prepareArchiveAdjustRelease("jammy", "22.04", "amd64", []string{"main", "universe"}, adjust)
+
+		options := archive.Options{
+			Label:      "ubuntu",
+			Version:    "22.04",
+			Arch:       "amd64",
+			Suites:     []string{"jammy"},
+			Components: []string{"main", "universe"},
+			CacheDir:   c.MkDir(),
+			PubKeys:    []*packet.PublicKey{s.pubKey},
+		}
+
+		_, err := archive.Open(&options)
+		if test.err != "" {
+			c.Assert(err, ErrorMatches, test.err)
+		} else {
+			c.Assert(err, IsNil)
+		}
 	}
-
-	_, err := archive.Open(&options)
-	c.Assert(err, IsNil)
-
-	s.prepareArchiveAdjustRelease("jammy", "22.04", "amd64", []string{"main", "universe"}, setLabel("Ubuntu"))
-
-	options = archive.Options{
-		Label:      "ubuntu",
-		Version:    "22.04",
-		Arch:       "amd64",
-		Suites:     []string{"jammy"},
-		Components: []string{"main", "universe"},
-		CacheDir:   c.MkDir(),
-		PubKeys:    []*packet.PublicKey{s.pubKey},
-	}
-
-	_, err = archive.Open(&options)
-	c.Assert(err, IsNil)
-
-	s.prepareArchiveAdjustRelease("jammy", "22.04", "amd64", []string{"main", "universe"}, setLabel("Unknown"))
-
-	options = archive.Options{
-		Label:      "ubuntu",
-		Version:    "22.04",
-		Arch:       "amd64",
-		Suites:     []string{"jammy"},
-		Components: []string{"main", "universe"},
-		CacheDir:   c.MkDir(),
-		PubKeys:    []*packet.PublicKey{s.pubKey},
-	}
-
-	_, err = archive.Open(&options)
-	c.Assert(err, ErrorMatches, `corrupted archive InRelease file: no Ubuntu section`)
 }
 
 func (s *httpSuite) TestProArchives(c *C) {
