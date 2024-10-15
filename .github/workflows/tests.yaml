@@ -45,8 +45,8 @@ jobs:
           path: ./*.html
 
   real-archive-tests:
-    # Do not change to ubuntu-latest as fips-updates may not be available there.
-    runs-on: ubuntu-22.04
+    # Do not change to newer releases as "fips" may not be available there.
+    runs-on: ubuntu-20.04
     name: Real Archive Tests
     steps:
       - uses: actions/checkout@v3
