@@ -553,14 +553,14 @@ func read(r io.Reader) string {
 
 // ----------------------------------------------------------------------------------------
 // Real archive tests, only enabled via:
-// 	1. --real-archive 		for non-Pro archives (e.g. standard jammy archive)
-//	2. --real-pro-archive	for Ubuntu Pro archives (e.g. FIPS archives).
+//   1. --real-archive 		for non-Pro archives (e.g. standard jammy archive),
+//   2. --real-pro-archive	for Ubuntu Pro archives (e.g. FIPS archives).
 //
 // To run the tests for Ubuntu Pro archives, the host machine must be Pro
 // enabled and relevant Pro services must be enabled. The following commands
 // might help:
-// 		sudo pro attach <pro-token> --no-auto-enable
-//		sudo pro enable fips-updates esm-apps esm-infra --assume-yes
+//   sudo pro attach <pro-token> --no-auto-enable
+//   sudo pro enable fips-updates esm-apps esm-infra --assume-yes
 
 var realArchiveFlag = flag.Bool("real-archive", false, "Perform tests against real archive")
 var proArchiveFlag = flag.Bool("real-pro-archive", false, "Perform tests against real Ubuntu Pro archive")
