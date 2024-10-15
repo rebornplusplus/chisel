@@ -603,7 +603,7 @@ type realArchiveTest struct {
 	archivePubKeys []*packet.PublicKey
 	architectures  []string
 	pkg            string
-	binPath        string
+	path           string
 	copyrightText  string
 }
 
@@ -614,7 +614,7 @@ var realArchiveTests = []realArchiveTest{{
 	components:     []string{"main", "universe"},
 	archivePubKeys: []*packet.PublicKey{keyUbuntu2018.PubKey},
 	pkg:            "hostname",
-	binPath:        "/bin/hostname",
+	path:           "/bin/hostname",
 	copyrightText:  "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }, {
 	name:           "jammy",
@@ -623,7 +623,7 @@ var realArchiveTests = []realArchiveTest{{
 	components:     []string{"main", "universe"},
 	archivePubKeys: []*packet.PublicKey{keyUbuntu2018.PubKey},
 	pkg:            "hostname",
-	binPath:        "/bin/hostname",
+	path:           "/bin/hostname",
 	copyrightText:  "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }, {
 	name:           "noble",
@@ -632,7 +632,7 @@ var realArchiveTests = []realArchiveTest{{
 	components:     []string{"main", "universe"},
 	archivePubKeys: []*packet.PublicKey{keyUbuntu2018.PubKey},
 	pkg:            "hostname",
-	binPath:        "/usr/bin/hostname",
+	path:           "/usr/bin/hostname",
 	copyrightText:  "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }}
 
@@ -647,7 +647,7 @@ var proArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntuFIPSv1.PubKey},
 	architectures:  []string{"amd64"},
 	pkg:            "openssh-client",
-	binPath:        "/usr/bin/ssh",
+	path:           "/usr/bin/ssh",
 	copyrightText:  "1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland",
 }, {
 	name:           "focal-esm-apps",
@@ -658,7 +658,7 @@ var proArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntuApps.PubKey},
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
-	binPath:        "/usr/bin/hello",
+	path:           "/usr/bin/hello",
 	copyrightText:  "This package was first put together by Ian Jackson",
 }, {
 	name:           "focal-esm-infra",
@@ -669,7 +669,7 @@ var proArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntuESMv2.PubKey},
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
-	binPath:        "/usr/bin/hello",
+	path:           "/usr/bin/hello",
 	copyrightText:  "This package was first put together by Ian Jackson",
 }, {
 	name:           "jammy-fips-updates",
@@ -680,7 +680,7 @@ var proArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntuFIPSv1.PubKey},
 	architectures:  []string{"amd64"},
 	pkg:            "openssh-client",
-	binPath:        "/usr/bin/ssh",
+	path:           "/usr/bin/ssh",
 	copyrightText:  "1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland",
 }, {
 	name:           "jammy-esm-apps",
@@ -691,7 +691,7 @@ var proArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntuApps.PubKey},
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
-	binPath:        "/usr/bin/hello",
+	path:           "/usr/bin/hello",
 	copyrightText:  "This package was first put together by Ian Jackson",
 }, {
 	name:           "jammy-esm-infra",
@@ -702,7 +702,7 @@ var proArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntuESMv2.PubKey},
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
-	binPath:        "/usr/bin/hello",
+	path:           "/usr/bin/hello",
 	copyrightText:  "This package was first put together by Ian Jackson",
 }, {
 	name:           "noble-esm-apps",
@@ -713,7 +713,7 @@ var proArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntuApps.PubKey},
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
-	binPath:        "/usr/bin/hello",
+	path:           "/usr/bin/hello",
 	copyrightText:  "This package was first put together by Ian Jackson",
 }, {
 	name:           "noble-esm-infra",
@@ -724,7 +724,7 @@ var proArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntuESMv2.PubKey},
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
-	binPath:        "/usr/bin/hello",
+	path:           "/usr/bin/hello",
 	copyrightText:  "This package was first put together by Ian Jackson",
 }}
 
@@ -778,7 +778,7 @@ func (s *S) testOpenArchiveArch(c *C, test realArchiveTest, arch string) {
 			fmt.Sprintf("/usr/share/doc/%s/copyright", test.pkg): {
 				{Path: "/copyright"},
 			},
-			test.binPath: {
+			test.path: {
 				{Path: "/binary"},
 			},
 		},
