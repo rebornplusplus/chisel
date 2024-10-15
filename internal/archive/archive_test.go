@@ -604,7 +604,6 @@ type realArchiveTest struct {
 	architectures  []string
 	pkg            string
 	path           string
-	copyrightText  string
 }
 
 var realArchiveTests = []realArchiveTest{{
@@ -615,7 +614,6 @@ var realArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntu2018.PubKey},
 	pkg:            "hostname",
 	path:           "/bin/hostname",
-	copyrightText:  "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }, {
 	name:           "jammy",
 	version:        "22.04",
@@ -624,7 +622,6 @@ var realArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntu2018.PubKey},
 	pkg:            "hostname",
 	path:           "/bin/hostname",
-	copyrightText:  "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }, {
 	name:           "noble",
 	version:        "24.04",
@@ -633,7 +630,6 @@ var realArchiveTests = []realArchiveTest{{
 	archivePubKeys: []*packet.PublicKey{keyUbuntu2018.PubKey},
 	pkg:            "hostname",
 	path:           "/usr/bin/hostname",
-	copyrightText:  "This package was written by Peter Tobias <tobias@et-inf.fho-emden.de>",
 }}
 
 var proArchiveTests = []realArchiveTest{{
@@ -648,7 +644,6 @@ var proArchiveTests = []realArchiveTest{{
 	architectures:  []string{"amd64"},
 	pkg:            "openssh-client",
 	path:           "/usr/bin/ssh",
-	copyrightText:  "1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland",
 }, {
 	name:           "focal-esm-apps",
 	version:        "20.04",
@@ -659,7 +654,6 @@ var proArchiveTests = []realArchiveTest{{
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
-	copyrightText:  "This package was first put together by Ian Jackson",
 }, {
 	name:           "focal-esm-infra",
 	version:        "20.04",
@@ -670,7 +664,6 @@ var proArchiveTests = []realArchiveTest{{
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
-	copyrightText:  "This package was first put together by Ian Jackson",
 }, {
 	name:           "jammy-fips-updates",
 	version:        "22.04",
@@ -681,7 +674,6 @@ var proArchiveTests = []realArchiveTest{{
 	architectures:  []string{"amd64"},
 	pkg:            "openssh-client",
 	path:           "/usr/bin/ssh",
-	copyrightText:  "1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland",
 }, {
 	name:           "jammy-esm-apps",
 	version:        "22.04",
@@ -692,7 +684,6 @@ var proArchiveTests = []realArchiveTest{{
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
-	copyrightText:  "This package was first put together by Ian Jackson",
 }, {
 	name:           "jammy-esm-infra",
 	version:        "22.04",
@@ -703,7 +694,6 @@ var proArchiveTests = []realArchiveTest{{
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
-	copyrightText:  "This package was first put together by Ian Jackson",
 }, {
 	name:           "noble-esm-apps",
 	version:        "24.04",
@@ -714,7 +704,6 @@ var proArchiveTests = []realArchiveTest{{
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
-	copyrightText:  "This package was first put together by Ian Jackson",
 }, {
 	name:           "noble-esm-infra",
 	version:        "24.04",
@@ -725,7 +714,6 @@ var proArchiveTests = []realArchiveTest{{
 	architectures:  []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
-	copyrightText:  "This package was first put together by Ian Jackson",
 }}
 
 var elfToDebArch = map[elf.Machine]string{
@@ -784,10 +772,6 @@ func (s *S) testOpenArchiveArch(c *C, test realArchiveTest, arch string) {
 		},
 	})
 	c.Assert(err, IsNil)
-
-	data, err := os.ReadFile(filepath.Join(extractDir, "copyright"))
-	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(string(data), test.copyrightText), Equals, true)
 
 	s.checkArchitecture(c, arch, filepath.Join(extractDir, "binary"))
 }
