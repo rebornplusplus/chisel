@@ -79,7 +79,7 @@ jobs:
           # This will disable the fips service.
           sudo pro enable fips-updates esm-apps esm-infra --assume-yes
           # Add the fips credentials back.
-          sudo cat /etc/apt/auth.conf.d/90ubuntu-advantage.fips-creds >> /etc/apt/auth.conf.d/90ubuntu-advantage
+          sudo sh -c 'cat /etc/apt/auth.conf.d/90ubuntu-advantage.fips-creds >> /etc/apt/auth.conf.d/90ubuntu-advantage'
           sudo rm /etc/apt/auth.conf.d/90ubuntu-advantage.fips-creds
 
           # Make apt credentials accessible to USER.
