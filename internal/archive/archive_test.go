@@ -423,17 +423,17 @@ func (s *httpSuite) TestProArchives(c *C) {
 		_, err = archive.Open(&options)
 		c.Assert(err, IsNil)
 	}
-}
 
-func (s *httpSuite) TestNonProArchive(c *C) {
-	do := func(req *http.Request) (*http.Response, error) {
+	// Test non-pro archives.
+	do = func(req *http.Request) (*http.Response, error) {
 		_, ok := req.Header["Authorization"]
 		c.Assert(ok, Equals, false, Commentf("Non-pro archives should not have any authorization header"))
 		return s.Do(req)
 	}
-	restoreDo := archive.FakeDo(do)
+	restoreDo = archive.FakeDo(do)
 	defer restoreDo()
 
+	s.base = "http://archive.ubuntu.com/ubuntu/"
 	s.prepareArchive("jammy", "22.04", "amd64", []string{"main", "universe"})
 
 	options := archive.Options{
@@ -446,7 +446,7 @@ func (s *httpSuite) TestNonProArchive(c *C) {
 		PubKeys:    []*packet.PublicKey{s.pubKey},
 	}
 
-	_, err := archive.Open(&options)
+	_, err = archive.Open(&options)
 	c.Assert(err, IsNil)
 }
 

@@ -195,21 +195,24 @@ func openUbuntu(options *Options) (Archive, error) {
 		return nil, fmt.Errorf("archive options missing version")
 	}
 
+	baseURL := archiveURL(options.Pro, options.Arch)
+	var creds *credentials
+	if options.Pro != "" {
+		var err error
+		creds, err = findCredentials(baseURL)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	archive := &ubuntuArchive{
 		options: *options,
 		cache: &cache.Cache{
 			Dir: options.CacheDir,
 		},
 		pubKeys: options.PubKeys,
-		baseURL: archiveURL(options.Pro, options.Arch),
-	}
-
-	if options.Pro != "" {
-		creds, err := findCredentials(archive.baseURL)
-		if err != nil {
-			return nil, err
-		}
-		archive.creds = creds
+		baseURL: baseURL,
+		creds:   creds,
 	}
 
 	for _, suite := range options.Suites {
