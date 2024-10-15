@@ -570,7 +570,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		switch details.Pro {
 		case "", ProApps, ProFIPS, ProFIPSUpdates, ProInfra:
 		default:
-			logf("Ignoring archive %q (invalid pro value: %s)...", archiveName, details.Pro)
+			logf("Ignoring archive %q (invalid pro value: %q)...", archiveName, details.Pro)
 			continue
 		}
 		if len(details.PubKeys) == 0 {
