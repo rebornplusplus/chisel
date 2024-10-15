@@ -427,9 +427,8 @@ func (s *httpSuite) TestProArchives(c *C) {
 
 func (s *httpSuite) TestNonProArchive(c *C) {
 	do := func(req *http.Request) (*http.Response, error) {
-		if _, ok := req.Header["Authorization"]; ok {
-			c.Fatalf("Non-pro archives should not have any authorization header")
-		}
+		_, ok := req.Header["Authorization"]
+		c.Assert(ok, Equals, false, Commentf("Non-pro archives should not have any authorization header"))
 		return s.Do(req)
 	}
 	restoreDo := archive.FakeDo(do)
