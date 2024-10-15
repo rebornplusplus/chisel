@@ -630,8 +630,16 @@ var realArchiveTests = []realArchiveTest{{
 }}
 
 var proArchiveTests = []realArchiveTest{{
-	// We cannot test both fips and fips-updates since both services cannot be
-	// enabled at the same time.
+	name:           "focal-fips",
+	version:        "20.04",
+	suites:         []string{"focal"},
+	components:     []string{"main"},
+	pro:            "fips",
+	archivePubKeys: []*packet.PublicKey{keyUbuntuFIPSv1.PubKey},
+	architectures:  []string{"amd64"},
+	pkg:            "openssh-client",
+	path:           "/usr/bin/ssh",
+}, {
 	name:           "focal-fips-updates",
 	version:        "20.04",
 	suites:         []string{"focal-updates"},
