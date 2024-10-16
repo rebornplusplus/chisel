@@ -574,6 +574,7 @@ func (s *S) TestProArchives(c *C) {
 		c.Skip("--real-pro-archive not provided")
 	}
 	s.runRealArchiveTests(c, proArchiveTests)
+	s.testProArchiveBadCreds(c)
 }
 
 func (s *S) runRealArchiveTests(c *C, tests []realArchiveTest) {
@@ -779,4 +780,36 @@ func (s *S) testOpenArchiveArch(c *C, test realArchiveTest, arch string) {
 	c.Assert(err, IsNil)
 
 	s.checkArchitecture(c, arch, filepath.Join(extractDir, "binary"))
+}
+
+func (s *S) testProArchiveBadCreds(c *C) {
+	c.Logf("Cannot fetch Pro packages with bad credentials")
+
+	credsDir := c.MkDir()
+	restore := fakeEnv("CHISEL_AUTH_DIR", credsDir)
+	defer restore()
+
+	confFile := filepath.Join(credsDir, "credentials")
+	contents := "machine esm.ubuntu.com/fips/ubuntu/ login bearer password invalid"
+	err := os.WriteFile(confFile, []byte(contents), 0600)
+	c.Assert(err, IsNil)
+
+	options := archive.Options{
+		Label:      "ubuntu",
+		Version:    "20.04",
+		Arch:       "amd64",
+		Suites:     []string{"focal"},
+		Components: []string{"main"},
+		CacheDir:   c.MkDir(),
+		Pro:        "fips",
+		PubKeys:    []*packet.PublicKey{keyUbuntuFIPSv1.PubKey},
+	}
+
+	// The archive can be "opened" without any credentials since the dists/ path
+	// containing InRelease files, does not require any credentials.
+	testArchive, err := archive.Open(&options)
+	c.Assert(err, IsNil)
+
+	_, _, err = testArchive.Fetch("openssh-client")
+	c.Assert(err, ErrorMatches, `cannot find archive data`)
 }
