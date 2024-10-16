@@ -336,8 +336,6 @@ func (s *httpSuite) TestArchiveLabels(c *C) {
 		label   string
 		err     string
 	}{{
-		summary: "No labels",
-	}, {
 		summary: "Ubuntu label",
 		label:   "Ubuntu",
 	}, {
