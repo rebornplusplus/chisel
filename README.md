@@ -84,8 +84,7 @@ archives:
 ...
 ```
 
-The archive URLs are hardcoded and varies based on the `pro` value. Chisel
-currently supports the following Pro archives:
+Chisel currently supports the following Pro archives:
 
 | `pro` value | Archive URL | Related Ubuntu Pro service |
 | - | - | - |
@@ -94,12 +93,13 @@ currently supports the following Pro archives:
 | apps         | https://esm.ubuntu.com/apps/ubuntu         | esm-apps     |
 | infra        | https://esm.ubuntu.com/infra/ubuntu        | esm-infra    |
 
-Since Pro archives require authentication, Chisel will support using credentials
-from the `/etc/apt/auth.conf.d/` directory. This means chiselling from a Pro
-archive is only possible if the host is also Pro (or equipped with the Pro
-credentials). The default credentials directory - `/etc/apt/auth.conf.d/` - can
-be configured by setting the environment variable `CHISEL_AUTH_DIR`. Chisel must
-have read permission for the necessary credentials files.
+Authentication to Pro archives requires that the host is Pro or it is equipped
+with the Pro credentials.
+
+By default, Chisel will support using credentials from the
+`/etc/apt/auth.conf.d/` directory, but this location can be configured using the
+environment variable `CHISEL_AUTH_DIR`. Note that Chisel must have read
+permission for the necessary credentials files.
 
 The format of these files is documented in the
 [apt_auth.conf(5)](https://manpages.debian.org/testing/apt/apt_auth.conf.5.en.html)
@@ -110,9 +110,6 @@ file from a host with the `fips-updates` and `infra` archives enabled:
 machine esm.ubuntu.com/infra/ubuntu/ login bearer password <infra-token>
 machine esm.ubuntu.com/fips-updates/ubuntu/ login bearer password <fips-updates-token>
 ```
-
-_Note that the strings <infra-bearer-token> and <fips-updates-bearer-token> are
-just placeholders for real bearer tokens._
 
 ## Reference
 
