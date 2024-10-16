@@ -404,14 +404,14 @@ func (s *httpSuite) TestProArchives(c *C) {
 
 	for pro, info := range archive.ProArchiveInfo {
 		s.base = info.BaseURL
-		s.prepareArchiveAdjustRelease("jammy", "22.04", "amd64", []string{"main", "universe"}, setLabel(info.Label))
+		s.prepareArchiveAdjustRelease("focal", "20.04", "amd64", []string{"main"}, setLabel(info.Label))
 
 		options := archive.Options{
 			Label:      "ubuntu",
-			Version:    "22.04",
+			Version:    "20.04",
 			Arch:       "amd64",
-			Suites:     []string{"jammy"},
-			Components: []string{"main", "universe"},
+			Suites:     []string{"focal"},
+			Components: []string{"main"},
 			CacheDir:   c.MkDir(),
 			Pro:        pro,
 			PubKeys:    []*packet.PublicKey{s.pubKey},
@@ -431,20 +431,56 @@ func (s *httpSuite) TestProArchives(c *C) {
 	defer restoreDo()
 
 	s.base = "http://archive.ubuntu.com/ubuntu/"
-	s.prepareArchive("jammy", "22.04", "amd64", []string{"main", "universe"})
+	s.prepareArchive("focal", "20.04", "amd64", []string{"main"})
 
 	options := archive.Options{
 		Label:      "ubuntu",
-		Version:    "22.04",
+		Version:    "20.04",
 		Arch:       "amd64",
-		Suites:     []string{"jammy"},
-		Components: []string{"main", "universe"},
+		Suites:     []string{"focal"},
+		Components: []string{"main"},
 		CacheDir:   c.MkDir(),
 		PubKeys:    []*packet.PublicKey{s.pubKey},
 	}
 
 	_, err = archive.Open(&options)
 	c.Assert(err, IsNil)
+
+	// Test Pro archives with bad credentials.
+	do = func(req *http.Request) (*http.Response, error) {
+		_, ok := req.Header["Authorization"]
+		c.Assert(ok, Equals, true)
+		if strings.Contains(req.URL.String(), "/pool/") {
+			s.status = 401
+		} else {
+			s.status = 200
+		}
+		return s.Do(req)
+	}
+	restoreDo = archive.FakeDo(do)
+	defer restoreDo()
+
+	for pro, info := range archive.ProArchiveInfo {
+		s.base = info.BaseURL
+		s.prepareArchiveAdjustRelease("focal", "20.04", "amd64", []string{"main"}, setLabel(info.Label))
+
+		options := archive.Options{
+			Label:      "ubuntu",
+			Version:    "20.04",
+			Arch:       "amd64",
+			Suites:     []string{"focal"},
+			Components: []string{"main"},
+			CacheDir:   c.MkDir(),
+			Pro:        pro,
+			PubKeys:    []*packet.PublicKey{s.pubKey},
+		}
+
+		testArchive, err := archive.Open(&options)
+		c.Assert(err, IsNil)
+
+		_, _, err = testArchive.Fetch("mypkg1")
+		c.Assert(err, ErrorMatches, `cannot fetch from .*: authorization required`)
+	}
 }
 
 type verifyArchiveReleaseTest struct {
@@ -569,12 +605,12 @@ func (s *S) TestRealArchive(c *C) {
 	s.runRealArchiveTests(c, realArchiveTests)
 }
 
-func (s *S) TestProArchives(c *C) {
+func (s *S) TestRealProArchives(c *C) {
 	if !*proArchiveFlag {
 		c.Skip("--real-pro-archive not provided")
 	}
 	s.runRealArchiveTests(c, proArchiveTests)
-	s.testProArchiveBadCreds(c)
+	s.testRealProArchiveBadCreds(c)
 }
 
 func (s *S) runRealArchiveTests(c *C, tests []realArchiveTest) {
@@ -782,7 +818,7 @@ func (s *S) testOpenArchiveArch(c *C, test realArchiveTest, arch string) {
 	s.checkArchitecture(c, arch, filepath.Join(extractDir, "binary"))
 }
 
-func (s *S) testProArchiveBadCreds(c *C) {
+func (s *S) testRealProArchiveBadCreds(c *C) {
 	c.Logf("Cannot fetch Pro packages with bad credentials")
 
 	credsDir := c.MkDir()
@@ -811,5 +847,5 @@ func (s *S) testProArchiveBadCreds(c *C) {
 	c.Assert(err, IsNil)
 
 	_, _, err = testArchive.Fetch("openssh-client")
-	c.Assert(err, ErrorMatches, `cannot find archive data`)
+	c.Assert(err, ErrorMatches, `cannot fetch from .*: authorization required`)
 }

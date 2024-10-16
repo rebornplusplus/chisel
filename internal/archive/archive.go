@@ -394,7 +394,9 @@ func (index *ubuntuIndex) fetch(suffix, digest string, flags fetchFlags) (io.Rea
 	switch resp.StatusCode {
 	case 200:
 		// ok
-	case 401, 404:
+	case 401:
+		return nil, fmt.Errorf("cannot fetch from %s: authorization required", index.archive.baseURL)
+	case 404:
 		return nil, fmt.Errorf("cannot find archive data")
 	default:
 		return nil, fmt.Errorf("error from archive: %v", resp.Status)
