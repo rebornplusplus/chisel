@@ -190,7 +190,7 @@ var optionErrorTests = []optionErrorTest{{
 		Components: []string{"main", "other"},
 		Pro:        "invalid",
 	},
-	error: `invalid pro value: "invalid"`,
+	error: `archive options has invalid pro value: "invalid"`,
 }}
 
 func (s *httpSuite) TestOptionErrors(c *C) {

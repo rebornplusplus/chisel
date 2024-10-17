@@ -196,7 +196,7 @@ func openUbuntu(options *Options) (Archive, error) {
 	}
 	if options.Pro != "" {
 		if _, ok := proArchiveInfo[options.Pro]; !ok {
-			return nil, fmt.Errorf("invalid pro value: %q", options.Pro)
+			return nil, fmt.Errorf("archive options has invalid pro value: %q", options.Pro)
 		}
 	}
 
