@@ -173,7 +173,7 @@ var proArchiveInfo = map[string]struct {
 }
 
 // archiveURL returns the archive base URL depending on the "pro" value and
-// selected architecture "arch". The "pro" value must be pre-validated.
+// selected architecture "arch".
 func archiveURL(pro, arch string) string {
 	if pro != "" {
 		return proArchiveInfo[pro].BaseURL
@@ -193,6 +193,11 @@ func openUbuntu(options *Options) (Archive, error) {
 	}
 	if len(options.Version) == 0 {
 		return nil, fmt.Errorf("archive options missing version")
+	}
+	if options.Pro != "" {
+		if _, ok := proArchiveInfo[options.Pro]; !ok {
+			return nil, fmt.Errorf("invalid pro value: %q", options.Pro)
+		}
 	}
 
 	baseURL := archiveURL(options.Pro, options.Arch)

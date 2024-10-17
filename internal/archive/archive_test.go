@@ -181,6 +181,16 @@ var optionErrorTests = []optionErrorTest{{
 		Components: []string{"main", "other"},
 	},
 	error: `invalid package architecture: foo`,
+}, {
+	options: archive.Options{
+		Label:      "ubuntu",
+		Version:    "22.04",
+		Arch:       "amd64",
+		Suites:     []string{"jammy"},
+		Components: []string{"main", "other"},
+		Pro:        "invalid",
+	},
+	error: `invalid pro value: "invalid"`,
 }}
 
 func (s *httpSuite) TestOptionErrors(c *C) {
