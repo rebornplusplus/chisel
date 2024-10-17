@@ -94,14 +94,12 @@ Chisel currently supports the following Pro archives:
 | infra        | https://esm.ubuntu.com/infra/ubuntu        | esm-infra    |
 
 Authentication to Pro archives requires that the host is Pro or it is equipped
-with the Pro credentials.
+with the Pro credentials.  By default, Chisel will support using credentials
+from the `/etc/apt/auth.conf.d/` directory, but this location can be configured
+using the environment variable `CHISEL_AUTH_DIR`. Note that Chisel must have
+read permission for the necessary credentials files.
 
-By default, Chisel will support using credentials from the
-`/etc/apt/auth.conf.d/` directory, but this location can be configured using the
-environment variable `CHISEL_AUTH_DIR`. Note that Chisel must have read
-permission for the necessary credentials files.
-
-The format of these files is documented in the
+The format of the files is documented in the
 [apt_auth.conf(5)](https://manpages.debian.org/testing/apt/apt_auth.conf.5.en.html)
 man page. Below is a snippet of the `/etc/apt/auth.conf.d/90ubuntu-advantage`
 file from a host with the `fips-updates` and `infra` archives enabled:

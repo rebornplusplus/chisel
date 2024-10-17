@@ -627,10 +627,10 @@ func (s *S) runRealArchiveTests(c *C, tests []realArchiveTest) {
 		allArch = append(allArch, arch)
 	}
 	for _, test := range tests {
-		if len(test.architectures) == 0 {
-			test.architectures = allArch
+		if len(test.archs) == 0 {
+			test.archs = allArch
 		}
-		for _, arch := range test.architectures {
+		for _, arch := range test.archs {
 			s.testOpenArchiveArch(c, test, arch)
 		}
 	}
@@ -643,7 +643,7 @@ type realArchiveTest struct {
 	components     []string
 	pro            string
 	archivePubKeys []*packet.PublicKey
-	architectures  []string
+	archs          []string
 	pkg            string
 	path           string
 }
@@ -681,7 +681,7 @@ var proArchiveTests = []realArchiveTest{{
 	components:     []string{"main"},
 	pro:            "fips",
 	archivePubKeys: []*packet.PublicKey{keyUbuntuFIPSv1.PubKey},
-	architectures:  []string{"amd64"},
+	archs:          []string{"amd64"},
 	pkg:            "openssh-client",
 	path:           "/usr/bin/ssh",
 }, {
@@ -691,7 +691,7 @@ var proArchiveTests = []realArchiveTest{{
 	components:     []string{"main"},
 	pro:            "fips-updates",
 	archivePubKeys: []*packet.PublicKey{keyUbuntuFIPSv1.PubKey},
-	architectures:  []string{"amd64"},
+	archs:          []string{"amd64"},
 	pkg:            "openssh-client",
 	path:           "/usr/bin/ssh",
 }, {
@@ -701,7 +701,7 @@ var proArchiveTests = []realArchiveTest{{
 	components:     []string{"main"},
 	pro:            "apps",
 	archivePubKeys: []*packet.PublicKey{keyUbuntuApps.PubKey},
-	architectures:  []string{"amd64"},
+	archs:          []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
 }, {
@@ -711,7 +711,7 @@ var proArchiveTests = []realArchiveTest{{
 	components:     []string{"main"},
 	pro:            "infra",
 	archivePubKeys: []*packet.PublicKey{keyUbuntuESMv2.PubKey},
-	architectures:  []string{"amd64"},
+	archs:          []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
 }, {
@@ -721,7 +721,7 @@ var proArchiveTests = []realArchiveTest{{
 	components:     []string{"main"},
 	pro:            "fips-updates",
 	archivePubKeys: []*packet.PublicKey{keyUbuntuFIPSv1.PubKey},
-	architectures:  []string{"amd64"},
+	archs:          []string{"amd64"},
 	pkg:            "openssh-client",
 	path:           "/usr/bin/ssh",
 }, {
@@ -731,7 +731,7 @@ var proArchiveTests = []realArchiveTest{{
 	components:     []string{"main"},
 	pro:            "apps",
 	archivePubKeys: []*packet.PublicKey{keyUbuntuApps.PubKey},
-	architectures:  []string{"amd64"},
+	archs:          []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
 }, {
@@ -741,7 +741,7 @@ var proArchiveTests = []realArchiveTest{{
 	components:     []string{"main"},
 	pro:            "infra",
 	archivePubKeys: []*packet.PublicKey{keyUbuntuESMv2.PubKey},
-	architectures:  []string{"amd64"},
+	archs:          []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
 }, {
@@ -751,7 +751,7 @@ var proArchiveTests = []realArchiveTest{{
 	components:     []string{"main"},
 	pro:            "apps",
 	archivePubKeys: []*packet.PublicKey{keyUbuntuApps.PubKey},
-	architectures:  []string{"amd64"},
+	archs:          []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
 }, {
@@ -761,7 +761,7 @@ var proArchiveTests = []realArchiveTest{{
 	components:     []string{"main"},
 	pro:            "infra",
 	archivePubKeys: []*packet.PublicKey{keyUbuntuESMv2.PubKey},
-	architectures:  []string{"amd64"},
+	archs:          []string{"amd64"},
 	pkg:            "hello",
 	path:           "/usr/bin/hello",
 }}

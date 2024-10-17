@@ -75,7 +75,6 @@ jobs:
           # other services, add the credentials back.
           sudo pro enable fips --assume-yes
           sudo cp /etc/apt/auth.conf.d/90ubuntu-advantage /etc/apt/auth.conf.d/90ubuntu-advantage.fips-creds
-
           # This will disable the fips service.
           sudo pro enable fips-updates esm-apps esm-infra --assume-yes
           # Add the fips credentials back.
