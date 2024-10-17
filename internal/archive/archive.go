@@ -395,7 +395,7 @@ func (index *ubuntuIndex) fetch(suffix, digest string, flags fetchFlags) (io.Rea
 	case 200:
 		// ok
 	case 401:
-		return nil, fmt.Errorf("cannot fetch from %q: authorization required", index.label)
+		return nil, fmt.Errorf("cannot fetch from %q: unauthorized", index.label)
 	case 404:
 		return nil, fmt.Errorf("cannot find archive data")
 	default:

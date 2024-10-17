@@ -477,7 +477,7 @@ func (s *httpSuite) TestProArchives(c *C) {
 		c.Assert(err, IsNil)
 
 		_, _, err = testArchive.Fetch("mypkg1")
-		c.Assert(err, ErrorMatches, `cannot fetch from "ubuntu": authorization required`)
+		c.Assert(err, ErrorMatches, `cannot fetch from "ubuntu": unauthorized`)
 	}
 }
 
@@ -845,5 +845,5 @@ func (s *S) testRealProArchiveBadCreds(c *C) {
 	c.Assert(err, IsNil)
 
 	_, _, err = testArchive.Fetch("openssh-client")
-	c.Assert(err, ErrorMatches, `cannot fetch from "ubuntu": authorization required`)
+	c.Assert(err, ErrorMatches, `cannot fetch from "ubuntu": unauthorized`)
 }
