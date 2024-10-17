@@ -1850,7 +1850,7 @@ var setupTests = []setupTest{{
 					version: 22.04
 					components: [main, universe]
 					suites: [jammy]
-					v1-public-keys: [test-key]
+					public-keys: [test-key]
 			public-keys:
 				test-key:
 					id: ` + testKey.ID + `
@@ -1860,7 +1860,7 @@ var setupTests = []setupTest{{
 			package: mypkg
 		`,
 	},
-	relerror: `chisel.yaml: more than one default archive: foo, bar`,
+	relerror: `chisel.yaml: more than one default archive: bar, foo`,
 }}
 
 var defaultChiselYaml = `

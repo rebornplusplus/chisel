@@ -549,7 +549,6 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 
 	// For compatibility if there is a default archive set and priorities are
 	// not being used, we will revert back to the default archive behaviour.
-	hasDefault := false
 	hasPriority := false
 	var defaultArchive string
 	for archiveName, details := range yamlVar.Archives {
@@ -569,11 +568,13 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			continue
 		}
 		if details.Default && defaultArchive != "" {
+			if archiveName < defaultArchive {
+				archiveName, defaultArchive = defaultArchive, archiveName
+			}
 			return nil, fmt.Errorf("%s: more than one default archive: %s, %s", fileName, defaultArchive, archiveName)
 		}
 		if details.Default {
 			defaultArchive = archiveName
-			hasDefault = true
 		}
 		if len(details.PubKeys) == 0 {
 			return nil, fmt.Errorf("%s: archive %q missing public-keys field", fileName, archiveName)
@@ -602,14 +603,18 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			PubKeys:    archiveKeys,
 		}
 	}
-	if hasDefault && !hasPriority {
+	if defaultArchive != "" && !hasPriority {
 		// For compatibility with the default archive behaviour we will set
 		// negative priorities to all but the default one, which means all
 		// others will be ignored unless pinned.
-		i := -1
+		var archiveNames []string
 		for archiveName := range yamlVar.Archives {
-			release.Archives[archiveName].Priority = i
-			i--
+			archiveNames = append(archiveNames, archiveName)
+		}
+		// Make it deterministic.
+		slices.Sort(archiveNames)
+		for i, archiveName := range archiveNames {
+			release.Archives[archiveName].Priority = -i - 1
 		}
 		release.Archives[defaultArchive].Priority = 0
 	}
