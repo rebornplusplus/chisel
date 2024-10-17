@@ -1467,7 +1467,7 @@ var slicerTests = []slicerTest{{
 					contents:
 		`,
 	},
-	error: `no valid archives defined`,
+	error: `cannot find package "test-package" in archive\(s\)`,
 }}
 
 var defaultChiselYaml = `
