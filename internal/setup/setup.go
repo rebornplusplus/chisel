@@ -21,11 +21,17 @@ import (
 // Release is a collection of package slices targeting a particular
 // distribution version.
 type Release struct {
-	Path           string
-	Packages       map[string]*Package
-	Archives       map[string]*Archive
-	DefaultArchive string
+	Path     string
+	Packages map[string]*Package
+	Archives map[string]*Archive
 }
+
+const (
+	ProFIPS        = "fips"
+	ProFIPSUpdates = "fips-updates"
+	ProApps        = "apps"
+	ProInfra       = "infra"
+)
 
 // Archive is the location from which binary packages are obtained.
 type Archive struct {
@@ -33,6 +39,8 @@ type Archive struct {
 	Version    string
 	Suites     []string
 	Components []string
+	Priority   int
+	Pro        string
 	PubKeys    []*packet.PublicKey
 }
 
@@ -229,6 +237,28 @@ func (r *Release) validate() error {
 		return err
 	}
 
+	// Check for archive priority conflicts.
+	priorities := make(map[int]*Archive)
+	for _, archive := range r.Archives {
+		if old, ok := priorities[archive.Priority]; ok {
+			if old.Name > archive.Name {
+				archive, old = old, archive
+			}
+			return fmt.Errorf("chisel.yaml: archives %q and %q have the same priority value of %d", old.Name, archive.Name, archive.Priority)
+		}
+		priorities[archive.Priority] = archive
+	}
+
+	// Check that archives pinned in packages are defined.
+	for _, pkg := range r.Packages {
+		if pkg.Archive == "" {
+			continue
+		}
+		if _, ok := r.Archives[pkg.Archive]; !ok {
+			return fmt.Errorf("%s: package refers to undefined archive %q", pkg.Path, pkg.Archive)
+		}
+	}
+
 	return nil
 }
 
@@ -355,9 +385,6 @@ func readSlices(release *Release, baseDir, dirName string) error {
 		if err != nil {
 			return err
 		}
-		if pkg.Archive == "" {
-			pkg.Archive = release.DefaultArchive
-		}
 
 		release.Packages[pkg.Name] = pkg
 	}
@@ -370,10 +397,17 @@ type yamlRelease struct {
 	PubKeys  map[string]yamlPubKey  `yaml:"public-keys"`
 }
 
+const (
+	MaxArchivePriority = 1000
+	MinArchivePriority = -1000
+)
+
 type yamlArchive struct {
 	Version    string   `yaml:"version"`
 	Suites     []string `yaml:"suites"`
 	Components []string `yaml:"components"`
+	Priority   int      `yaml:"priority"`
+	Pro        string   `yaml:"pro"`
 	Default    bool     `yaml:"default"`
 	PubKeys    []string `yaml:"public-keys"`
 }
@@ -477,13 +511,6 @@ type yamlPubKey struct {
 	Armor string `yaml:"armor"`
 }
 
-var ubuntuAdjectives = map[string]string{
-	"18.04": "bionic",
-	"20.04": "focal",
-	"22.04": "jammy",
-	"22.10": "kinetic",
-}
-
 func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 	release := &Release{
 		Path:     baseDir,
@@ -520,27 +547,34 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		pubKeys[keyName] = key
 	}
 
+	// For compatibility if there is a default archive set and priorities are
+	// not being used, we will revert back to the default archive behaviour.
+	hasPriority := false
+	var defaultArchive string
 	for archiveName, details := range yamlVar.Archives {
 		if details.Version == "" {
 			return nil, fmt.Errorf("%s: archive %q missing version field", fileName, archiveName)
 		}
 		if len(details.Suites) == 0 {
-			adjective := ubuntuAdjectives[details.Version]
-			if adjective == "" {
-				return nil, fmt.Errorf("%s: archive %q missing suites field", fileName, archiveName)
-			}
-			details.Suites = []string{adjective}
+			return nil, fmt.Errorf("%s: archive %q missing suites field", fileName, archiveName)
 		}
 		if len(details.Components) == 0 {
 			return nil, fmt.Errorf("%s: archive %q missing components field", fileName, archiveName)
 		}
-		if len(yamlVar.Archives) == 1 {
-			details.Default = true
-		} else if details.Default && release.DefaultArchive != "" {
-			return nil, fmt.Errorf("%s: more than one default archive: %s, %s", fileName, release.DefaultArchive, archiveName)
+		switch details.Pro {
+		case "", ProApps, ProFIPS, ProFIPSUpdates, ProInfra:
+		default:
+			logf("Ignoring archive %q (invalid pro value: %q)...", archiveName, details.Pro)
+			continue
+		}
+		if details.Default && defaultArchive != "" {
+			if archiveName < defaultArchive {
+				archiveName, defaultArchive = defaultArchive, archiveName
+			}
+			return nil, fmt.Errorf("%s: more than one default archive: %s, %s", fileName, defaultArchive, archiveName)
 		}
 		if details.Default {
-			release.DefaultArchive = archiveName
+			defaultArchive = archiveName
 		}
 		if len(details.PubKeys) == 0 {
 			return nil, fmt.Errorf("%s: archive %q missing public-keys field", fileName, archiveName)
@@ -553,13 +587,36 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			}
 			archiveKeys = append(archiveKeys, key)
 		}
+		if details.Priority > MaxArchivePriority || details.Priority < MinArchivePriority {
+			return nil, fmt.Errorf("%s: archive %q has invalid priority value of %d", fileName, archiveName, details.Priority)
+		}
+		if details.Priority != 0 {
+			hasPriority = true
+		}
 		release.Archives[archiveName] = &Archive{
 			Name:       archiveName,
 			Version:    details.Version,
 			Suites:     details.Suites,
 			Components: details.Components,
+			Pro:        details.Pro,
+			Priority:   details.Priority,
 			PubKeys:    archiveKeys,
 		}
+	}
+	if defaultArchive != "" && !hasPriority {
+		// For compatibility with the default archive behaviour we will set
+		// negative priorities to all but the default one, which means all
+		// others will be ignored unless pinned.
+		var archiveNames []string
+		for archiveName := range yamlVar.Archives {
+			archiveNames = append(archiveNames, archiveName)
+		}
+		// Make it deterministic.
+		slices.Sort(archiveNames)
+		for i, archiveName := range archiveNames {
+			release.Archives[archiveName].Priority = -i - 1
+		}
+		release.Archives[defaultArchive].Priority = 0
 	}
 
 	return release, err
