@@ -1,5 +1,3 @@
-// This file contains the YAML-specific logic needed to support setup.go.
-
 package setup
 
 import (
