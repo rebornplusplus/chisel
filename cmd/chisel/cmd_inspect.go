@@ -119,6 +119,7 @@ func (cmd *cmdInspect) showCoverage(opts *inspect.CoverageOptions) error {
 			}
 			pkgPaths[attr.Package] = append(pkgPaths[attr.Package], path)
 		}
+		slices.Sort(pkgs)
 		var paths []string
 		for _, pkg := range pkgs {
 			slices.Sort(pkgPaths[pkg])
