@@ -15,10 +15,9 @@ import (
 // Release is a collection of package slices targeting a particular
 // distribution version.
 type Release struct {
-	Path           string
-	Packages       map[string]*Package
-	Archives       map[string]*Archive
-	DefaultArchive string
+	Path     string
+	Packages map[string]*Package
+	Archives map[string]*Archive
 }
 
 // Archive is the location from which binary packages are obtained.
@@ -27,6 +26,7 @@ type Archive struct {
 	Version    string
 	Suites     []string
 	Components []string
+	Priority   int
 	PubKeys    []*packet.PublicKey
 }
 
@@ -217,6 +217,28 @@ func (r *Release) validate() error {
 		return err
 	}
 
+	// Check for archive priority conflicts.
+	priorities := make(map[int]*Archive)
+	for _, archive := range r.Archives {
+		if old, ok := priorities[archive.Priority]; ok {
+			if old.Name > archive.Name {
+				archive, old = old, archive
+			}
+			return fmt.Errorf("chisel.yaml: archives %q and %q have the same priority value of %d", old.Name, archive.Name, archive.Priority)
+		}
+		priorities[archive.Priority] = archive
+	}
+
+	// Check that archives pinned in packages are defined.
+	for _, pkg := range r.Packages {
+		if pkg.Archive == "" {
+			continue
+		}
+		if _, ok := r.Archives[pkg.Archive]; !ok {
+			return fmt.Errorf("%s: package refers to undefined archive %q", pkg.Path, pkg.Archive)
+		}
+	}
+
 	return nil
 }
 
@@ -342,9 +364,6 @@ func readSlices(release *Release, baseDir, dirName string) error {
 		pkg, err := parsePackage(baseDir, pkgName, stripBase(baseDir, pkgPath), data)
 		if err != nil {
 			return err
-		}
-		if pkg.Archive == "" {
-			pkg.Archive = release.DefaultArchive
 		}
 
 		release.Packages[pkg.Name] = pkg

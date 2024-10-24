@@ -26,10 +26,16 @@ type yamlRelease struct {
 	PubKeys  map[string]yamlPubKey  `yaml:"public-keys"`
 }
 
+const (
+	MaxArchivePriority = 1000
+	MinArchivePriority = -1000
+)
+
 type yamlArchive struct {
 	Version    string   `yaml:"version"`
 	Suites     []string `yaml:"suites"`
 	Components []string `yaml:"components"`
+	Priority   *int     `yaml:"priority"`
 	Default    bool     `yaml:"default"`
 	PubKeys    []string `yaml:"public-keys"`
 }
@@ -169,6 +175,11 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		pubKeys[keyName] = key
 	}
 
+	// For compatibility if there is a default archive set and priorities are
+	// not being used, we will revert back to the default archive behaviour.
+	hasPriority := false
+	var defaultArchive string
+	var archiveNoPriority string
 	for archiveName, details := range yamlVar.Archives {
 		if details.Version == "" {
 			return nil, fmt.Errorf("%s: archive %q missing version field", fileName, archiveName)
@@ -179,13 +190,14 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		if len(details.Components) == 0 {
 			return nil, fmt.Errorf("%s: archive %q missing components field", fileName, archiveName)
 		}
-		if len(yamlVar.Archives) == 1 {
-			details.Default = true
-		} else if details.Default && release.DefaultArchive != "" {
-			return nil, fmt.Errorf("%s: more than one default archive: %s, %s", fileName, release.DefaultArchive, archiveName)
+		if details.Default && defaultArchive != "" {
+			if archiveName < defaultArchive {
+				archiveName, defaultArchive = defaultArchive, archiveName
+			}
+			return nil, fmt.Errorf("%s: more than one default archive: %s, %s", fileName, defaultArchive, archiveName)
 		}
 		if details.Default {
-			release.DefaultArchive = archiveName
+			defaultArchive = archiveName
 		}
 		if len(details.PubKeys) == 0 {
 			return nil, fmt.Errorf("%s: archive %q missing public-keys field", fileName, archiveName)
@@ -198,13 +210,46 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 			}
 			archiveKeys = append(archiveKeys, key)
 		}
+		priority := 0
+		if details.Priority != nil {
+			hasPriority = true
+			priority = *details.Priority
+			if priority > MaxArchivePriority || priority < MinArchivePriority || priority == 0 {
+				return nil, fmt.Errorf("%s: archive %q has invalid priority value of %d", fileName, archiveName, priority)
+			}
+		} else {
+			if archiveNoPriority == "" || archiveName < archiveNoPriority {
+				// Make it deterministic.
+				archiveNoPriority = archiveName
+			}
+		}
 		release.Archives[archiveName] = &Archive{
 			Name:       archiveName,
 			Version:    details.Version,
 			Suites:     details.Suites,
 			Components: details.Components,
+			Priority:   priority,
 			PubKeys:    archiveKeys,
 		}
+	}
+	if (hasPriority && archiveNoPriority != "") ||
+		(!hasPriority && defaultArchive == "" && len(yamlVar.Archives) > 1) {
+		return nil, fmt.Errorf("%s: archive %q is missing the priority setting", fileName, archiveNoPriority)
+	}
+	if defaultArchive != "" && !hasPriority {
+		// For compatibility with the default archive behaviour we will set
+		// negative priorities to all but the default one, which means all
+		// others will be ignored unless pinned.
+		var archiveNames []string
+		for archiveName := range yamlVar.Archives {
+			archiveNames = append(archiveNames, archiveName)
+		}
+		// Make it deterministic.
+		slices.Sort(archiveNames)
+		for i, archiveName := range archiveNames {
+			release.Archives[archiveName].Priority = -i - 1
+		}
+		release.Archives[defaultArchive].Priority = 1
 	}
 
 	return release, err
