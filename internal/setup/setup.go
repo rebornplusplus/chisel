@@ -24,6 +24,8 @@ type Release struct {
 	Path     string
 	Packages map[string]*Package
 	Archives map[string]*Archive
+	// Conflicts holds info about resolved path conflicts.
+	Conflicts map[string]*ConflictResolution
 }
 
 // Archive is the location from which binary packages are obtained.
@@ -100,6 +102,10 @@ type PathInfo struct {
 	Until    PathUntil
 	Arch     []string
 	Generate GenerateKind
+
+	// The "prefer" property is used in non-glob paths to resolve conflicting
+	// definitions across packages.
+	Prefer string
 }
 
 // SameContent returns whether the path has the same content properties as some
@@ -111,7 +117,8 @@ func (pi *PathInfo) SameContent(other *PathInfo) bool {
 		pi.Info == other.Info &&
 		pi.Mode == other.Mode &&
 		pi.Mutable == other.Mutable &&
-		pi.Generate == other.Generate)
+		pi.Generate == other.Generate &&
+		pi.Prefer == other.Prefer)
 }
 
 type SliceKey struct {
@@ -169,6 +176,7 @@ func (r *Release) validate() error {
 	// The above also means that generated content (e.g. text files, directories
 	// with make:true) will always conflict with extracted content, because we
 	// cannot validate that they are the same without downloading the package.
+	conflicts := make(map[string]*Conflict)
 	paths := make(map[string]*Slice)
 	globs := make(map[string]*Slice)
 	for _, pkg := range r.Packages {
@@ -177,16 +185,16 @@ func (r *Release) validate() error {
 			for newPath, newInfo := range new.Contents {
 				if old, ok := paths[newPath]; ok {
 					oldInfo := old.Contents[newPath]
-					if !newInfo.SameContent(&oldInfo) || (newInfo.Kind == CopyPath || newInfo.Kind == GlobPath) && new.Package != old.Package {
-						if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
-							old, new = new, old
+					if _, ok := conflicts[newPath]; !ok {
+						conflicts[newPath] = &Conflict{
+							Path:      newPath,
+							PathInfos: make(map[string]*PathInfo),
 						}
-						return fmt.Errorf("slices %s and %s conflict on %s", old, new, newPath)
 					}
-					// Note: Because for conflict resolution we only check that
-					// the created file would be the same and we know newInfo and
-					// oldInfo produce the same one, we do not have to record
-					// newInfo.
+					conflict := conflicts[newPath]
+					newInfo := newInfo
+					conflict.PathInfos[new.String()] = &newInfo
+					conflict.PathInfos[old.String()] = &oldInfo
 				} else {
 					paths[newPath] = new
 					if newInfo.Kind == GeneratePath || newInfo.Kind == GlobPath {
@@ -195,6 +203,16 @@ func (r *Release) validate() error {
 				}
 			}
 		}
+	}
+
+	// Resolve exact-path conflicts and store the resolved info.
+	r.Conflicts = make(map[string]*ConflictResolution)
+	for path, c := range conflicts {
+		res, err := ResolveConflict(c)
+		if err != nil {
+			return err
+		}
+		r.Conflicts[path] = res
 	}
 
 	// Check for glob and generate conflicts.
@@ -420,6 +438,7 @@ type yamlPath struct {
 	Until    PathUntil    `yaml:"until,omitempty"`
 	Arch     yamlArch     `yaml:"arch,omitempty"`
 	Generate GenerateKind `yaml:"generate,omitempty"`
+	Prefer   string       `yaml:"prefer,omitempty"`
 }
 
 func (yp *yamlPath) MarshalYAML() (interface{}, error) {
@@ -445,7 +464,8 @@ func (yp *yamlPath) SameContent(other *yamlPath) bool {
 		yp.Copy == other.Copy &&
 		yp.Text == other.Text &&
 		yp.Symlink == other.Symlink &&
-		yp.Mutable == other.Mutable)
+		yp.Mutable == other.Mutable &&
+		yp.Prefer == other.Prefer)
 }
 
 type yamlArch struct {
@@ -698,6 +718,7 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 			var until PathUntil
 			var arch []string
 			var generate GenerateKind
+			var prefer string
 			if yamlPath != nil && yamlPath.Generate != "" {
 				zeroPathGenerate := zeroPath
 				zeroPathGenerate.Generate = yamlPath.Generate
@@ -722,6 +743,7 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 				mode = uint(yamlPath.Mode)
 				mutable = yamlPath.Mutable
 				generate = yamlPath.Generate
+				prefer = yamlPath.Prefer
 				if yamlPath.Dir {
 					if !strings.HasSuffix(contPath, "/") {
 						return nil, fmt.Errorf("slice %s_%s path %s must end in / for 'make' to be valid",
@@ -778,6 +800,7 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 				Until:    until,
 				Arch:     arch,
 				Generate: generate,
+				Prefer:   prefer,
 			}
 		}
 
@@ -829,6 +852,9 @@ func Select(release *Release, slices []SliceKey) (*Selection, error) {
 		for newPath, newInfo := range new.Contents {
 			if old, ok := paths[newPath]; ok {
 				oldInfo := old.Contents[newPath]
+				if oldInfo.Prefer != "" || newInfo.Prefer != "" {
+					continue
+				}
 				if !newInfo.SameContent(&oldInfo) || (newInfo.Kind == CopyPath || newInfo.Kind == GlobPath) && new.Package != old.Package {
 					if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
 						old, new = new, old

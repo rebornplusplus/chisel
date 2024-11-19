@@ -89,6 +89,7 @@ var setupTests = []setupTest{{
 				Slices: map[string]*setup.Slice{},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Coverage of multiple path kinds",
@@ -160,6 +161,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Empty contents",
@@ -198,6 +200,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Cycles are detected within packages",
@@ -462,6 +465,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Conflicting globs",
@@ -667,6 +671,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Multiple architecture selection",
@@ -704,6 +709,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Text can be empty",
@@ -743,6 +749,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Multiple archives with priorities",
@@ -797,6 +804,7 @@ var setupTests = []setupTest{{
 				Slices: map[string]*setup.Slice{},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Multiple archives inconsistent use of priorities",
@@ -983,6 +991,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Archives with public keys",
@@ -1040,6 +1049,7 @@ var setupTests = []setupTest{{
 				Slices: map[string]*setup.Slice{},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Archive without public keys",
@@ -1155,6 +1165,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Very short, invalid package name",
@@ -1226,6 +1237,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Package essentials with slices from other packages",
@@ -1296,6 +1308,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Package essentials loop",
@@ -1450,6 +1463,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 	selslices: []setup.SliceKey{{"mypkg", "myslice"}},
 	selection: &setup.Selection{
@@ -1497,6 +1511,7 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 	selslices: []setup.SliceKey{{"mypkg", "myslice"}},
 	selerror:  `slice mypkg_myslice has invalid 'generate' for path /dir/\*\*: "foo"`,
@@ -1596,6 +1611,14 @@ var setupTests = []setupTest{{
 							"/path/**": {Kind: "generate", Generate: "manifest"},
 						},
 					},
+				},
+			},
+		},
+		Conflicts: map[string]*setup.ConflictResolution{
+			"/path/**": {
+				Priority: map[string]int{
+					"mypkg":  0,
+					"mypkg2": 0,
 				},
 			},
 		},
@@ -1738,6 +1761,7 @@ var setupTests = []setupTest{{
 				Slices: map[string]*setup.Slice{},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Default is ignored",
@@ -1793,6 +1817,7 @@ var setupTests = []setupTest{{
 				Slices: map[string]*setup.Slice{},
 			},
 		},
+		Conflicts: map[string]*setup.ConflictResolution{},
 	},
 }, {
 	summary: "Multiple default archives",
@@ -1822,6 +1847,108 @@ var setupTests = []setupTest{{
 		`,
 	},
 	relerror: `chisel.yaml: more than one default archive: bar, foo`,
+}, {
+	summary: `Path with "prefer" keyword`,
+	input: map[string]string{
+		"slices/mydir/mypkg1.yaml": `
+			package: mypkg1
+			slices:
+				myslice:
+					contents:
+						/file: {prefer: mypkg2}
+		`,
+		"slices/mydir/mypkg2.yaml": `
+			package: mypkg2
+			slices:
+				myslice:
+					contents:
+						/file:
+		`,
+	},
+	release: &setup.Release{
+		Archives: map[string]*setup.Archive{
+			"ubuntu": {
+				Name:       "ubuntu",
+				Version:    "22.04",
+				Suites:     []string{"jammy"},
+				Components: []string{"main", "universe"},
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+		},
+		Packages: map[string]*setup.Package{
+			"mypkg1": {
+				Name: "mypkg1",
+				Path: "slices/mydir/mypkg1.yaml",
+				Slices: map[string]*setup.Slice{
+					"myslice": {
+						Package: "mypkg1",
+						Name:    "myslice",
+						Contents: map[string]setup.PathInfo{
+							"/file": {Kind: "copy", Prefer: "mypkg2"},
+						},
+					},
+				},
+			},
+			"mypkg2": {
+				Name: "mypkg2",
+				Path: "slices/mydir/mypkg2.yaml",
+				Slices: map[string]*setup.Slice{
+					"myslice": {
+						Package: "mypkg2",
+						Name:    "myslice",
+						Contents: map[string]setup.PathInfo{
+							"/file": {Kind: "copy"},
+						},
+					},
+				},
+			},
+		},
+		Conflicts: map[string]*setup.ConflictResolution{
+			"/file": {
+				Priority: map[string]int{
+					"mypkg1": 0,
+					"mypkg2": 1,
+				},
+			},
+		},
+	},
+}, {
+	summary: `Globs conflict with "prefer" paths`,
+	input: map[string]string{
+		"slices/mydir/mypkg1.yaml": `
+			package: mypkg1
+			slices:
+				myslice:
+					contents:
+						/file: {prefer: mypkg2}
+		`,
+		"slices/mydir/mypkg2.yaml": `
+			package: mypkg2
+			slices:
+				myslice:
+					contents:
+						/file*:
+		`,
+	},
+	relerror: `slices mypkg1_myslice and mypkg2_myslice conflict on /file and /file\*`,
+}, {
+	summary: `Cannot use "prefer" with globs`,
+	input: map[string]string{
+		"slices/mydir/mypkg1.yaml": `
+			package: mypkg1
+			slices:
+				myslice:
+					contents:
+						/file*: {prefer: mypkg2}
+		`,
+	},
+	relerror: `slice mypkg1_myslice path /file\* has invalid wildcard options`,
+	// More tests with "prefer":
+	//   - "prefer" cannot specify own package.
+	// 	 - "prefer" specifying a package that does not exist.
+	//   - "prefer" cycle.
+	//   - bad "prefer" graph.
+	//   - ...
 }}
 
 var defaultChiselYaml = `
