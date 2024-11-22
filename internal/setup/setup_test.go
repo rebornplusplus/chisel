@@ -2240,3 +2240,49 @@ func (s *S) TestParseSliceKey(c *C) {
 		c.Assert(key, DeepEquals, test.expected)
 	}
 }
+
+var yamlPathTests = []struct {
+	path1, path2 string
+	areSame      bool
+}{{
+	path1:   "{copy: foo, mutable: true, arch: [amd64]}",
+	path2:   "{copy: foo, mutable: true, arch: [amd64]}",
+	areSame: true,
+}, {
+	path1:   "{make: true, mode: 0755}",
+	path2:   "{make: true, mode: 0755}",
+	areSame: true,
+}, {
+	path1:   "{symlink: foo}",
+	path2:   "{symlink: foo}",
+	areSame: true,
+}, {
+	path1:   "{generate: manifest}",
+	path2:   "{generate: manifest}",
+	areSame: true,
+}, {
+	// "until" is not checked.
+	path1:   "{copy: foo, mutable: true, until: mutate}",
+	path2:   "{copy: foo, mutable: true}",
+	areSame: true,
+}, {
+	// Although "text" strings are equal, they do not produce the same pointer.
+	path1:   "{text: foo}",
+	path2:   "{text: foo}",
+	areSame: false,
+}, {
+	// Empty text produces nil pointers.
+	path1:   "{text: }",
+	path2:   "{text: }",
+	areSame: true,
+}}
+
+func (s *S) TestYAMLPathSameContent(c *C) {
+	for _, test := range yamlPathTests {
+		path1 := &setup.YAMLPath{Path: test.path1}
+		path2 := &setup.YAMLPath{Path: test.path2}
+		areSame, err := path1.SameContent(path2)
+		c.Assert(err, IsNil)
+		c.Assert(areSame, Equals, test.areSame)
+	}
+}
