@@ -1,23 +1,19 @@
-# Starter pack
+# Chisel
 
-**A single sentence that says what the product is, succinctly and memorably.**
-Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-dolore magna aliqua.
+**Chisel** is a tool for carving and cutting Debian packages.
 
-**A paragraph of one to three short sentences, that describe what the product
-does.** Urna cursus eget nunc scelerisque viverra mauris in. Nibh mauris
-cursus mattis molestie a iaculis at vestibulum rhoncus est pellentesque
-elit. Diam phasellus vestibulum lorem sed.
+It can derive a minimal Ubuntu-like Linux distribution using a release
+database that defines "slices" of Debian packages. Slices enable users to
+cherry-pick just the files they need from the Ubuntu archives, and combine them
+to create a new root file system which can be packaged.
 
-**A third paragraph of similar length, this time explaining what need the
-product meets.** Dui ut ornare lectus sit amet est. Nunc sed augue lacus
-viverra vitae congue eu consequat ac libero id faucibus nisl tincidunt eget
-nullam.
+If you need a way to create a minimal root file system based on Ubuntu
+packages, Chisel might be for you. It handles package slice dependency,
+fetching Ubuntu Pro packages, and allows you to create a fully operational but
+minimal root file system for your application.
 
-**Finally, a paragraph that describes whom the product is useful for.** Nunc
-non blandit massa enim nec dui nunc mattis enim. Ornare arcu odio ut sem
-nulla pharetra diam porttitor leo a diam sollicitudin tempor id eu. Ipsum
-dolor sit amet consectetur adipiscing elit pellentesque habitant.
+Chisel is particularly useful for developers who are creating minimal
+containers such as {{Rocks}}, or {{Docker}} images.
 
 ---------
 
@@ -25,12 +21,12 @@ dolor sit amet consectetur adipiscing elit pellentesque habitant.
 
 ````{grid} 1 1 2 2
 
-```{grid-item-card} [Tutorials](index)
+```{grid-item-card} [Tutorial](tutorial/getting-started)
 
-**Start here**: a hands-on introduction to Example Product for new users
+**Start here**: a hands-on introduction to Chisel for new users
 ```
 
-```{grid-item-card} [How-to guides](index)
+```{grid-item-card} [How-to guides](how-to/index)
 
 **Step-by-step guides** covering key operations and common tasks
 ```
@@ -40,12 +36,12 @@ dolor sit amet consectetur adipiscing elit pellentesque habitant.
 ````{grid} 1 1 2 2
 :reverse:
 
-```{grid-item-card} [Reference](index)
+```{grid-item-card} [Reference](reference/index)
 
-**Technical information** - specifications, APIs, architecture
+**Technical information** - specifications, syntax, architecture
 ```
 
-```{grid-item-card} [Explanations](index)
+```{grid-item-card} [Explanations](explanation/index)
 
 **Discussion and clarification** of key topics
 ```
@@ -56,37 +52,20 @@ dolor sit amet consectetur adipiscing elit pellentesque habitant.
 
 ## Project and community
 
-Example Project is a member of the Ubuntu family. It’s an open source project that warmly welcomes community projects, contributions, suggestions, fixes and constructive feedback.
+Chisel is free software and released under {{AGPL3}}.
 
-* Code of conduct
-* Get support
-* Join our online chat
-* Contribute
-* Roadmap
-* Thinking about using Example Product for your next project? Get in touch!
+The Chisel project is sponsored by {{Canonical}}.
 
-(a_section_target_myst)=
-## Links
+- [Code of conduct](https://ubuntu.com/community/ethos/code-of-conduct)
+- [Contribute](https://github.com/canonical/chisel)
 
-- [Canonical website](https://canonical.com/)
-- {ref}`a_section_target_myst`
-- {doc}`index`
-- {doc}`Link text <index>`
-
-````{tabs}
-```{group-tab} Tab 1
-
-Content Tab 1
-```
-
-```{group-tab} Tab 2
-Content Tab 2
-```
-````
 
 ```{toctree}
 :hidden:
 :maxdepth: 2
 
-self
+Tutorial <tutorial/getting-started>
+how-to/index
+explanation/index
+reference/index
 ```
