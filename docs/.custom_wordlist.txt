@@ -1,0 +1,5 @@
+AGPL
+Levenshtein
+Subcommands
+subcommand
+subcommands
