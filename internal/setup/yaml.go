@@ -25,6 +25,17 @@ type yamlRelease struct {
 	Format   string                 `yaml:"format"`
 	Archives map[string]yamlArchive `yaml:"archives"`
 	PubKeys  map[string]yamlPubKey  `yaml:"public-keys"`
+	// "v2-archives" defines the archives, same as "archives". It is added to
+	// define Ubuntu Pro archives in chisel-releases with "pro" and "priority"
+	// fields (see #160 and #167), while supporting Chisel<=v1.0.0 and
+	// chisel-releases "format"<=v1. Since Chisel ignores unknown fields,
+	// archives defined in "v2-archives" will be ignored by v1.0.0 but picked up
+	// by later versions.
+	// Note that the archive definitions in "archives" and "v2-archives" are
+	// merged together while parsing. (See parseRelease.)
+	// TODO deprecate this field once both Chisel v1.0.0 and chisel-releases v1
+	// are unsupported.
+	V2Archives map[string]yamlArchive `yaml:"v2-archives"`
 }
 
 const (
@@ -161,7 +172,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 	if yamlVar.Format != "v1" {
 		return nil, fmt.Errorf("%s: unknown format %q", fileName, yamlVar.Format)
 	}
-	if len(yamlVar.Archives) == 0 {
+	if len(yamlVar.Archives)+len(yamlVar.V2Archives) == 0 {
 		return nil, fmt.Errorf("%s: no archives defined", fileName)
 	}
 
@@ -178,12 +189,24 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		pubKeys[keyName] = key
 	}
 
+	// Merge all archive definitions.
+	yamlArchives := make(map[string]yamlArchive, len(yamlVar.Archives)+len(yamlVar.V2Archives))
+	for archiveName, details := range yamlVar.Archives {
+		yamlArchives[archiveName] = details
+	}
+	for archiveName, details := range yamlVar.V2Archives {
+		if _, ok := yamlArchives[archiveName]; ok {
+			return nil, fmt.Errorf("%s: archive %q defined twice", fileName, archiveName)
+		}
+		yamlArchives[archiveName] = details
+	}
+
 	// For compatibility if there is a default archive set and priorities are
 	// not being used, we will revert back to the default archive behaviour.
 	hasPriority := false
 	var defaultArchive string
 	var archiveNoPriority string
-	for archiveName, details := range yamlVar.Archives {
+	for archiveName, details := range yamlArchives {
 		if details.Version == "" {
 			return nil, fmt.Errorf("%s: archive %q missing version field", fileName, archiveName)
 		}

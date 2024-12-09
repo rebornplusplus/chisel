@@ -1933,6 +1933,162 @@ var setupTests = []setupTest{{
 		`,
 	},
 	relerror: `chisel.yaml: more than one default archive: bar, foo`,
+}, {
+	summary: "Define additional archives in v2-archives",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: v1
+			archives:
+				ubuntu:
+					version: 20.04
+					components: [main]
+					suites: [focal]
+					priority: 10
+					public-keys: [test-key]
+			v2-archives:
+				fips:
+					version: 20.04
+					components: [main]
+					suites: [focal]
+					pro: fips
+					priority: 20
+					public-keys: [test-key]
+			public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	release: &setup.Release{
+		Archives: map[string]*setup.Archive{
+			"ubuntu": {
+				Name:       "ubuntu",
+				Version:    "20.04",
+				Suites:     []string{"focal"},
+				Components: []string{"main"},
+				Priority:   10,
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+			"fips": {
+				Name:       "fips",
+				Version:    "20.04",
+				Suites:     []string{"focal"},
+				Components: []string{"main"},
+				Pro:        "fips",
+				Priority:   20,
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+		},
+		Packages: map[string]*setup.Package{
+			"mypkg": {
+				Name:   "mypkg",
+				Path:   "slices/mydir/mypkg.yaml",
+				Slices: map[string]*setup.Slice{},
+			},
+		},
+	},
+}, {
+	summary: "Define archives in v2-archives only",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: v1
+			v2-archives:
+				ubuntu:
+					version: 20.04
+					components: [main]
+					suites: [focal]
+					priority: 10
+					public-keys: [test-key]
+			public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	release: &setup.Release{
+		Archives: map[string]*setup.Archive{
+			"ubuntu": {
+				Name:       "ubuntu",
+				Version:    "20.04",
+				Suites:     []string{"focal"},
+				Components: []string{"main"},
+				Priority:   10,
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+		},
+		Packages: map[string]*setup.Package{
+			"mypkg": {
+				Name:   "mypkg",
+				Path:   "slices/mydir/mypkg.yaml",
+				Slices: map[string]*setup.Slice{},
+			},
+		},
+	},
+}, {
+	summary: "Cannot define same archive name in archives and v2-archives",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: v1
+			archives:
+				ubuntu:
+					version: 20.04
+					components: [main]
+					suites: [focal]
+					priority: 10
+					public-keys: [test-key]
+			v2-archives:
+				ubuntu:
+					version: 20.04
+					components: [main]
+					suites: [focal]
+					priority: 20
+					pro: fips
+					public-keys: [test-key]
+			public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	relerror: `chisel.yaml: archive "ubuntu" defined twice`,
+}, {
+	summary: "Multiple default archives across archives and v2-archives",
+	input: map[string]string{
+		"chisel.yaml": `
+			format: v1
+			archives:
+				foo:
+					default: true
+					version: 22.04
+					components: [main]
+					suites: [jammy]
+					public-keys: [test-key]
+			v2-archives:
+				bar:
+					default: true
+					version: 22.04
+					components: [main, universe]
+					suites: [jammy]
+					public-keys: [test-key]
+			public-keys:
+				test-key:
+					id: ` + testKey.ID + `
+					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
+		`,
+		"slices/mydir/mypkg.yaml": `
+			package: mypkg
+		`,
+	},
+	relerror: `chisel.yaml: more than one default archive: bar, foo`,
 }}
 
 var defaultChiselYaml = `
