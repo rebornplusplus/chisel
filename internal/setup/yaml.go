@@ -25,16 +25,11 @@ type yamlRelease struct {
 	Format   string                 `yaml:"format"`
 	Archives map[string]yamlArchive `yaml:"archives"`
 	PubKeys  map[string]yamlPubKey  `yaml:"public-keys"`
-	// "v2-archives" defines the archives, same as "archives". It is added to
-	// define Ubuntu Pro archives in chisel-releases with "pro" and "priority"
-	// fields (see #160 and #167), while supporting Chisel<=v1.0.0 and
-	// chisel-releases "format"<=v1. Since Chisel ignores unknown fields,
-	// archives defined in "v2-archives" will be ignored by v1.0.0 but picked up
-	// by later versions.
-	// Note that the archive definitions in "archives" and "v2-archives" are
-	// merged together while parsing. (See parseRelease.)
-	// TODO deprecate this field once both Chisel v1.0.0 and chisel-releases v1
-	// are unsupported.
+	// "v2-archives" is used for backwards compatibility with Chisel <= 1.0.0
+	// since it will be ignored. In new versions, it will be parsed with the new
+	// fields that break said compatibility, e.g. "pro" archives.
+	//
+	// Note: "archives" and "v2-archives" are merged together while parsing.
 	V2Archives map[string]yamlArchive `yaml:"v2-archives"`
 }
 
