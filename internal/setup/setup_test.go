@@ -1991,46 +1991,6 @@ var setupTests = []setupTest{{
 		},
 	},
 }, {
-	summary: "Define archives in v2-archives only",
-	input: map[string]string{
-		"chisel.yaml": `
-			format: v1
-			v2-archives:
-				ubuntu:
-					version: 20.04
-					components: [main]
-					suites: [focal]
-					priority: 10
-					public-keys: [test-key]
-			public-keys:
-				test-key:
-					id: ` + testKey.ID + `
-					armor: |` + "\n" + testutil.PrefixEachLine(testKey.PubKeyArmor, "\t\t\t\t\t\t") + `
-		`,
-		"slices/mydir/mypkg.yaml": `
-			package: mypkg
-		`,
-	},
-	release: &setup.Release{
-		Archives: map[string]*setup.Archive{
-			"ubuntu": {
-				Name:       "ubuntu",
-				Version:    "20.04",
-				Suites:     []string{"focal"},
-				Components: []string{"main"},
-				Priority:   10,
-				PubKeys:    []*packet.PublicKey{testKey.PubKey},
-			},
-		},
-		Packages: map[string]*setup.Package{
-			"mypkg": {
-				Name:   "mypkg",
-				Path:   "slices/mydir/mypkg.yaml",
-				Slices: map[string]*setup.Slice{},
-			},
-		},
-	},
-}, {
 	summary: "Cannot define same archive name in archives and v2-archives",
 	input: map[string]string{
 		"chisel.yaml": `
@@ -2077,7 +2037,27 @@ var defaultChiselYaml = `
 `
 
 func (s *S) TestParseRelease(c *C) {
-	for _, test := range setupTests {
+	// Run tests for "archives" field in "v1" format.
+	runParseReleaseTests(c, setupTests)
+
+	// Run tests for "v2-archives" field in "v1" format.
+	v2ArchiveTests := make([]setupTest, len(setupTests))
+	for i, t := range setupTests {
+		m := make(map[string]string)
+		for k, v := range t.input {
+			if !strings.Contains(v, "v2-archives:") {
+				v = strings.Replace(v, "archives:", "v2-archives:", -1)
+			}
+			m[k] = v
+		}
+		t.input = m
+		v2ArchiveTests[i] = t
+	}
+	runParseReleaseTests(c, v2ArchiveTests)
+}
+
+func runParseReleaseTests(c *C, tests []setupTest) {
+	for _, test := range tests {
 		c.Logf("Summary: %s", test.summary)
 
 		if _, ok := test.input["chisel.yaml"]; !ok {
