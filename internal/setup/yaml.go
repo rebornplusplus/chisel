@@ -261,7 +261,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		}
 	}
 	if (hasPriority && archiveNoPriority != "") ||
-		(!hasPriority && defaultArchive == "" && len(yamlVar.Archives) > 1) {
+		(!hasPriority && defaultArchive == "" && len(yamlArchives) > 1) {
 		return nil, fmt.Errorf("%s: archive %q is missing the priority setting", fileName, archiveNoPriority)
 	}
 	if defaultArchive != "" && !hasPriority {
@@ -269,7 +269,7 @@ func parseRelease(baseDir, filePath string, data []byte) (*Release, error) {
 		// negative priorities to all but the default one, which means all
 		// others will be ignored unless pinned.
 		var archiveNames []string
-		for archiveName := range yamlVar.Archives {
+		for archiveName := range yamlArchives {
 			archiveNames = append(archiveNames, archiveName)
 		}
 		// Make it deterministic.
