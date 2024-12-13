@@ -2041,8 +2041,8 @@ func (s *S) TestParseRelease(c *C) {
 	runParseReleaseTests(c, setupTests)
 
 	// Run tests for "v2-archives" field in "v1" format.
-	v2ArchiveTests := make([]setupTest, len(setupTests))
-	for i, t := range setupTests {
+	v2ArchiveTests := make([]setupTest, 0, len(setupTests))
+	for _, t := range setupTests {
 		m := make(map[string]string)
 		for k, v := range t.input {
 			if !strings.Contains(v, "v2-archives:") {
@@ -2051,7 +2051,7 @@ func (s *S) TestParseRelease(c *C) {
 			m[k] = v
 		}
 		t.input = m
-		v2ArchiveTests[i] = t
+		v2ArchiveTests = append(v2ArchiveTests, t)
 	}
 	runParseReleaseTests(c, v2ArchiveTests)
 }

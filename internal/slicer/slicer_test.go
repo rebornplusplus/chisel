@@ -1499,8 +1499,8 @@ func (s *S) TestRun(c *C) {
 	runSlicerTests(c, slicerTests)
 
 	// Run tests for "v2-archives" field in "v1" format.
-	v2ArchiveTests := make([]slicerTest, len(slicerTests))
-	for i, t := range slicerTests {
+	v2ArchiveTests := make([]slicerTest, 0, len(slicerTests))
+	for _, t := range slicerTests {
 		m := make(map[string]string)
 		for k, v := range t.release {
 			if !strings.Contains(v, "v2-archives:") {
@@ -1509,7 +1509,7 @@ func (s *S) TestRun(c *C) {
 			m[k] = v
 		}
 		t.release = m
-		v2ArchiveTests[i] = t
+		v2ArchiveTests = append(v2ArchiveTests, t)
 	}
 	runSlicerTests(c, v2ArchiveTests)
 }
