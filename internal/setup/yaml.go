@@ -91,8 +91,7 @@ func (yp *yamlPath) SameContent(other *yamlPath) bool {
 		yp.Text == other.Text &&
 		yp.Symlink == other.Symlink &&
 		yp.Mutable == other.Mutable &&
-		yp.Generate == other.Generate &&
-		yp.Prefer == other.Prefer)
+		yp.Generate == other.Generate)
 }
 
 type yamlArch struct {
@@ -368,7 +367,7 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 			if yamlPath != nil && yamlPath.Generate != "" {
 				zeroPathGenerate := zeroPath
 				zeroPathGenerate.Generate = yamlPath.Generate
-				if !yamlPath.SameContent(&zeroPathGenerate) || yamlPath.Until != UntilNone {
+				if !yamlPath.SameContent(&zeroPathGenerate) || yamlPath.Prefer != "" || yamlPath.Until != UntilNone {
 					return nil, fmt.Errorf("slice %s_%s path %s has invalid generate options",
 						pkgName, sliceName, contPath)
 				}
@@ -378,7 +377,7 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 				kinds = append(kinds, GeneratePath)
 			} else if strings.ContainsAny(contPath, "*?") {
 				if yamlPath != nil {
-					if !yamlPath.SameContent(&zeroPath) {
+					if !yamlPath.SameContent(&zeroPath) || yamlPath.Prefer != "" {
 						return nil, fmt.Errorf("slice %s_%s path %s has invalid wildcard options",
 							pkgName, sliceName, contPath)
 					}
