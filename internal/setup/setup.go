@@ -601,7 +601,7 @@ func (g *conflictGraph) walk(src, dest string) error {
 			break
 		}
 		if _, ok := g.release.Packages[next]; !ok {
-			return fmt.Errorf("slice %s has invalid 'prefer' for path %s: %q", s, g.path, next)
+			return fmt.Errorf("slice %s cannot 'prefer' non-existent package for path %s: %q", s, g.path, next)
 		}
 		prev = cur
 		cur = next

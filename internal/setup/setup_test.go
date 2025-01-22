@@ -2201,7 +2201,7 @@ var setupTests = []setupTest{{
 						/path: {prefer: mypkg}
 		`,
 	},
-	relerror: `slice mypkg_myslice has invalid 'prefer' for path /path: "mypkg"`,
+	relerror: `slice mypkg_myslice cannot 'prefer' own package for path /path: "mypkg"`,
 }, {
 	summary: "Cannot specify non-existent package in 'prefer'",
 	input: map[string]string{
@@ -2213,7 +2213,7 @@ var setupTests = []setupTest{{
 						/path: {prefer: non-existent}
 		`,
 	},
-	relerror: `slice mypkg_myslice has invalid 'prefer' for path /path: "non-existent"`,
+	relerror: `slice mypkg_myslice cannot 'prefer' non-existent package for path /path: "non-existent"`,
 }, {
 	summary: "Path prefers package, but package does not have path",
 	input: map[string]string{
