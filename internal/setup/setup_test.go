@@ -2021,19 +2021,16 @@ var setupTests = []setupTest{{
 	},
 	relerror: `chisel.yaml: archive "ubuntu" defined twice`,
 }, {
-	summary: "Path conflicts with 'prefer'",
+	summary: "Paths with same content do not conflict",
 	input: map[string]string{
 		"slices/mydir/mypkg1.yaml": `
 			package: mypkg1
 			slices:
 				myslice1:
 					contents:
-						/path: {prefer: mypkg2}
 						/text: {text: foo}
-						/link: {symlink: /file1}
 				myslice2:
 					contents:
-						/path: {prefer: mypkg2}
 						/text: {text: foo}
 		`,
 		"slices/mydir/mypkg2.yaml": `
@@ -2041,15 +2038,6 @@ var setupTests = []setupTest{{
 			slices:
 				myslice1:
 					contents:
-						/path: {prefer: mypkg3}
-						/link: {symlink: /file2, prefer: mypkg1}
-		`,
-		"slices/mydir/mypkg3.yaml": `
-			package: mypkg3
-			slices:
-				myslice1:
-					contents:
-						/path:
 						/text: {text: foo}
 		`,
 	},
@@ -2072,8 +2060,83 @@ var setupTests = []setupTest{{
 						Package: "mypkg1",
 						Name:    "myslice1",
 						Contents: map[string]setup.PathInfo{
-							"/path": {Kind: "copy", Prefer: "mypkg2"},
 							"/text": {Kind: "text", Info: "foo"},
+						},
+					},
+					"myslice2": {
+						Package: "mypkg1",
+						Name:    "myslice2",
+						Contents: map[string]setup.PathInfo{
+							"/text": {Kind: "text", Info: "foo"},
+						},
+					},
+				},
+			},
+			"mypkg2": {
+				Name: "mypkg2",
+				Path: "slices/mydir/mypkg2.yaml",
+				Slices: map[string]*setup.Slice{
+					"myslice1": {
+						Package: "mypkg2",
+						Name:    "myslice1",
+						Contents: map[string]setup.PathInfo{
+							"/text": {Kind: "text", Info: "foo"},
+						},
+					},
+				},
+			},
+		},
+	},
+}, {
+	summary: "Path conflicts with 'prefer'",
+	input: map[string]string{
+		"slices/mydir/mypkg1.yaml": `
+			package: mypkg1
+			slices:
+				myslice1:
+					contents:
+						/path: {prefer: mypkg2}
+						/link: {symlink: /file1}
+				myslice2:
+					contents:
+						/path: {prefer: mypkg2}
+		`,
+		"slices/mydir/mypkg2.yaml": `
+			package: mypkg2
+			slices:
+				myslice1:
+					contents:
+						/path: {prefer: mypkg3}
+						/link: {symlink: /file2, prefer: mypkg1}
+		`,
+		"slices/mydir/mypkg3.yaml": `
+			package: mypkg3
+			slices:
+				myslice1:
+					contents:
+						/path:
+		`,
+	},
+	release: &setup.Release{
+		Archives: map[string]*setup.Archive{
+			"ubuntu": {
+				Name:       "ubuntu",
+				Version:    "22.04",
+				Suites:     []string{"jammy"},
+				Components: []string{"main", "universe"},
+				PubKeys:    []*packet.PublicKey{testKey.PubKey},
+			},
+		},
+		Packages: map[string]*setup.Package{
+			"mypkg1": {
+				Name: "mypkg1",
+				Path: "slices/mydir/mypkg1.yaml",
+				Slices: map[string]*setup.Slice{
+					"myslice1": {
+						Package: "mypkg1",
+						Name:    "myslice1",
+						Contents: map[string]setup.PathInfo{
+							"/path": {Kind: "copy", Prefer: "mypkg2"},
 							"/link": {Kind: "symlink", Info: "/file1"},
 						},
 					},
@@ -2082,7 +2145,6 @@ var setupTests = []setupTest{{
 						Name:    "myslice2",
 						Contents: map[string]setup.PathInfo{
 							"/path": {Kind: "copy", Prefer: "mypkg2"},
-							"/text": {Kind: "text", Info: "foo"},
 						},
 					},
 				},
@@ -2110,7 +2172,6 @@ var setupTests = []setupTest{{
 						Name:    "myslice1",
 						Contents: map[string]setup.PathInfo{
 							"/path": {Kind: "copy"},
-							"/text": {Kind: "text", Info: "foo"},
 						},
 					},
 				},

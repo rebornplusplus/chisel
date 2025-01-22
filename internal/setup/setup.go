@@ -103,8 +103,7 @@ func (pi *PathInfo) SameContent(other *PathInfo) bool {
 		pi.Info == other.Info &&
 		pi.Mode == other.Mode &&
 		pi.Mutable == other.Mutable &&
-		pi.Generate == other.Generate &&
-		pi.Prefer == other.Prefer)
+		pi.Generate == other.Generate)
 }
 
 type SliceKey struct {
@@ -122,6 +121,30 @@ func (s SliceKey) String() string { return s.Package + "_" + s.Slice }
 type Selection struct {
 	Release *Release
 	Slices  []*Slice
+}
+
+// SelectPackage returns true if pkg should be the one to provide path among all
+// other selected packages.
+func (s *Selection) SelectPackage(path, pkg string) bool {
+	// pkg provides the path if there are no conflicts regarding the path or if
+	// there is, pkg is the most preferred package for this path in the
+	// selection.
+	ranks, ok := s.Release.ConflictRanks[path]
+	if !ok {
+		return true
+	}
+	pkgRank, ok := ranks[pkg]
+	if !ok {
+		return false
+	}
+	for _, slice := range s.Slices {
+		if rank, ok := ranks[slice.Package]; ok {
+			if rank > pkgRank {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func ReadRelease(dir string) (*Release, error) {
@@ -162,7 +185,6 @@ func (r *Release) validate() error {
 	// The above also means that generated content (e.g. text files, directories
 	// with make:true) will always conflict with extracted content, because we
 	// cannot validate that they are the same without downloading the package.
-	paths := make(map[string]*Slice)
 	globs := make(map[string]*Slice)
 	conflicts := make(map[string]*conflictGraph)
 
@@ -177,24 +199,23 @@ func (r *Release) validate() error {
 		for _, new := range pkg.Slices {
 			keys = append(keys, SliceKey{pkg.Name, new.Name})
 			for newPath, newInfo := range new.Contents {
-				if old, ok := paths[newPath]; ok {
-					oldInfo := old.Contents[newPath]
-					sameContent := newInfo.SameContent(&oldInfo)
-					if newInfo.Kind == CopyPath || newInfo.Kind == GlobPath {
-						sameContent = sameContent && (new.Package == old.Package)
-					}
-
+				if g, ok := conflicts[newPath]; ok {
 					reportConflict := func(old, new *Slice, path string) error {
 						if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
 							old, new = new, old
 						}
 						return fmt.Errorf("slices %s and %s conflict on %s", old, new, path)
 					}
+					old := g.head
+					oldInfo := old.Contents[newPath]
 
-					g := conflicts[newPath]
 					if s, ok := g.visited[new.Package]; ok {
+						// If the package was already visited we only need to
+						// check that the new path provides the same content as
+						// the recorded one and they have the same prefer
+						// relationship.
 						sInfo := s.Contents[newPath]
-						if !newInfo.SameContent(&sInfo) {
+						if !newInfo.SameContent(&sInfo) || newInfo.Prefer != sInfo.Prefer {
 							return reportConflict(s, new, newPath)
 						}
 						continue
@@ -207,15 +228,14 @@ func (r *Release) validate() error {
 						if err := g.walk(new.Package, old.Package); err != nil {
 							return err
 						}
-						paths[newPath] = new
 					} else {
-						if !sameContent {
+						if oldInfo.Prefer != "" || !newInfo.SameContent(&oldInfo) ||
+							(newInfo.Kind == CopyPath || newInfo.Kind == GlobPath) && new.Package != old.Package {
 							return reportConflict(old, new, newPath)
 						}
 						g.visited[new.Package] = new
 					}
 				} else {
-					paths[newPath] = new
 					if newInfo.Kind == GeneratePath || newInfo.Kind == GlobPath {
 						globs[newPath] = new
 					}
@@ -230,8 +250,8 @@ func (r *Release) validate() error {
 							return err
 						}
 					} else {
+						g.head = new
 						g.visited[new.Package] = new
-						g.head = new.Package
 					}
 				}
 			}
@@ -245,40 +265,31 @@ func (r *Release) validate() error {
 			r.ConflictRanks = make(map[string]map[string]int)
 		}
 		r.ConflictRanks[path] = make(map[string]int)
-		for cur, i := g.head, 1; cur != ""; cur, i = g.next(cur), i+1 {
-			r.ConflictRanks[path][cur] = i
+		var counter int
+		for cur := g.head.Package; cur != ""; cur = g.next(cur) {
+			counter++
+			r.ConflictRanks[path][cur] = counter
 		}
 	}
 
 	// Check for glob and generate conflicts.
 	for oldPath, old := range globs {
 		oldInfo := old.Contents[oldPath]
-		for newPath, new := range paths {
+		for newPath, g := range conflicts {
 			if oldPath == newPath {
 				// Identical globs have been filtered earlier. This must be the
 				// exact same entry.
 				continue
 			}
-			newInfo := new.Contents[newPath]
-			if oldInfo.Kind == GlobPath && (newInfo.Kind == GlobPath || newInfo.Kind == CopyPath) {
-				if new.Package == old.Package && !conflicts[newPath].isLinear() {
-					// We do not need to check for a conflict if the new path
-					// comes from the same package, is either a glob or a copy
-					// path and is not part of any conflict chain.
-					continue
-				}
+			if !strdist.GlobPath(newPath, oldPath) {
+				continue
 			}
-			if strdist.GlobPath(newPath, oldPath) {
-				if oldInfo.Kind == GlobPath && newInfo.Kind == CopyPath &&
-					new.Package == old.Package && conflicts[newPath].isLinear() {
-					// In this case, we have found a CopyPath that conflicts
-					// with a GlobPath from the same package and the CopyPath is
-					// part of a conflict chain. Since the two paths are from
-					// the same package, we should find another package in the
-					// CopyPath chain to report the error. Since this package is
-					// the head of the chain, report the next package in chain.
-					next := conflicts[newPath].next(new.Package)
-					new = conflicts[newPath].visited[next]
+			for _, new := range g.visited {
+				newInfo := new.Contents[newPath]
+				if oldInfo.Kind == GlobPath && (newInfo.Kind == GlobPath || newInfo.Kind == CopyPath) {
+					if new.Package == old.Package {
+						continue
+					}
 				}
 				if (old.Package > new.Package) || (old.Package == new.Package && old.Name > new.Name) ||
 					(old.Package == new.Package && old.Name == new.Name && oldPath > newPath) {
@@ -490,13 +501,13 @@ type conflictGraph struct {
 	release *Release
 	// The initial node (pkg) of the chain. If the graph is not linear, then
 	// head may be any node.
-	head    string
+	head    *Slice
 	visited map[string]*Slice
 }
 
 // isLinear returns true if the 'prefer' relations form a linear graph.
 func (g *conflictGraph) isLinear() bool {
-	return g.visited[g.head].Contents[g.path].Prefer != ""
+	return g.head.Contents[g.path].Prefer != ""
 }
 
 // hasNoPrefers returns true if there are at least two nodes in the graph and
@@ -510,7 +521,7 @@ func (g *conflictGraph) next(pkg string) string {
 	return g.visited[pkg].Contents[g.path].Prefer
 }
 
-// findSlice returns a package slice which defines the path.
+// findSlice returns a package slice which contains the path.
 func (g *conflictGraph) findSlice(pkg string) (*Slice, error) {
 	for _, s := range g.release.Packages[pkg].Slices {
 		if _, ok := s.Contents[g.path]; ok {
@@ -518,6 +529,19 @@ func (g *conflictGraph) findSlice(pkg string) (*Slice, error) {
 		}
 	}
 	return nil, fmt.Errorf("package %s does not have path %s", pkg, g.path)
+}
+
+func (g *conflictGraph) findCycle(visited map[string]*Slice, start string) []string {
+	var cycle []string
+	for u := start; ; u = visited[u].Contents[g.path].Prefer {
+		if len(cycle) > 0 && u == cycle[0] {
+			break
+		}
+		cycle = append(cycle, u)
+	}
+	idx := slices.Index(cycle, slices.Min(cycle))
+	cycle = append(cycle[idx:], cycle[:idx]...)
+	return cycle
 }
 
 // walk iterates over the 'prefer' relationships for the path, starting from
@@ -529,16 +553,7 @@ func (g *conflictGraph) walk(src, dest string) error {
 	cur := src
 	for {
 		if _, ok := tempVisited[cur]; ok {
-			// Found a cycle.
-			var cycle []string
-			for u := cur; ; u = tempVisited[u].Contents[g.path].Prefer {
-				if len(cycle) > 0 && u == cycle[0] {
-					break
-				}
-				cycle = append(cycle, u)
-			}
-			idx := slices.Index(cycle, slices.Min(cycle))
-			cycle = append(cycle[idx:], cycle[:idx]...)
+			cycle := g.findCycle(tempVisited, cur)
 			return fmt.Errorf("slice %s path %s has a 'prefer' cycle: %s",
 				tempVisited[cycle[0]], g.path, strings.Join(cycle, ", "))
 		}
@@ -549,7 +564,7 @@ func (g *conflictGraph) walk(src, dest string) error {
 				// it means that it is not a linear 'prefer' graph, rather a "Y"
 				// shaped one.
 				a, b := tempVisited[src], g.visited[dest]
-				if a.String() > b.String() {
+				if a.Package > b.Package || (a.Package == b.Package && a.Name > b.Name) {
 					a, b = b, a
 				}
 				return fmt.Errorf("slices %s and %s have a non-linear 'prefer' relationship for path %s",
@@ -561,7 +576,7 @@ func (g *conflictGraph) walk(src, dest string) error {
 		if err != nil {
 			if prev != "" {
 				prevSlice := tempVisited[prev]
-				return fmt.Errorf("slice %s path %s prefers %q: %w",
+				return fmt.Errorf("slice %s path %s prefers %q: %s",
 					prevSlice, g.path, cur, err)
 			}
 			return err
@@ -576,7 +591,7 @@ func (g *conflictGraph) walk(src, dest string) error {
 				// at package dest. Thus the 'prefer' graph must have more than
 				// one components i.e. disconnected.
 				a, b := tempVisited[src], g.visited[dest]
-				if a.String() > b.String() {
+				if a.Package > b.Package || (a.Package == b.Package && a.Name > b.Name) {
 					a, b = b, a
 				}
 				return fmt.Errorf("slices %s and %s have no 'prefer' relationship for path %s",
@@ -592,32 +607,9 @@ func (g *conflictGraph) walk(src, dest string) error {
 	}
 
 	// A chain is found. Update the head of the chain and mark the nodes.
-	g.head = src
+	g.head = tempVisited[src]
 	for p, s := range tempVisited {
 		g.visited[p] = s
 	}
 	return nil
-}
-
-// PackageProvidesPath returns true if pkg should be the one to provide path
-// among all other selected packages.
-// pkg provides the path if there are no conflicts regarding the path or if
-// there is, pkg is the most _preferred_ package for this path in the selection.
-func (s *Selection) PackageProvidesPath(pkg, path string) bool {
-	ranks, ok := s.Release.ConflictRanks[path]
-	if !ok {
-		return true
-	}
-	pkgRank, ok := ranks[pkg]
-	if !ok {
-		return false
-	}
-	for _, slice := range s.Slices {
-		if rank, ok := ranks[slice.Package]; ok {
-			if rank > pkgRank {
-				return false
-			}
-		}
-	}
-	return true
 }
