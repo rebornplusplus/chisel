@@ -2228,7 +2228,7 @@ var setupTests = []setupTest{{
 			package: mypkg2
 		`,
 	},
-	relerror: `slice mypkg1_myslice path /path prefers "mypkg2": package mypkg2 does not have path /path`,
+	relerror: `slice mypkg1_myslice path /path has an invalid 'prefer' "mypkg2": package mypkg2 does not have path /path`,
 }, {
 	summary: "Path has 'prefer' cycle",
 	input: map[string]string{

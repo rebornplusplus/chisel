@@ -577,7 +577,7 @@ func (g *conflictGraph) walk(src, dest string) error {
 		if err != nil {
 			if prev != "" {
 				prevSlice := tempVisited[prev]
-				return fmt.Errorf("slice %s path %s prefers %q: %s",
+				return fmt.Errorf("slice %s path %s has an invalid 'prefer' %q: %s",
 					prevSlice, g.path, cur, err)
 			}
 			return err
