@@ -243,6 +243,7 @@ func (r *Release) validate() error {
 					g := &conflictGraph{
 						path:    newPath,
 						release: r,
+						head:    new,
 						visited: make(map[string]*Slice),
 					}
 					conflicts[newPath] = g
@@ -251,7 +252,6 @@ func (r *Release) validate() error {
 							return err
 						}
 					} else {
-						g.head = new
 						g.visited[new.Package] = new
 					}
 				}
@@ -608,7 +608,11 @@ func (g *conflictGraph) walk(src, dest string) error {
 	}
 
 	// A chain is found. Update the head of the chain and mark the nodes.
-	g.head = tempVisited[src]
+	if g.head == nil || g.head.Package != src {
+		// If the head had been assigned with a slice of the src package, we
+		// should retain that information.
+		g.head = tempVisited[src]
+	}
 	for p, s := range tempVisited {
 		g.visited[p] = s
 	}
