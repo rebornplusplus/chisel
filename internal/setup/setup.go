@@ -16,10 +16,11 @@ import (
 // Release is a collection of package slices targeting a particular
 // distribution version.
 type Release struct {
-	Path          string
-	Packages      map[string]*Package
-	Archives      map[string]*Archive
-	ConflictRanks map[string]map[string]int
+	Path     string
+	Packages map[string]*Package
+	Archives map[string]*Archive
+
+	conflictRanks map[string]map[string]int
 }
 
 // Archive is the location from which binary packages are obtained.
@@ -129,7 +130,7 @@ func (s *Selection) SelectPackage(path, pkg string) bool {
 	// pkg provides the path if there are no conflicts regarding the path or if
 	// there is, pkg is the most preferred package for this path in the
 	// selection.
-	ranks, ok := s.Release.ConflictRanks[path]
+	ranks, ok := s.Release.conflictRanks[path]
 	if !ok {
 		return true
 	}
@@ -261,14 +262,14 @@ func (r *Release) validate() error {
 		if !g.isLinear() {
 			continue
 		}
-		if r.ConflictRanks == nil {
-			r.ConflictRanks = make(map[string]map[string]int)
+		if r.conflictRanks == nil {
+			r.conflictRanks = make(map[string]map[string]int)
 		}
-		r.ConflictRanks[path] = make(map[string]int)
+		r.conflictRanks[path] = make(map[string]int)
 		var counter int
 		for cur := g.head.Package; cur != ""; cur = g.next(cur) {
 			counter++
-			r.ConflictRanks[path][cur] = counter
+			r.conflictRanks[path][cur] = counter
 		}
 	}
 

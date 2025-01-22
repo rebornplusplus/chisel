@@ -19,13 +19,14 @@ var (
 )
 
 type setupTest struct {
-	summary   string
-	input     map[string]string
-	release   *setup.Release
-	relerror  string
-	selslices []setup.SliceKey
-	selection *setup.Selection
-	selerror  string
+	summary       string
+	input         map[string]string
+	release       *setup.Release
+	relerror      string
+	conflictRanks map[string]map[string]int
+	selslices     []setup.SliceKey
+	selection     *setup.Selection
+	selerror      string
 }
 
 var setupTests = []setupTest{{
@@ -2177,16 +2178,16 @@ var setupTests = []setupTest{{
 				},
 			},
 		},
-		ConflictRanks: map[string]map[string]int{
-			"/path": {
-				"mypkg1": 1,
-				"mypkg2": 2,
-				"mypkg3": 3,
-			},
-			"/link": {
-				"mypkg1": 2,
-				"mypkg2": 1,
-			},
+	},
+	conflictRanks: map[string]map[string]int{
+		"/path": {
+			"mypkg1": 1,
+			"mypkg2": 2,
+			"mypkg3": 3,
+		},
+		"/link": {
+			"mypkg1": 2,
+			"mypkg2": 1,
 		},
 	},
 }, {
@@ -2407,8 +2408,13 @@ func runParseReleaseTests(c *C, tests []setupTest) {
 		release.Path = ""
 
 		if test.release != nil {
-			c.Assert(release, DeepEquals, test.release)
+			// Checking each item individually because DeepEquals asserts for
+			// unexported fields too.
+			c.Assert(release.Path, DeepEquals, test.release.Path)
+			c.Assert(release.Packages, DeepEquals, test.release.Packages)
+			c.Assert(release.Archives, DeepEquals, test.release.Archives)
 		}
+		c.Assert(release.ConflictRanks(), DeepEquals, test.conflictRanks)
 
 		if test.selslices != nil {
 			selection, err := setup.Select(release, test.selslices)
