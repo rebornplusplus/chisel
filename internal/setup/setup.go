@@ -223,7 +223,7 @@ func (r *Release) validate() error {
 					}
 
 					if newInfo.Prefer != "" {
-						if g.hasNoPrefers() {
+						if len(g.visited) > 1 && !g.isLinear() {
 							return reportConflict(old, new, newPath)
 						}
 						if err := g.walk(new.Package, old.Package); err != nil {
@@ -509,12 +509,6 @@ type conflictGraph struct {
 // isLinear returns true if the 'prefer' relations form a linear graph.
 func (g *conflictGraph) isLinear() bool {
 	return g.head.Contents[g.path].Prefer != ""
-}
-
-// hasNoPrefers returns true if there are at least two nodes in the graph and
-// none of them have specified 'prefer' on the paths.
-func (g *conflictGraph) hasNoPrefers() bool {
-	return len(g.visited) > 1 && !g.isLinear()
 }
 
 // Returns the next node (pkg) in the 'prefer' chain.
