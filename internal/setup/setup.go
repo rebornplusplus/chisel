@@ -485,6 +485,8 @@ func Select(release *Release, slices []SliceKey) (*Selection, error) {
 
 	for _, new := range selection.Slices {
 		for newPath, newInfo := range new.Contents {
+			// An invalid "generate" value should only throw an error if that
+			// particular slice is selected. Hence, the check is here.
 			switch newInfo.Generate {
 			case GenerateNone, GenerateManifest:
 			default:
