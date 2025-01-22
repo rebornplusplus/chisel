@@ -528,6 +528,7 @@ func (g *conflictGraph) findSlice(pkg string) (*Slice, error) {
 	return nil, fmt.Errorf("package %s does not have path %s", pkg, g.path)
 }
 
+// findCycle returns the nodes in a cycle if a cycle has been detected.
 func (g *conflictGraph) findCycle(visited map[string]*Slice, start string) []string {
 	var cycle []string
 	for u := start; ; u = visited[u].Contents[g.path].Prefer {
