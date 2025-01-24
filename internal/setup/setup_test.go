@@ -2408,13 +2408,9 @@ func runParseReleaseTests(c *C, tests []setupTest) {
 		release.Path = ""
 
 		if test.release != nil {
-			// Checking each item individually because DeepEquals asserts for
-			// unexported fields too.
-			c.Assert(release.Path, DeepEquals, test.release.Path)
-			c.Assert(release.Packages, DeepEquals, test.release.Packages)
-			c.Assert(release.Archives, DeepEquals, test.release.Archives)
+			test.release.SetConflictRanks(test.conflictRanks)
+			c.Assert(release, DeepEquals, test.release)
 		}
-		c.Assert(release.ConflictRanks(), DeepEquals, test.conflictRanks)
 
 		if test.selslices != nil {
 			selection, err := setup.Select(release, test.selslices)
