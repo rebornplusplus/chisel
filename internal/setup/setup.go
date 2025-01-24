@@ -222,24 +222,23 @@ func (r *Release) validate() error {
 					}
 
 					if newInfo.Prefer != "" {
-						// TODO make this check simpler.
 						if len(g.visited) > 1 && !g.isLinear() {
+							// Since there are already two or more package paths
+							// with no 'prefer' specified, the graph must be
+							// disconnected.
 							return reportConflict(g.head, new, newPath)
-						}
-
-						if err := g.walk(new.Package, g.head.Package); err != nil {
-							return err
 						}
 					} else {
 						// Since there are no prefer relationships, compare with
 						// any slice seen before.
-						old := g.head
-						oldInfo := old.Contents[newPath]
-						if oldInfo.Prefer != "" || !newInfo.SameContent(&oldInfo) ||
-							(newInfo.Kind == CopyPath || newInfo.Kind == GlobPath) && new.Package != old.Package {
-							return reportConflict(old, new, newPath)
+						headInfo := g.head.Contents[newPath]
+						if headInfo.Prefer != "" || !newInfo.SameContent(&headInfo) ||
+							((newInfo.Kind == CopyPath || newInfo.Kind == GlobPath) && new.Package != g.head.Package) {
+							return reportConflict(g.head, new, newPath)
 						}
-						g.visited[new.Package] = new
+					}
+					if err := g.walk(new); err != nil {
+						return err
 					}
 				} else {
 					if newInfo.Kind == GeneratePath || newInfo.Kind == GlobPath {
@@ -248,16 +247,11 @@ func (r *Release) validate() error {
 					g := &preferGraph{
 						path:    newPath,
 						release: r,
-						head:    new,
 						visited: make(map[string]*Slice),
 					}
 					graphs[newPath] = g
-					if newInfo.Prefer != "" {
-						if err := g.walk(new.Package, ""); err != nil {
-							return err
-						}
-					} else {
-						g.visited[new.Package] = new
+					if err := g.walk(new); err != nil {
+						return err
 					}
 				}
 			}
@@ -525,7 +519,7 @@ type preferGraph struct {
 
 // isLinear returns true if the 'prefer' relations form a linear graph.
 func (g *preferGraph) isLinear() bool {
-	return g.head.Contents[g.path].Prefer != ""
+	return g.head != nil && g.head.Contents[g.path].Prefer != ""
 }
 
 // Returns the next node (pkg) in the 'prefer' chain.
@@ -553,14 +547,20 @@ func (g *preferGraph) findCycle(visited map[string]*Slice, start string) []strin
 }
 
 // walk iterates over the 'prefer' relationships for the path, starting from
-// src. It returns an error if it does not find a linear relationship between
-// src and dest.
+// src.
 // A variant of Depth-first Search algorithm is used in this function.
 // See https://en.wikipedia.org/wiki/Depth-first_search.
-func (g *preferGraph) walk(src, dest string) error {
+func (g *preferGraph) walk(src *Slice) error {
+	orderSlices := func(a, b *Slice) (*Slice, *Slice) {
+		if a.Package > b.Package || (a.Package == b.Package && a.Name > b.Name) {
+			a, b = b, a
+		}
+		return a, b
+	}
 	tempVisited := make(map[string]*Slice)
+
 	var prev string
-	cur := src
+	cur := src.Package
 	for {
 		if _, ok := tempVisited[cur]; ok {
 			cycle := g.findCycle(tempVisited, cur)
@@ -569,41 +569,39 @@ func (g *preferGraph) walk(src, dest string) error {
 		}
 		if _, ok := g.visited[cur]; ok {
 			// This has been previously visited, thus this chain stops here.
-			if cur != dest {
+			if cur != g.head.Package {
 				// The chain should have stopped at dest, but since it does not,
 				// it means that it is not a linear 'prefer' graph, rather a "Y"
 				// shaped one.
-				a, b := tempVisited[src], g.visited[dest]
-				if a.Package > b.Package || (a.Package == b.Package && a.Name > b.Name) {
-					a, b = b, a
-				}
-				return fmt.Errorf("slices %s and %s have a non-linear 'prefer' relationship for path %s",
-					a, b, g.path)
+				a, b := orderSlices(src, g.head)
+				return fmt.Errorf("slices %s and %s have a non-linear 'prefer' relationship for path %s", a, b, g.path)
 			}
 			break
 		}
-		s, err := findPath(g.release, g.path, cur)
-		if err != nil {
-			if prev != "" {
-				prevSlice := tempVisited[prev]
-				return fmt.Errorf("slice %s path %s has an invalid 'prefer' %q: %s",
-					prevSlice, g.path, cur, err)
+		var s *Slice
+		if cur == src.Package {
+			s = src
+		} else {
+			var err error
+			s, err = findPath(g.release, g.path, cur)
+			if err != nil {
+				if prev != "" {
+					return fmt.Errorf("slice %s path %s has an invalid 'prefer' %q: %s",
+						tempVisited[prev], g.path, cur, err)
+				}
+				return err
 			}
-			return err
 		}
 		tempVisited[cur] = s
 
 		next := s.Contents[g.path].Prefer
 		if next == "" {
 			// The tail of the chain is found. This chain stops here.
-			if dest != "" {
+			if g.isLinear() {
 				// A tail has been found whereas this chain should have stopped
-				// at package dest. Thus the 'prefer' graph must have more than
-				// one components i.e. disconnected.
-				a, b := tempVisited[src], g.visited[dest]
-				if a.Package > b.Package || (a.Package == b.Package && a.Name > b.Name) {
-					a, b = b, a
-				}
+				// at g.head.Package. Thus, the 'prefer' graph must have more
+				// than one components i.e. disconnected.
+				a, b := orderSlices(src, g.head)
 				return fmt.Errorf("slices %s and %s have no 'prefer' relationship for path %s",
 					a, b, g.path)
 			}
@@ -616,12 +614,8 @@ func (g *preferGraph) walk(src, dest string) error {
 		cur = next
 	}
 
-	// A chain is found. Update the head of the chain and mark the nodes.
-	if g.head == nil || g.head.Package != src {
-		// If the head had been assigned with a slice of the src package, we
-		// should retain that information.
-		g.head = tempVisited[src]
-	}
+	// Update the head and mark the nodes.
+	g.head = src
 	for p, s := range tempVisited {
 		g.visited[p] = s
 	}
