@@ -19,14 +19,14 @@ var (
 )
 
 type setupTest struct {
-	summary       string
-	input         map[string]string
-	release       *setup.Release
-	relerror      string
-	conflictRanks map[string]map[string]int
-	selslices     []setup.SliceKey
-	selection     *setup.Selection
-	selerror      string
+	summary        string
+	input          map[string]string
+	release        *setup.Release
+	relerror       string
+	pathPriorities map[string]map[string]int
+	selslices      []setup.SliceKey
+	selection      *setup.Selection
+	selerror       string
 }
 
 var setupTests = []setupTest{{
@@ -2179,7 +2179,7 @@ var setupTests = []setupTest{{
 			},
 		},
 	},
-	conflictRanks: map[string]map[string]int{
+	pathPriorities: map[string]map[string]int{
 		"/path": {
 			"mypkg1": 1,
 			"mypkg2": 2,
@@ -2408,7 +2408,7 @@ func runParseReleaseTests(c *C, tests []setupTest) {
 		release.Path = ""
 
 		if test.release != nil {
-			test.release.SetConflictRanks(test.conflictRanks)
+			test.release.SetPathPriorities(test.pathPriorities)
 			c.Assert(release, DeepEquals, test.release)
 		}
 
