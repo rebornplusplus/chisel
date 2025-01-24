@@ -570,11 +570,12 @@ func (g *preferGraph) walk(src *Slice) error {
 		if _, ok := g.visited[cur]; ok {
 			// This has been previously visited, thus this chain stops here.
 			if cur != g.head.Package {
-				// The chain should have stopped at dest, but since it does not,
-				// it means that it is not a linear 'prefer' graph, rather a "Y"
-				// shaped one.
+				// The chain should have stopped at g.head, but since it does
+				// not, it means that it is not a linear 'prefer' graph, rather
+				// a "Y" shaped one.
 				a, b := orderSlices(src, g.head)
-				return fmt.Errorf("slices %s and %s have a non-linear 'prefer' relationship for path %s", a, b, g.path)
+				return fmt.Errorf("slices %s and %s conflict on path %s: "+
+					"path has 'prefer' but there is no valid linear order", a, b, g.path)
 			}
 			break
 		}
@@ -602,13 +603,13 @@ func (g *preferGraph) walk(src *Slice) error {
 				// at g.head.Package. Thus, the 'prefer' graph must have more
 				// than one components i.e. disconnected.
 				a, b := orderSlices(src, g.head)
-				return fmt.Errorf("slices %s and %s have no 'prefer' relationship for path %s",
-					a, b, g.path)
+				return fmt.Errorf("slices %s and %s conflict on path %s: "+
+					"path has 'prefer' but there is no valid linear order", a, b, g.path)
 			}
 			break
 		}
 		if _, ok := g.release.Packages[next]; !ok {
-			return fmt.Errorf("slice %s cannot 'prefer' non-existent package for path %s: %q", s, g.path, next)
+			return fmt.Errorf("slice %s path %s 'prefer' refers to undefined package %q", s, g.path, next)
 		}
 		prev = cur
 		cur = next

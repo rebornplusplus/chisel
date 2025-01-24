@@ -424,7 +424,7 @@ func parsePackage(baseDir, pkgName, pkgPath string, data []byte) (*Package, erro
 					}
 				}
 				if prefer == pkgName {
-					return nil, fmt.Errorf("slice %s_%s cannot 'prefer' own package for path %s: %q", pkgName, sliceName, contPath, prefer)
+					return nil, fmt.Errorf("slice %s_%s cannot 'prefer' its own package for path %s", pkgName, sliceName, contPath)
 				}
 			}
 			if len(kinds) == 0 {

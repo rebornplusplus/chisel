@@ -1774,6 +1774,7 @@ var slicerTests = []slicerTest{{
 					contents:
 						/file: {prefer: test-package2}
 						/link: {symlink: /file1}
+						/text: {text: foo, prefer: test-package3}
 		`,
 		"slices/mydir/test-package2.yaml": `
 			package: test-package2
@@ -1789,15 +1790,18 @@ var slicerTests = []slicerTest{{
 				myslice:
 					contents:
 						/link: {symlink: /file2, prefer: test-package1}
+						/text: {text: bar}
 		`,
 	},
 	filesystem: map[string]string{
 		"/file": "file 0644 fcde2b2e",
 		"/link": "symlink /file1",
+		"/text": "file 0644 2c26b46b",
 	},
 	manifestPaths: map[string]string{
 		"/file": "file 0644 fcde2b2e {test-package2_myslice}",
 		"/link": "symlink /file1 {test-package1_myslice}",
+		"/text": "file 0644 2c26b46b {test-package1_myslice}",
 	},
 }}
 

@@ -2022,73 +2022,6 @@ var setupTests = []setupTest{{
 	},
 	relerror: `chisel.yaml: archive "ubuntu" defined twice`,
 }, {
-	summary: "Paths with same content do not conflict",
-	input: map[string]string{
-		"slices/mydir/mypkg1.yaml": `
-			package: mypkg1
-			slices:
-				myslice1:
-					contents:
-						/text: {text: foo}
-				myslice2:
-					contents:
-						/text: {text: foo}
-		`,
-		"slices/mydir/mypkg2.yaml": `
-			package: mypkg2
-			slices:
-				myslice1:
-					contents:
-						/text: {text: foo}
-		`,
-	},
-	release: &setup.Release{
-		Archives: map[string]*setup.Archive{
-			"ubuntu": {
-				Name:       "ubuntu",
-				Version:    "22.04",
-				Suites:     []string{"jammy"},
-				Components: []string{"main", "universe"},
-				PubKeys:    []*packet.PublicKey{testKey.PubKey},
-			},
-		},
-		Packages: map[string]*setup.Package{
-			"mypkg1": {
-				Name: "mypkg1",
-				Path: "slices/mydir/mypkg1.yaml",
-				Slices: map[string]*setup.Slice{
-					"myslice1": {
-						Package: "mypkg1",
-						Name:    "myslice1",
-						Contents: map[string]setup.PathInfo{
-							"/text": {Kind: "text", Info: "foo"},
-						},
-					},
-					"myslice2": {
-						Package: "mypkg1",
-						Name:    "myslice2",
-						Contents: map[string]setup.PathInfo{
-							"/text": {Kind: "text", Info: "foo"},
-						},
-					},
-				},
-			},
-			"mypkg2": {
-				Name: "mypkg2",
-				Path: "slices/mydir/mypkg2.yaml",
-				Slices: map[string]*setup.Slice{
-					"myslice1": {
-						Package: "mypkg2",
-						Name:    "myslice1",
-						Contents: map[string]setup.PathInfo{
-							"/text": {Kind: "text", Info: "foo"},
-						},
-					},
-				},
-			},
-		},
-	},
-}, {
 	summary: "Path conflicts with 'prefer'",
 	input: map[string]string{
 		"slices/mydir/mypkg1.yaml": `
@@ -2201,7 +2134,7 @@ var setupTests = []setupTest{{
 						/path: {prefer: mypkg}
 		`,
 	},
-	relerror: `slice mypkg_myslice cannot 'prefer' own package for path /path: "mypkg"`,
+	relerror: `slice mypkg_myslice cannot 'prefer' its own package for path /path`,
 }, {
 	summary: "Cannot specify non-existent package in 'prefer'",
 	input: map[string]string{
@@ -2213,7 +2146,7 @@ var setupTests = []setupTest{{
 						/path: {prefer: non-existent}
 		`,
 	},
-	relerror: `slice mypkg_myslice cannot 'prefer' non-existent package for path /path: "non-existent"`,
+	relerror: `slice mypkg_myslice path /path 'prefer' refers to undefined package "non-existent"`,
 }, {
 	summary: "Path prefers package, but package does not have path",
 	input: map[string]string{
@@ -2294,7 +2227,8 @@ var setupTests = []setupTest{{
 						/path:
 		`,
 	},
-	relerror: `slices mypkg1_myslice and mypkg3_myslice have no 'prefer' relationship for path /path`,
+	relerror: `slices mypkg1_myslice and mypkg3_myslice conflict on path /path: ` +
+		`path has 'prefer' but there is no valid linear order`,
 }, {
 	summary: "Path has more than one 'prefer' chain",
 	input: map[string]string{
@@ -2320,7 +2254,8 @@ var setupTests = []setupTest{{
 						/path:
 		`,
 	},
-	relerror: `slices mypkg1_myslice and mypkg2_myslice have a non-linear 'prefer' relationship for path /path`,
+	relerror: `slices mypkg1_myslice and mypkg2_myslice conflict on path /path: ` +
+		`path has 'prefer' but there is no valid linear order`,
 }, {
 	summary: "Glob paths can conflict with 'prefer' chain",
 	input: map[string]string{
