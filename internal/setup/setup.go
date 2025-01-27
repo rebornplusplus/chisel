@@ -20,6 +20,11 @@ type Release struct {
 	Packages map[string]*Package
 	Archives map[string]*Archive
 
+	// pathPriorities will store package priorities if there is a 'prefer'
+	// relationship. Otherwise, it will be nil.
+	// For each path, packages have numerical priorities. Given a selection of
+	// packages, the path should be extracted from the one with the highest
+	// priority.
 	pathPriorities map[string]map[string]int
 }
 
@@ -124,8 +129,7 @@ type Selection struct {
 	Slices  []*Slice
 }
 
-// SelectPackage returns true if pkg should be the one to provide path among all
-// other selected packages.
+// SelectPackage returns true if path should be extracted from pkg.
 func (s *Selection) SelectPackage(path, pkg string) bool {
 	// If the path has no prefer relationships then it is always selected.
 	priorities, ok := s.Release.pathPriorities[path]
@@ -139,7 +143,8 @@ func (s *Selection) SelectPackage(path, pkg string) bool {
 	if !ok {
 		return false
 	}
-	// TODO possible optimization: we can potentially cache the results.
+	// TODO possible optimization: we could cache the results because they only
+	// depend on the selection.
 	for _, slice := range s.Slices {
 		if p, ok := priorities[slice.Package]; ok {
 			if p > pkgPriority {
@@ -174,6 +179,13 @@ func ReadRelease(dir string) (*Release, error) {
 	return release, nil
 }
 
+func reportConflict(old, new *Slice, path string) error {
+	if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
+		old, new = new, old
+	}
+	return fmt.Errorf("slices %s and %s conflict on %s", old, new, path)
+}
+
 func (r *Release) validate() error {
 	keys := []SliceKey(nil)
 
@@ -189,11 +201,7 @@ func (r *Release) validate() error {
 	// with make:true) will always conflict with extracted content, because we
 	// cannot validate that they are the same without downloading the package.
 	globs := make(map[string]*Slice)
-	// The 'prefer' relationship representation for each path. There are only
-	// two valid configurations of a graph - either all the nodes are
-	// disconnected and they produce the same content, or there is a linear
-	// order of 'prefer' relationship. In any other case, the graph functions
-	// returns an error.
+	// Used for conflict resolution using 'prefer'. See preferGraph.
 	graphs := make(map[string]*preferGraph)
 
 	// Iterate on a stable package order.
@@ -208,13 +216,6 @@ func (r *Release) validate() error {
 			keys = append(keys, SliceKey{pkg.Name, new.Name})
 			for newPath, newInfo := range new.Contents {
 				if g, ok := graphs[newPath]; ok {
-					reportConflict := func(old, new *Slice, path string) error {
-						if old.Package > new.Package || old.Package == new.Package && old.Name > new.Name {
-							old, new = new, old
-						}
-						return fmt.Errorf("slices %s and %s conflict on %s", old, new, path)
-					}
-
 					if s, ok := g.visited[new.Package]; ok {
 						// If the package was already visited we only need to
 						// check that the new path provides the same content as
@@ -246,19 +247,20 @@ func (r *Release) validate() error {
 					if err := g.visit(new); err != nil {
 						return err
 					}
-				} else {
-					if newInfo.Kind == GeneratePath || newInfo.Kind == GlobPath {
-						globs[newPath] = new
-					}
-					g := &preferGraph{
-						path:    newPath,
-						release: r,
-						visited: make(map[string]*Slice),
-					}
-					graphs[newPath] = g
-					if err := g.visit(new); err != nil {
-						return err
-					}
+					continue
+				}
+
+				if newInfo.Kind == GeneratePath || newInfo.Kind == GlobPath {
+					globs[newPath] = new
+				}
+				g := &preferGraph{
+					path:    newPath,
+					release: r,
+					visited: make(map[string]*Slice),
+				}
+				graphs[newPath] = g
+				if err := g.visit(new); err != nil {
+					return err
 				}
 			}
 		}
@@ -506,7 +508,8 @@ func Select(release *Release, slices []SliceKey) (*Selection, error) {
 	return selection, nil
 }
 
-// findPath returns a package slice which contains the path.
+// findPath returns a package slice which contains the path. It may return any
+// slice if there are multiple.
 func findPath(r *Release, path, pkg string) (*Slice, error) {
 	for _, s := range r.Packages[pkg].Slices {
 		if _, ok := s.Contents[path]; ok {
@@ -535,16 +538,19 @@ func (g *preferGraph) isLinear() bool {
 	return g.head != nil && g.head.Contents[g.path].Prefer != ""
 }
 
-// Returns the next node (pkg) in the 'prefer' chain.
+// Returns the next node (package name) in the 'prefer' chain.
 func (g *preferGraph) next(pkg string) string {
 	return g.visited[pkg].Contents[g.path].Prefer
 }
 
-// findCycle returns the nodes in a cycle if a cycle has been detected.
-// Note: this function requires a cycle to be present.
-func (g *preferGraph) findCycle(visited map[string]*Slice, start string) []string {
+// findCycle returns the nodes in a cycle if a cycle has been detected,
+// otherwise it returns an error.
+func (g *preferGraph) findCycle(visited map[string]*Slice, start string) ([]string, error) {
 	var cycle []string
 	for u := start; ; u = visited[u].Contents[g.path].Prefer {
+		if u == "" {
+			return nil, fmt.Errorf("internal error: expected a cycle")
+		}
 		if len(cycle) > 0 && u == cycle[0] {
 			break
 		}
@@ -557,13 +563,13 @@ func (g *preferGraph) findCycle(visited map[string]*Slice, start string) []strin
 		}
 	}
 	cycle = append(cycle[minIdx:], cycle[:minIdx]...)
-	return cycle
+	return cycle, nil
 }
 
 // visit iterates over the 'prefer' relations, starting from src.
 func (g *preferGraph) visit(src *Slice) error {
-	// A variant of Depth-first Search algorithm is used in this function.
-	// See https://en.wikipedia.org/wiki/Depth-first_search.
+	// A variant of Topological sorting using DFS is used in this function.
+	// See https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search.
 	orderSlices := func(a, b *Slice) (*Slice, *Slice) {
 		if a.Package > b.Package || (a.Package == b.Package && a.Name > b.Name) {
 			a, b = b, a
@@ -572,11 +578,15 @@ func (g *preferGraph) visit(src *Slice) error {
 	}
 	tempVisited := make(map[string]*Slice)
 
+	// prev is used for error reporting.
 	var prev string
 	cur := src.Package
 	for {
 		if _, ok := tempVisited[cur]; ok {
-			cycle := g.findCycle(tempVisited, cur)
+			cycle, err := g.findCycle(tempVisited, cur)
+			if err != nil {
+				return err
+			}
 			return fmt.Errorf("slice %s path %s has a 'prefer' cycle: %s",
 				tempVisited[cycle[0]], g.path, strings.Join(cycle, ", "))
 		}
@@ -592,6 +602,7 @@ func (g *preferGraph) visit(src *Slice) error {
 			}
 			break
 		}
+
 		var s *Slice
 		if cur == src.Package {
 			s = src
