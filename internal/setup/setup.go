@@ -127,13 +127,14 @@ type Selection struct {
 // SelectPackage returns true if pkg should be the one to provide path among all
 // other selected packages.
 func (s *Selection) SelectPackage(path, pkg string) bool {
-	// pkg provides the path if there are no conflicts regarding the path or if
-	// there is, pkg is the most preferred package for this path in the
-	// selection.
+	// If the path has no prefer relationships then it is always selected.
 	priorities, ok := s.Release.pathPriorities[path]
 	if !ok {
 		return true
 	}
+
+	// If there is a prefer relationship, we choose the package with the highest
+	// priority among the selection.
 	pkgPriority, ok := priorities[pkg]
 	if !ok {
 		return false
@@ -188,6 +189,11 @@ func (r *Release) validate() error {
 	// with make:true) will always conflict with extracted content, because we
 	// cannot validate that they are the same without downloading the package.
 	globs := make(map[string]*Slice)
+	// The 'prefer' relationship representation for each path. There are only
+	// two valid configurations of a graph - either all the nodes are
+	// disconnected and they produce the same content, or there is a linear
+	// order of 'prefer' relationship. In any other case, the graph functions
+	// returns an error.
 	graphs := make(map[string]*preferGraph)
 
 	// Iterate on a stable package order.
@@ -237,7 +243,7 @@ func (r *Release) validate() error {
 							return reportConflict(g.head, new, newPath)
 						}
 					}
-					if err := g.walk(new); err != nil {
+					if err := g.visit(new); err != nil {
 						return err
 					}
 				} else {
@@ -250,7 +256,7 @@ func (r *Release) validate() error {
 						visited: make(map[string]*Slice),
 					}
 					graphs[newPath] = g
-					if err := g.walk(new); err != nil {
+					if err := g.visit(new); err != nil {
 						return err
 					}
 				}
@@ -265,7 +271,7 @@ func (r *Release) validate() error {
 			r.pathPriorities = make(map[string]map[string]int)
 		}
 		r.pathPriorities[path] = make(map[string]int)
-		var counter int
+		counter := 0
 		for cur := g.head.Package; cur != ""; cur = g.next(cur) {
 			counter++
 			r.pathPriorities[path][cur] = counter
@@ -285,6 +291,8 @@ func (r *Release) validate() error {
 				continue
 			}
 			for _, new := range g.visited {
+				// It is okay to check only one slice per packages because the
+				// content has been validated to be the same earlier.
 				newInfo := new.Contents[newPath]
 				if oldInfo.Kind == GlobPath && (newInfo.Kind == GlobPath || newInfo.Kind == CopyPath) {
 					if new.Package == old.Package {
@@ -508,11 +516,16 @@ func findPath(r *Release, path, pkg string) (*Slice, error) {
 	return nil, fmt.Errorf("package %s does not have path %s", pkg, path)
 }
 
+// preferGraph stores the 'prefer' relationship representation for a path. There
+// are only two valid configurations of a graph - either all the nodes are
+// disconnected and they produce the same content, or there is a linear order of
+// 'prefer' relationship. In any other case, the graph functions returns an
+// error.
 type preferGraph struct {
 	path    string
 	release *Release
-	// The initial node (pkg) of the chain. If the graph is not linear, then
-	// head may be any node.
+	// The initial node (represented by a slice of the package) of the chain. If
+	// the graph is not linear, then head may be any node.
 	head    *Slice
 	visited map[string]*Slice
 }
@@ -528,6 +541,7 @@ func (g *preferGraph) next(pkg string) string {
 }
 
 // findCycle returns the nodes in a cycle if a cycle has been detected.
+// Note: this function requires a cycle to be present.
 func (g *preferGraph) findCycle(visited map[string]*Slice, start string) []string {
 	var cycle []string
 	for u := start; ; u = visited[u].Contents[g.path].Prefer {
@@ -546,11 +560,10 @@ func (g *preferGraph) findCycle(visited map[string]*Slice, start string) []strin
 	return cycle
 }
 
-// walk iterates over the 'prefer' relationships for the path, starting from
-// src.
-// A variant of Depth-first Search algorithm is used in this function.
-// See https://en.wikipedia.org/wiki/Depth-first_search.
-func (g *preferGraph) walk(src *Slice) error {
+// visit iterates over the 'prefer' relations, starting from src.
+func (g *preferGraph) visit(src *Slice) error {
+	// A variant of Depth-first Search algorithm is used in this function.
+	// See https://en.wikipedia.org/wiki/Depth-first_search.
 	orderSlices := func(a, b *Slice) (*Slice, *Slice) {
 		if a.Package > b.Package || (a.Package == b.Package && a.Name > b.Name) {
 			a, b = b, a
@@ -602,6 +615,7 @@ func (g *preferGraph) walk(src *Slice) error {
 				// A tail has been found whereas this chain should have stopped
 				// at g.head.Package. Thus, the 'prefer' graph must have more
 				// than one components i.e. disconnected.
+				// Note: this is how we deviate from DFS described above.
 				a, b := orderSlices(src, g.head)
 				return fmt.Errorf("slices %s and %s conflict on path %s: "+
 					"path has 'prefer' but there is no valid linear order", a, b, g.path)
